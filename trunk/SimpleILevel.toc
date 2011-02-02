@@ -4,7 +4,7 @@
 ## Title-zhTW: 簡易物品等級
 ## Notes-zhTW: 提示欄顯示其他玩家的平均物品等級
 
-## Version: 0.63
+## Version: 0.64
 ## Author: Scotepi
 ## SavedVariables: SIL_CacheGUID, SIL_Settings
 

@@ -2,8 +2,12 @@
 	Total Rewrite:
 	---------------------------------------
 	To Do List for 1.0:
-	* Fix level 80 heirlooms on 81+ players
-	* Better way of handleing people under 60 who don't have 14 items
+	* Remove accuracy since i fixed the inspect bugs
+	
+	To Do List for 2.0:
+	* Move to a xml UI
+	* Add a simple UI for displaying party and raid scores
+	* Purge cache older then X days
 	
 	To-Do List for 2.0 and beyond:
 	* Add color based score for over 100% accuracy
@@ -19,8 +23,13 @@
 	* Level 80 heirlooms on level 81+ return the wrong iLevel
 	* Doesn't work on heath or mana bars when you target someone, this is a bug, there is no UnitName("mouseover") or UnitGUID("mouseover") there
 	
-	Changelog for 0.63:
-	* Fixed color for hours to be more visable, light blue insted of dark
+	Changelog for 0.64:
+	* Removed accuracy, no longer required, if somehow someone get someone with less then 5 items it will still be gray
+	* Moved translations to SVN
+	* Correct padding on raid and party names
+	
+	Changelog for 0.63: 2011-02-02 alpha
+	* Fixed color for hours to be more visable, light blue insted of dark blue
 	* Fixed rounding on /sil again ><
 	* Added padding to player names in raid and party to hopefully make it more readable
 	
@@ -47,16 +56,11 @@
 ]]
 
 -- Local Variables
-SIL_Loaded = false;
-SIL_Debug = false;
-SIL_Version = 0.63;
-local L = false;
-
-if ( SIL_Local ) then
-	L = SIL_Local;
-else
-	L = SIL_enUS;
-end
+local addonName, L = ...;
+local SIL_Loaded = false;
+local SIL_Debug = false;
+local SIL_Version = 0.64;
+local SIL_Release = "@project-version@";
 
 function SIL_OnEvent(SIL_Nil, eventName, arg1, arg2, arg3)
 	if ( eventName == 'ADDON_LOADED' ) and not ( SIL_Loaded ) then
@@ -72,7 +76,7 @@ function SIL_OnEvent(SIL_Nil, eventName, arg1, arg2, arg3)
 		end
 		
 		-- Tell the player we have been loaded
-		SIL_Console(SIL_Replace(L['Loading Addon'], 'version', SIL_Version));
+		SIL_Console(SIL_Replace(L['Loading Addon'], 'version', SIL_Version..' '..SIL_Release));
 		SIL_Loaded = true;
 		
 		-- Debug if its the devs alt
@@ -104,7 +108,6 @@ function SIL_Initialize()
 	
 	SIL_Settings = {}
 	SIL_Settings['age'] = 1800;				-- How long till information is refreshed
-	SIL_Settings['accuracy'] = 14;			-- How many items is considered 100% accurate
 	SIL_Settings['advanced'] = false;		-- Display extra information in the tooltips
 	SIL_Settings['version'] = SIL_Version;	-- Version for future referance
 end;
@@ -115,7 +118,11 @@ end;
 ]]
 function SIL_Upgrade()
 	
-	-- Nothing to do yet
+	local oldVersion = SIL_Settings['version'];
+	
+	if ( oldVersion < 0.63 ) and ( SIL_Settings['accuracy'] ) then
+		SIL_Settings['accuracy'] = nil;
+	end
 	
 	SIL_Settings['version'] = SIL_Version;
 end
@@ -170,7 +177,7 @@ end
 
 --[[
 	SIL_GetScore(name|guid);
-	returns false or score, accuracy, age
+	returns false or score, age and items
 ]]
 function SIL_GetScore(target)
 	
@@ -181,11 +188,10 @@ function SIL_GetScore(target)
 	
 	if ( SIL_CacheGUID[target] ) and ( SIL_CacheGUID[target]['items'] ) then
 		
-		-- Return the unformated score, accuracy and age
+		-- Return the unformated score and age
 		local score = SIL_CacheGUID[target]['total'] / SIL_CacheGUID[target]['items'];
-		local accuracy = SIL_GetAccuracy(SIL_CacheGUID[target]['items'], true);
-		local age = time() - SIL_CacheGUID[target]['time']
-		return score, accuracy, age;
+		local age = time() - SIL_CacheGUID[target]['time'];
+		return score, age, SIL_CacheGUID[target]['items'];
 	else
 		return false;
 	end
@@ -256,29 +262,6 @@ function SIL_ClearScore(target)
 end;
 
 --[[
-	SIL_GetAccuracy(items, timesOneHundred)
-	if timesOneHundred = true then the score will be 0-100
-	returns the accuracy for a give number of items
-]]
-function SIL_GetAccuracy(items, times)
-	local accuracy = 0;
-	
-	-- Find the accuracy
-	if ( items < SIL_Settings['accuracy'] ) then
-		accuracy = items / SIL_Settings['accuracy'];
-	else
-		accuracy = 1;
-	end
-	
-	-- Return a result
-	if ( times ) then
-		return SIL_Round(accuracy * 100, 1);
-	else
-		return accuracy;
-	end;
-end;
-
---[[
 	SIL_StartScore(target, forceRefresh, showTooltip);
 	returns true or false if a score was started
 ]]
@@ -301,15 +284,15 @@ function SIL_StartScore(target, refresh, tooltip)
 		end
 		
 		-- Check there score to get all usefull information
-		local score, accuracy, age = SIL_GetScore(guid);
+		local score, age, items = SIL_GetScore(guid);
 		
 		-- Some debuging
 		if ( score ) then
-			SIL_Console(name.." score:"..score.." acc:"..accuracy.." age:"..age, true);
+			SIL_Console(name.." score:"..score.." age:"..age, true);
 		end
 		
-		-- We have a score and its under age and its accurate
-		if ( score ) and ( age < SIL_Settings['age'] ) and ( accuracy == '100.0' ) then
+		-- We have a score and its under age and has over 5 items
+		if ( score ) and ( age < SIL_Settings['age'] ) and ( items > 5 ) then
 			
 			if ( tooltip ) then
 				SIL_ShowTooltip();
@@ -350,7 +333,7 @@ end
 
 --[[
 	SIL_ProcessInspect(guid, showTooltip)
-	returns false or the score and accuracy in %;
+	returns false or the score
 ]]
 function SIL_ProcessInspect(guid, tooltip)
 	
@@ -409,16 +392,14 @@ function SIL_ProcessInspect(guid, tooltip)
 				SIL_SetScore(totalItems, totalScore, guid);
 				
 				-- Get the score back, this is dumb but it avoids dupe code
-				local score, accuracy = SIL_GetScore(guid);
+				local score = SIL_GetScore(guid);
 				
 				if ( tooltip ) then
-					SIL_ShowTooltip(score, totalItems);
+					SIL_ShowTooltip();
 				end
 				
-				--- SIL_Console(name..' has '..totalItems..' items with a score or '..score..' and accuracy of '..accuracy..'%', true);
-				return score, accuracy, 0;
+				return score, 0, totalItems;
 			else
-				--- SIL_Console(name..' has no items', true);
 				return false;
 			end
 		else
@@ -437,45 +418,32 @@ function SIL_ShowTooltip()
 	if ( SIL_HasScore(guid) ) then
 		
 		local items = SIL_CacheGUID[guid]['items'];
-		local score, accuracyPercent, age = SIL_GetScore(guid);
-		local accuracy = SIL_GetAccuracy(items, false);
+		local score, age, items = SIL_GetScore(guid);
 		
 		-- We have a score so color it
-		if ( accuracy == 1 ) then
-			r,g,b = SIL_ColorScore(score);
+		r,g,b = SIL_ColorScore(score);
 		
-		-- Its over 0.2 so make it gray
-		elseif ( accuracy > 0.2 ) then
-			r = SIL_Round(accuracy, 2);
+		-- Less then 6 items so gray it
+		if ( items < 6 ) then
+			r = 0.5;
 			g = r;
 			b = r;
-		
-		-- Limit it to 0.2
-		else
-			r = 0.2;
-			g = 0.2;
-			b = 0.2;
-		end
-		
-		-- Fix 100.0%
-		if ( accuracyPercent == '100.0' ) then
-			accuracyPercent = '100';
 		end
 		
 		-- Build text colors
 		local rgbHex = SIL_RGBtoHex(tonumber(r),tonumber(g),tonumber(b));
-		local accHex = SIL_RGBtoHex(accuracy,accuracy,accuracy);
 		
 		-- Build the tool tip text
 		local textLeft1 = '|cFF216bff'..L['Tool Tip Left 1']..'|r ';
 		local textRight1 = '|cFF'..rgbHex..SIL_Replace(L['Tool Tip Right 1'], 'score', SIL_Round(score, 1))..'|r';
-		local textLeft2 = SIL_Replace(L['Tool Tip Left 2'], 'hex', accHex);
-		textLeft2 = SIL_Replace(textLeft2, 'accuracy', accuracyPercent);
+		
+		local textLeft2 = L['Tool Tip Left 2'];
 		local textRight2 = SIL_Replace(L['Tool Tip Right 2'], 'localizedAge', SIL_AgeToText(age));
 		
 		-- Loop tooltip text to check if its alredy there
 		local ttLines = GameTooltip:NumLines();
 		local ttUpdated = false;
+		
 		for i = 1,ttLines do
 					
 			-- If the static text matches
@@ -549,21 +517,6 @@ return 0.1, 0.1, 0.1
 end
 
 --[[
-	SIL_TooltipHook();
-	Called when you mouse over someone, should attempt to also do mouseover event
-	return true or false if a tooltip was able to be shown
-]]
-function SIL_TooltipHook(arg1, arg2)
-	
-	-- Can't do anything if we are incombat
-	if ( InCombatLockdown() ) then 
-		return false; 
-	else
-		return SIL_ShowTooltip();
-	end;
-end;
-
---[[
 	SIL_AgeToText(age);
 ]]
 function SIL_AgeToText(age)
@@ -597,16 +550,15 @@ function SIL_Party(output)
 		
 		-- Add yourself
 		SIL_StartScore('player', true, false);
-		local score, accuracy, age = SIL_ProcessInspect(UnitGUID('player'), false);
+		local score, age, items = SIL_ProcessInspect(UnitGUID('player'), false);
 		
 		if ( score ) then
 			partySize = partySize + 1;
 			partyTotal = partyTotal + score;
 			
 			if ( output ) then
-				local str = SIL_Replace(L['Party Member Score'], 'name', UnitName('player'));
+				local str = SIL_Replace(L['Party Member Score'], 'name', SIL_Strpad(UnitName('player'), 20));
 				str = SIL_Replace(str, 'score', SIL_Round(score, 1));
-				str = SIL_Replace(str, 'accuracy', accuracy);
 				str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
 				SIL_Console(str);
@@ -622,11 +574,11 @@ function SIL_Party(output)
 				-- Try and refresh the information
 				if ( CanInspect(name) ) then
 					SIL_StartScore(name, true, false);
-					score, accuracy, age = SIL_ProcessInspect(guid, false);
+					score, age, items = SIL_ProcessInspect(guid, false);
 				
 				-- We couldn't inspect so try from the cache
 				elseif ( SIL_HasScore(guid) ) then
-					score, accuracy, age = SIL_GetScore(guid);
+					score, age, items = SIL_GetScore(guid);
 				end
 				
 				-- They have a score so count them
@@ -638,7 +590,6 @@ function SIL_Party(output)
 						
 						local str = SIL_Replace(L['Party Member Score'], 'name', SIL_Strpad(name, 20));
 						str = SIL_Replace(str, 'score', SIL_Round(score, 1));
-						str = SIL_Replace(str, 'accuracy', accuracy);
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
 						SIL_Console(str);
@@ -697,11 +648,11 @@ function SIL_Raid(output)
 				-- Start Inspecting if they are in range
 				if ( CanInspect(name) ) then
 					SIL_StartScore(name, true, false);
-					score, accuracy, age = SIL_ProcessInspect(guid, false);
+					score, age, items = SIL_ProcessInspect(guid, false);
 				
 				-- We couldn't inspect so try from the cache
 				elseif ( SIL_HasScore(guid) ) then
-					score, accuracy, age = SIL_GetScore(guid);
+					score, age, items = SIL_GetScore(guid);
 				end
 				
 				-- They have a score so count them
@@ -713,7 +664,6 @@ function SIL_Raid(output)
 						
 						local str = SIL_Replace(L['Raid Member Score'], 'name', SIL_Strpad(name, 20));
 						str = SIL_Replace(str, 'score', SIL_Round(score, 1));
-						str = SIL_Replace(str, 'accuracy', accuracy);
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
 						SIL_Console(str);
@@ -795,13 +745,12 @@ function SIL_SlashCommand(command)
 		if ( CanInspect('target') ) then
 		
 			SIL_StartScore('target', true, false);
-			local score, accuracy = SIL_ProcessInspect(UnitGUID('target'), false);
+			local score, age, items = SIL_ProcessInspect(UnitGUID('target'), false);
 			
 			
 			if ( score ) then
 				local str = SIL_Replace(L['Slash Target Score True'], 'target', UnitName('target'));
 				str = SIL_Replace(str, 'score', SIL_Round(score, 1));
-				str = SIL_Replace(str, 'accuracy', accuracy);
 				
 				SIL_Console(str);
 				
@@ -820,7 +769,7 @@ function SIL_SlashCommand(command)
 		-- Check that we have a score
 		if ( SIL_HasScore(value) ) then
 			
-			local score, accuracy, age = SIL_GetScore(value);
+			local score, age, items = SIL_GetScore(value);
 			
 			if ( score ) then
 				
@@ -830,7 +779,6 @@ function SIL_SlashCommand(command)
 				local str = L['Slash Get Score True'];
 				str = SIL_Replace(str, 'target', value);
 				str = SIL_Replace(str, 'score', SIL_Round(score, 1));
-				str = SIL_Replace(str, 'accuracy', accuracy);
 				str = SIL_Replace(str, 'ageLocal', age);
 				
 				SIL_Console(str);
@@ -846,11 +794,6 @@ function SIL_SlashCommand(command)
 		else
 			SIL_Console(SIL_Replace(L['Slash Target Score False'], 'target', value));
 		end
-	
-	-- Set the accuracy 1-18
-	elseif ( command == "accuracy" ) and ( number ) and ( 0 < number ) and ( number < 19 ) then
-		SIL_Settings['accuracy'] = number;
-		SIL_Console(SIL_Replace(L['Slash Accuracy Change'], 'items', SIL_Settings['accuracy']));
 	
 	-- Set the max age
 	elseif (( command == "cache" ) or ( command == "age" )) and ( number ) then
@@ -871,18 +814,17 @@ function SIL_SlashCommand(command)
 		
 		-- Get the score for the player
 		SIL_StartScore('player', true, false);
-		local score, accuracy = SIL_ProcessInspect(UnitGUID('player'), false);
+		local score, age, items = SIL_ProcessInspect(UnitGUID('player'), false);
 		
-		SIL_Console(L['Help1']);
-		SIL_Console(L['Help2']);
-		SIL_Console(L['Help3']);
-		SIL_Console(L['Help4']);
-		SIL_Console(L['Help5']);
-		SIL_Console(L['Help6']);
-		SIL_Console(L['Help7']);
-		SIL_Console(L['Help8']);
-		SIL_Console(L['Help9']);
-		SIL_Console(L['Help10']);
+		SIL_Console(L['Addon Name'].." - v"..SIL_Version.." "..SIL_Release);
+		SIL_Console(L['Help Help']);
+		SIL_Console(L['Help Clear']);
+		SIL_Console(L['Help Advanced']);
+		SIL_Console(L['Help Target']);
+		SIL_Console(L['Help Get']);
+		SIL_Console(L['Help Age']);
+		SIL_Console(L['Help Party']);
+		SIL_Console(L['Help Raid']);
 		
 		if ( score ) then
 			SIL_Console('-----------------------');
@@ -944,11 +886,11 @@ end;
 	returns string
 ]]
 function SIL_Strpad(str, length, pad)
-	if not ( padd ) then
-		padd = ' ';
+	if not ( pad ) then
+		pad = ' ';
 	end
 	
-	while str.len() < length do
+	while string.len(str) < length do
 		str = str..pad;
 	end
 	
@@ -958,13 +900,10 @@ end
 -- Create the frame and register the events
 local f = CreateFrame("Frame", "SimpleItemLevel", UIParent);
 f:SetScript("OnEvent", SIL_OnEvent);
-f:RegisterEvent("ADDON_LOADED");
-f:RegisterEvent("INSPECT_READY");
-f:RegisterEvent("PLAYER_TARGET_CHANGED");
-f:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
-
--- Hook the tooltip for units
--- GameTooltip:HookScript("OnTooltipSetUnit", SIL_TooltipHook);
+f:RegisterEvent("ADDON_LOADED");			-- Processing settings
+f:RegisterEvent("PLAYER_TARGET_CHANGED");	-- Initating the inspect process
+f:RegisterEvent("INSPECT_READY");			-- Finishing the inspect process
+f:RegisterEvent("UPDATE_MOUSEOVER_UNIT");	-- Showing and updating tool tips
 
 -- Set up the slash command information
 SlashCmdList["SIMPLEILEVEL"] = SIL_SlashCommand;
