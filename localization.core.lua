@@ -1,45 +1,48 @@
 ﻿-- Default localization - enUS
--- SIL_Console(SIL_Replace(L['Loading Addon'], 'version', SIL_Version));
-SIL_enUS = {
-	["Addon Description"] = "Adds the Average iLevel (AiL) to the tool tip of other players",
-	["Addon Name"] = "Simple Item Level",
-	["Addon Short Name"] = "SiL",
-	["Age Days"] = "%age days",
-	["Age Hours"] = "%age hours",
-	["Age Minutes"] = "%age minutes",
-	["Age Seconds"] = "%age seconds",
-	Help1 = "Simple Item Level Help",
-	Help10 = "/sil raid: Shows the AiL of everyone in your raid",
-	Help2 = "/sil help: for this message",
-	Help3 = "/sil clear: cleared all settings and the cache",
-	Help4 = "/sil advanced: toggles advanced tooltips inc. age and accuracy",
-	Help5 = "/sil target: Gets the AiL or your current target",
-	Help6 = "/sil get <name>: Gets the AiL of name if its cached",
-	Help7 = "/sil accuracy <1-18>: Sets the number of items be considered 100%",
-	Help8 = "/sil age <seconds>: Sets the amount of time between inspect refreshes",
-	Help9 = "/sil party: Shows the AiL of everyone in your party",
-	["Loading Addon"] = "Loading v%version",
-	["Party False"] = "Not in a party",
-	["Party Member Score"] = "%name - AiL: %score %accuracy% %ageLocal old",
-	["Party Member Score False"] = "%name - Out of range",
-	["Party Score"] = "Party AiL: %score over %number members",
-	["Raid False"] = "Not in a raid",
-	["Raid Member Score"] = "%name - AiL: %score %accuracy% %ageLocal old",
-	["Raid Member Score False"] = "%name - Out of range",
-	["Raid Score"] = "Raid AiL: %score over %number members",
-	["Slash Accuracy Change"] = "Setting the Accuracy to %items items",
-	["Slash Advanced Off"] = "Advanced tool tips Off",
-	["Slash Advanced On"] = "Advanced tool tips On",
-	["Slash Age Change"] = "Setting the Cache Age to %timeInSeconds",
-	["Slash Clear"] = "Clearing settings",
-	["Slash Get Score False"] = "Sorry, there was a error getting a score for %target",
-	["Slash Get Score True"] = "%target has a AiL of %score with %accuracy% accuracy and the information is %ageLocal old",
-	["Slash Target Score False"] = "Sorry, there was a error building a score for your target",
-	["Slash Target Score True"] = "%target has a AiL of %score with %accuracy% accuracy",
-	["Tool Tip Left 1"] = "Average iLevel:",
-	["Tool Tip Left 2"] = "|cFF%hex%accuracy%|r accuracy",
-	["Tool Tip Right 1"] = "%score",
-	["Tool Tip Right 2"] = "%localizedAge",
-	["Your Score"] = "Your AiL is %score",
-}
+local addonName, L = ...;
 
+L["Addon Description"] = "Adds the Average iLevel (AiL) to the tool tip of other players"
+L["Addon Name"] = "Simple Item Level"
+L["Addon Short Name"] = "SiL"
+L["Age Days"] = "%age days"
+L["Age Hours"] = "%age hours"
+L["Age Minutes"] = "%age minutes"
+L["Age Seconds"] = "%age seconds"
+L["Help Advanced"] = "/sil advanced: toggles advanced tool tips inc. age"
+L["Help Age"] = "/sil age <seconds>: Sets the amount of time between inspect refreshes"
+L["Help Clear"] = "/sil clear: cleared all settings and the cache"
+L["Help Get"] = "/sil get <name>: Gets the AiL of name if its cached"
+L["Help Help"] = "/sil help: for this message"
+L["Help Party"] = "/sil party: Shows the AiL of everyone in your party"
+L["Help Raid"] = "/sil raid: Shows the AiL of everyone in your raid"
+L["Help Target"] = "/sil target: Gets the AiL or your current target"
+L["Loading Addon"] = "Loading v%version"
+L["Party False"] = "Not in a party"
+L["Party Member Score"] = "%name - AiL: %score %ageLocal old"
+L["Party Member Score False"] = "%name - Out of range"
+L["Party Score"] = "Party AiL: %score over %number members"
+L["Raid False"] = "Not in a raid"
+L["Raid Member Score"] = "%name - AiL: %score %ageLocal old"
+L["Raid Member Score False"] = "%name - Out of range"
+L["Raid Score"] = "Raid AiL: %score over %number members"
+L["Slash Advanced Off"] = "Advanced tool tips Off"
+L["Slash Advanced On"] = "Advanced tool tips On"
+L["Slash Age Change"] = "Setting the Cache Age to %timeInSeconds"
+L["Slash Clear"] = "Clearing settings"
+L["Slash Get Score False"] = "Sorry, there was a error getting a score for %target"
+L["Slash Get Score True"] = "%target has a AiL of %score with and the information is %ageLocal old"
+L["Slash Target Score False"] = "Sorry, there was a error building a score for your target"
+L["Slash Target Score True"] = "%target has a AiL of %score"
+L["Tool Tip Left 1"] = "Average iLevel:"
+L["Tool Tip Left 2"] = " "
+L["Tool Tip Right 1"] = "%score"
+L["Tool Tip Right 2"] = "%localizedAge old"
+L["Your Score"] = "Your AiL is %score"
+
+
+
+local function defaultFunc(L, key)
+	--print('SiL: Missing localization for '..key);
+	return key;
+end
+setmetatable(L, {__index=defaultFunc});
