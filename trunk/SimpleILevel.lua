@@ -21,6 +21,10 @@
 	* Level 80 heirlooms on level 81+ return the wrong iLevel
 	* Doesn't work on heath or mana bars when you target someone, this is a bug, there is no UnitName("mouseover") or UnitGUID("mouseover") there
 	
+	Changelog for 0.71:
+	* Added realm support to the cache
+	* Moved padding value to localization
+	
 	Changelog for 0.7: 2011-02-03
 	* Cleaned up party and raid display some more, removing age when its current, less then 30sec
 	* This will most likely become 1.0 for 4.0.6 patch
@@ -36,7 +40,7 @@
 local addonName, L = ...;
 local SIL_Loaded = false;
 local SIL_Debug = false;
-local SIL_Version = 0.7;
+local SIL_Version = 0.71;
 
 -- Color constants
 local SIL_ColorIndex = {0,200,333,379,1000};
@@ -112,8 +116,26 @@ function SIL_Upgrade()
 	
 	local oldVersion = SIL_Settings['version'];
 	
+	-- Added realm information
+	if ( oldVersion < 0.71 ) then
+		for guid,info in pairs(SIL_CacheGUID) do
+			SIL_CacheGUID['realm'] = nil;
+		end
+	end
+	
+	-- Removed accuracy
 	if ( oldVersion < 0.63 ) and ( SIL_Settings['accuracy'] ) then
-		SIL_Settings['accuracy'] = nil;
+		local age = SIL_Settings['age'];
+		local advanced = SIL_Settings['advanced'];
+		SIL_Settings = {};
+		SIL_Settings['age'] = age;
+		SIL_Settings['advanced'] = advanced;
+	end
+	
+	-- The version is to old so just clear the settings
+	if not ( oldVersion ) then
+		SIL_Console("Sorry, you version is to old and your settings need to be reset");
+		SIL_Initialize();
 	end
 	
 	SIL_Settings['version'] = SIL_Version;
@@ -135,12 +157,12 @@ end
 	SIL_NameToGUID(guid);
 	returns guid or false
 ]]
-function SIL_NameToGUID(name)
+function SIL_NameToGUID(name, realm)
 	if ( name ) then
 		name = strlower(name);
 		
 		for guid,info in pairs(SIL_CacheGUID) do
-			if ( strlower(info['name']) == name ) then
+			if ( strlower(info['name']) == name ) and ( info['realm'] == realm ) then
 				return guid;
 			end
 		end
@@ -266,7 +288,7 @@ function SIL_StartScore(target, refresh, tooltip)
 	-- We can inspect the person
 	elseif ( CanInspect(target) ) then
 		local guid = UnitGUID(target);
-		local name = UnitName(target);
+		local name, realm = UnitName(target);
 		
 		-- We want to start from scratch
 		if ( refresh ) then
@@ -300,6 +322,7 @@ function SIL_StartScore(target, refresh, tooltip)
 			if not ( SIL_CacheGUID[guid] ) then
 				SIL_CacheGUID[guid] = {};
 				SIL_CacheGUID[guid]['name'] = name;
+				SIL_CacheGUID[guid]['realm'] = realm;
 				SIL_Console(name.." New", true);
 			else
 				SIL_Console(name.." reFresh", true);
@@ -581,7 +604,7 @@ function SIL_Party(output)
 					str = L['Party Member Score Fresh'];
 				end
 						
-				str = SIL_Replace(str, 'name', SIL_Strpad(UnitName('player'), 20));
+				str = SIL_Replace(str, 'name', SIL_Strpad(UnitName('player'), L["Max UnitName"]));
 				str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 				str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
@@ -618,7 +641,7 @@ function SIL_Party(output)
 							str = L['Party Member Score Fresh'];
 						end
 						
-						str = SIL_Replace(str, 'name', SIL_Strpad(name, 20));
+						str = SIL_Replace(str, 'name', SIL_Strpad(name, L["Max UnitName"]));
 						str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
@@ -626,7 +649,7 @@ function SIL_Party(output)
 					end
 				else
 					if ( output ) then
-						SIL_Console(SIL_Replace(L['Party Member Score False'], 'name', SIL_Strpad(name, 20)));
+						SIL_Console(SIL_Replace(L['Party Member Score False'], 'name', SIL_Strpad(name, L["Max UnitName"])));
 					end
 				end
 			end
@@ -699,7 +722,7 @@ function SIL_Raid(output)
 						end
 						
 						
-						str = SIL_Replace(str, 'name', SIL_Strpad(name, 20));
+						str = SIL_Replace(str, 'name', SIL_Strpad(name, L["Max UnitName"]));
 						str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
@@ -707,7 +730,7 @@ function SIL_Raid(output)
 					end
 				else
 					if ( output ) then
-						SIL_Console(SIL_Replace(L['Raid Member Score False'], 'name', SIL_Strpad(name, 20)));
+						SIL_Console(SIL_Replace(L['Raid Member Score False'], 'name', SIL_Strpad(name, L["Max UnitName"])));
 					end
 				end
 			end
@@ -927,8 +950,12 @@ function SIL_Strpad(str, length, pad)
 		pad = ' ';
 	end
 	
-	while string.len(str) < length do
-		str = str..pad;
+	length = tonumber(length);
+	
+	if ( type(length) == "number" ) then
+		while string.len(str) < length do
+			str = str..pad;
+		end
 	end
 	
 	return str;
