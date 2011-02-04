@@ -17,13 +17,13 @@ L["Help Party"] = "/sil party: Shows the AiL of everyone in your party"
 L["Help Raid"] = "/sil raid: Shows the AiL of everyone in your raid"
 L["Help Target"] = "/sil target: Gets the AiL or your current target"
 L["Loading Addon"] = "Loading v%version"
-L["Party False"] = "Not in a party"
 L["Party Member Score"] = "%name - AiL: %score %ageLocal old"
 L["Party Member Score False"] = "%name - Out of range"
+L["Party Member Score Fresh"] = "%name - AiL: %score"
 L["Party Score"] = "Party AiL: %score over %number members"
-L["Raid False"] = "Not in a raid"
 L["Raid Member Score"] = "%name - AiL: %score %ageLocal old"
 L["Raid Member Score False"] = "%name - Out of range"
+L["Raid Member Score Fresh"] = "%name - AiL: %score"
 L["Raid Score"] = "Raid AiL: %score over %number members"
 L["Slash Advanced Off"] = "Advanced tool tips Off"
 L["Slash Advanced On"] = "Advanced tool tips On"
@@ -33,16 +33,7 @@ L["Slash Get Score False"] = "Sorry, there was a error getting a score for %targ
 L["Slash Get Score True"] = "%target has a AiL of %score with and the information is %ageLocal old"
 L["Slash Target Score False"] = "Sorry, there was a error building a score for your target"
 L["Slash Target Score True"] = "%target has a AiL of %score"
-L["Tool Tip Left 1"] = "Average iLevel:"
-L["Tool Tip Left 2"] = " "
-L["Tool Tip Right 1"] = "%score"
-L["Tool Tip Right 2"] = "%localizedAge old"
+L["Tool Tip Advanced"] = "%localizedAge old"
+L["Tool Tip Left"] = "Average iLevel:"
+L["Tool Tip Right"] = "%score"
 L["Your Score"] = "Your AiL is %score"
-
-
-
-local function defaultFunc(L, key)
-	--print('SiL: Missing localization for '..key);
-	return key;
-end
-setmetatable(L, {__index=defaultFunc});
