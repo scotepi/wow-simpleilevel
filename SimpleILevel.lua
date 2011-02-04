@@ -2,65 +2,57 @@
 	Total Rewrite:
 	---------------------------------------
 	To Do List for 1.0:
-	* Remove accuracy since i fixed the inspect bugs
+	* Tweeks and bug fixes
 	
 	To Do List for 2.0:
-	* Move to a xml UI
+	* Add options for displaying AiL in chat next to names
+	* Move to a .xml UI
 	* Add a simple UI for displaying party and raid scores
 	* Purge cache older then X days
 	
 	To-Do List for 2.0 and beyond:
-	* Add color based score for over 100% accuracy
-		- white - yellow - green (333) - blue (heroic t11) - purple (heroic t12) - red (500 assumed max due to belt bucle)
 	* Add SiL's AiL to your charciter information sheet
 	* Add the AiL to the inspect window
-	* UI for viwing the cache - log way off
-	* More mathmatical stats for party and raid
+	* UI for viwing the cache - porb same time as party/raid ui
+	* More mathmatical stats for party and raid, min, max, std dev
 	
 	Known Issues:
 	* Blizzard_InspectUI\InspectPaperDollFrame.lua errors are bugs in the default UI
-	* Lower level toons will never be 100%, posibly have accuracy scale?
 	* Level 80 heirlooms on level 81+ return the wrong iLevel
 	* Doesn't work on heath or mana bars when you target someone, this is a bug, there is no UnitName("mouseover") or UnitGUID("mouseover") there
 	
-	Changelog for 0.64:
-	* Removed accuracy, no longer required, if somehow someone get someone with less then 5 items it will still be gray
-	* Moved translations to SVN
-	* Correct padding on raid and party names
-	
-	Changelog for 0.63: 2011-02-02 alpha
-	* Fixed color for hours to be more visable, light blue insted of dark blue
-	* Fixed rounding on /sil again ><
-	* Added padding to player names in raid and party to hopefully make it more readable
-	
-	Changelog for 0.62: 2011-02-01
-	* Changed all files to UTF-8
-	* Fixed translation to use native characters
-	* Fixed /sil get <name> to be case insensitive
-	* Fixed typo in party and raid
-	
-	Changelog for 0.61: 2011-01-31
-	* Fixed raid and party scoring, forgot to set a variable to local
-	* Added localization for zhTW, thanks meowgoddess
-	
-	Changelog for 0.6: 2011-01-29
-	* Fixed hairlooms yet again >< should have tested a little more
-	* Fixed scanning people, should be less then 100% for 1sec or less and then fully load
-	* Fixed duplicate tool tips! Thanks kd3 and Adys in #wowuidev on freenode
-	* Fixed missing tool tips, no longer uses hook functions but insted uses events
-	* Added color to the advanced tool tips for accuracy and age
-	* Added color for age, green < 1h, blue < 1day, red > day
-	* Added information to party and raid scaning for people not in range and no cache
-	* Cleaned up some internal functions, making it esier for other addons to use
-	* Finalized saved variables including cache and settings
+	Changelog for 0.7: 2011-02-03
+	* Cleaned up party and raid display some more, removing age when its current, less then 30sec
+	* This will most likely become 1.0 for 4.0.6 patch
+	* Fixed the advanced line to be a single line insted of double, no more spacing issue with localization
+	* Added colorization to all scores!
+		White->Yellow = 1-200
+		Yellow->Green = 200-333
+		Green->Blue = 333-376
+		More to come when t12 iLevel is known
 ]]
 
 -- Local Variables
 local addonName, L = ...;
 local SIL_Loaded = false;
 local SIL_Debug = false;
-local SIL_Version = 0.64;
-local SIL_Release = "@project-version@";
+local SIL_Version = 0.7;
+
+-- Color constants
+local SIL_ColorIndex = {0,200,333,379,1000};
+local SIL_Colors = {
+	-- White base color
+	[0] = 		{['r']=255,	['g']=255,	['b']=255,	['p']=0,},
+	-- Yellow for wrath dungeon gear
+	[200] = 	{['r']=255,	['g']=204,	['b']=0,	['p']=0,},
+	-- Green for cata dungeon
+	[333] = 	{['r']=0,	['g']=204,	['b']=0,	['p']=200,},
+	-- Blue for heroic t11 final gear
+	[379] = 	{['r']=0,	['g']=102,	['b']=204,	['p']=333,},
+	-- Red for a max score
+	[1000] = 	{['r']=255,	['g']=0,	['b']=0,	['p']=379},
+};
+
 
 function SIL_OnEvent(SIL_Nil, eventName, arg1, arg2, arg3)
 	if ( eventName == 'ADDON_LOADED' ) and not ( SIL_Loaded ) then
@@ -76,7 +68,7 @@ function SIL_OnEvent(SIL_Nil, eventName, arg1, arg2, arg3)
 		end
 		
 		-- Tell the player we have been loaded
-		SIL_Console(SIL_Replace(L['Loading Addon'], 'version', SIL_Version..' '..SIL_Release));
+		SIL_Console(SIL_Replace(L['Loading Addon'], 'version', SIL_Version));
 		SIL_Loaded = true;
 		
 		-- Debug if its the devs alt
@@ -417,28 +409,13 @@ function SIL_ShowTooltip()
 	
 	if ( SIL_HasScore(guid) ) then
 		
-		local items = SIL_CacheGUID[guid]['items'];
 		local score, age, items = SIL_GetScore(guid);
 		
-		-- We have a score so color it
-		r,g,b = SIL_ColorScore(score);
-		
-		-- Less then 6 items so gray it
-		if ( items < 6 ) then
-			r = 0.5;
-			g = r;
-			b = r;
-		end
-		
-		-- Build text colors
-		local rgbHex = SIL_RGBtoHex(tonumber(r),tonumber(g),tonumber(b));
-		
 		-- Build the tool tip text
-		local textLeft1 = '|cFF216bff'..L['Tool Tip Left 1']..'|r ';
-		local textRight1 = '|cFF'..rgbHex..SIL_Replace(L['Tool Tip Right 1'], 'score', SIL_Round(score, 1))..'|r';
+		local textLeft = '|cFF216bff'..L['Tool Tip Left']..'|r ';
+		local textRight = SIL_Replace(L['Tool Tip Right'], 'score', SIL_FormatScore(score, items));
 		
-		local textLeft2 = L['Tool Tip Left 2'];
-		local textRight2 = SIL_Replace(L['Tool Tip Right 2'], 'localizedAge', SIL_AgeToText(age));
+		local textAdvanced = SIL_Replace(L['Tool Tip Advanced'], 'localizedAge', SIL_AgeToText(age));
 		
 		-- Loop tooltip text to check if its alredy there
 		local ttLines = GameTooltip:NumLines();
@@ -447,17 +424,16 @@ function SIL_ShowTooltip()
 		for i = 1,ttLines do
 					
 			-- If the static text matches
-			if ( _G["GameTooltipTextLeft"..i]:GetText() == textLeft1 ) then
+			if ( _G["GameTooltipTextLeft"..i]:GetText() == textLeft ) then
 				
 				-- Update the text
-				_G["GameTooltipTextLeft"..i]:SetText(textLeft1);
-				_G["GameTooltipTextRight"..i]:SetText(textRight1);
+				_G["GameTooltipTextLeft"..i]:SetText(textLeft);
+				_G["GameTooltipTextRight"..i]:SetText(textRight);
 				GameTooltip:Show();
 				
 				-- Update the advanced info too
 				if ( SIL_Settings['advanced'] ) then
-					_G["GameTooltipTextLeft"..i+1]:SetText(textLeft2);
-					_G["GameTooltipTextRight"..i+1]:SetText(textRight2);
+					_G["GameTooltipTextLeft"..i+1]:SetText(textAdvanced);
 					GameTooltip:Show();
 				end
 				
@@ -470,11 +446,11 @@ function SIL_ShowTooltip()
 		-- Tool tip is new
 		if not ( ttUpdated ) then
 			
-			GameTooltip:AddDoubleLine(textLeft1, textRight1);
+			GameTooltip:AddDoubleLine(textLeft, textRight);
 			GameTooltip:Show();
 			
 			if ( SIL_Settings['advanced'] ) then
-				GameTooltip:AddDoubleLine(textLeft2, textRight2);
+				GameTooltip:AddLine(textAdvanced);
 				GameTooltip:Show();
 			end
 		end
@@ -486,34 +462,75 @@ function SIL_ShowTooltip()
 end;
 
 --[[
-	SIL_ColorScore(score);
-	returns r,g,b for the a score
+	SIL_FormatScore(score, items);
+	takes a score and item count and returns a colored text string with the score
+	returns colored string
 ]]
-function SIL_ColorScore(score)
---[[
--- GS Light code for quick referance
-if ( ItemScore > 5999 ) then ItemScore = 5999; end
-	local Red = 0.1; local Blue = 0.1; local Green = 0.1; local GS_QualityDescription = "Legendary"
-   	if not ( ItemScore ) then return 0, 0, 0, "Trash"; end
-	for i = 0,6 do
-		if ( ItemScore > i * 1000 ) and ( ItemScore <= ( ( i + 1 ) * 1000 ) ) then
-		    local Red = GS_Quality[( i + 1 ) * 1000].Red["A"] + (((ItemScore - GS_Quality[( i + 1 ) * 1000].Red["B"])*GS_Quality[( i + 1 ) * 1000].Red["C"])*GS_Quality[( i + 1 ) * 1000].Red["D"])
-            local Blue = GS_Quality[( i + 1 ) * 1000].Green["A"] + (((ItemScore - GS_Quality[( i + 1 ) * 1000].Green["B"])*GS_Quality[( i + 1 ) * 1000].Green["C"])*GS_Quality[( i + 1 ) * 1000].Green["D"])
-            local Green = GS_Quality[( i + 1 ) * 1000].Blue["A"] + (((ItemScore - GS_Quality[( i + 1 ) * 1000].Blue["B"])*GS_Quality[( i + 1 ) * 1000].Blue["C"])*GS_Quality[( i + 1 ) * 1000].Blue["D"])
-			--if not ( Red ) or not ( Blue ) or not ( Green ) then return 0.1, 0.1, 0.1, nil; end
-			return Red, Green, Blue, GS_Quality[( i + 1 ) * 1000].Description
-		end
-	end``````````````````````````````````````````````````````````````````
-return 0.1, 0.1, 0.1
-]]
-	-- Only color over 133
-	if ( score > 333 ) then
+function SIL_FormatScore(score, items)
+	local hexColor = SIL_ColorScore(score, items);
+	local score = SIL_Round(score, 1);
 	
-	else
-		
+	return '|cFF'..hexColor..score..'|r';
+end
+
+--[[
+	SIL_ColorScore(score);
+	returns hex color for the a score
+]]
+function SIL_ColorScore(score, items)
+	-- Default to white
+	local r,g,b = 1,1,1;
+	
+	local found = false;
+	
+	for i,maxScore in pairs(SIL_ColorIndex) do
+		if ( score < maxScore ) and not ( found ) then
+			local colors = SIL_Colors[maxScore];
+			local baseColors = SIL_Colors[colors['p']];
+			
+			local steps = maxScore - colors['p'];
+			local scoreDiff = score - colors['p'];
+			
+			local diffR = (baseColors['r'] - colors['r']) / 255;
+			local diffG = (baseColors['g'] - colors['g']) / 255;
+			local diffB = (baseColors['b'] - colors['b']) / 255;
+			
+			local diffStepR = diffR / steps;
+			local diffStepG = diffG / steps;
+			local diffStepB = diffB / steps;
+			
+			local scoreDiffR = scoreDiff * diffStepR;
+			local scoreDiffG = scoreDiff * diffStepG;
+			local scoreDiffB = scoreDiff * diffStepB;
+			
+			r = (baseColors['r'] / 255) - scoreDiffR;
+			g = (baseColors['g'] / 255) - scoreDiffG;
+			b = (baseColors['b'] / 255) - scoreDiffB;
+			
+			found = true;
+		end
 	end
 	
-	return 1,1,1;
+	-- Nothing was found so red
+	if not ( found ) then
+		r = SIL_Colors[1000]['r'];
+		g = SIL_Colors[1000]['g'];
+		b = SIL_Colors[1000]['b'];
+	end
+	
+	-- There are some missing items so gray
+	if ( items ) and ( items < 6 ) then
+		return SIL_RGBtoHex(0.5,0.5,0.5);
+	else
+		return SIL_RGBtoHex(r,g,b);
+	end
+end
+
+-- Quick function for testing color ranges
+function SIL_ColorTest(l,h)
+	for i = l,h do
+		print("Testing "..i.." "..SIL_FormatScore(i));
+	end
 end
 
 --[[
@@ -557,8 +574,15 @@ function SIL_Party(output)
 			partyTotal = partyTotal + score;
 			
 			if ( output ) then
-				local str = SIL_Replace(L['Party Member Score'], 'name', SIL_Strpad(UnitName('player'), 20));
-				str = SIL_Replace(str, 'score', SIL_Round(score, 1));
+			
+				local str = L['Party Member Score'];
+						
+				if ( age < 30 ) then
+					str = L['Party Member Score Fresh'];
+				end
+						
+				str = SIL_Replace(str, 'name', SIL_Strpad(UnitName('player'), 20));
+				str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 				str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
 				SIL_Console(str);
@@ -588,8 +612,14 @@ function SIL_Party(output)
 					
 					if ( output ) then
 						
-						local str = SIL_Replace(L['Party Member Score'], 'name', SIL_Strpad(name, 20));
-						str = SIL_Replace(str, 'score', SIL_Round(score, 1));
+						local str = L['Party Member Score'];
+						
+						if ( age < 30 ) then
+							str = L['Party Member Score Fresh'];
+						end
+						
+						str = SIL_Replace(str, 'name', SIL_Strpad(name, 20));
+						str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
 						SIL_Console(str);
@@ -608,7 +638,7 @@ function SIL_Party(output)
 			if ( output ) then
 				SIL_Console("------------------------");
 				
-				local str = SIL_Replace(L['Party Score'], 'score', SIL_Round(partyAverage, 1));
+				local str = SIL_Replace(L['Party Score'], 'score', SIL_FormatScore(partyAverage));
 				str = SIL_Replace(str, 'number', partySize);
 				
 				SIL_Console(str);
@@ -620,7 +650,7 @@ function SIL_Party(output)
 		end
 	else
 		if ( output ) then
-			SIL_Console(L['Party False']);
+			SIL_Console(ERR_NOT_IN_GROUP);
 		end
 		
 		return false;
@@ -662,8 +692,15 @@ function SIL_Raid(output)
 					
 					if ( output ) then
 						
-						local str = SIL_Replace(L['Raid Member Score'], 'name', SIL_Strpad(name, 20));
-						str = SIL_Replace(str, 'score', SIL_Round(score, 1));
+						local str = L['Raid Member Score'];
+						
+						if ( age < 30 ) then
+							str = L['Raid Member Score Fresh'];
+						end
+						
+						
+						str = SIL_Replace(str, 'name', SIL_Strpad(name, 20));
+						str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
 				
 						SIL_Console(str);
@@ -682,7 +719,7 @@ function SIL_Raid(output)
 			if ( output ) then
 				SIL_Console("------------------------");
 				
-				local str = SIL_Replace(L['Raid Score'], 'score', SIL_Round(raidAverage, 1));
+				local str = SIL_Replace(L['Raid Score'], 'score', SIL_FormatScore(raidAverage));
 				str = SIL_Replace(str, 'number', raidSize);
 				
 				SIL_Console(str);
@@ -694,7 +731,7 @@ function SIL_Raid(output)
 		end
 	else
 		if ( output ) then
-			SIL_Console(L['Raid False']);
+			SIL_Console(ERR_NOT_IN_RAID);
 		end
 		
 		return false;
@@ -750,7 +787,7 @@ function SIL_SlashCommand(command)
 			
 			if ( score ) then
 				local str = SIL_Replace(L['Slash Target Score True'], 'target', UnitName('target'));
-				str = SIL_Replace(str, 'score', SIL_Round(score, 1));
+				str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 				
 				SIL_Console(str);
 				
@@ -778,7 +815,7 @@ function SIL_SlashCommand(command)
 				
 				local str = L['Slash Get Score True'];
 				str = SIL_Replace(str, 'target', value);
-				str = SIL_Replace(str, 'score', SIL_Round(score, 1));
+				str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 				str = SIL_Replace(str, 'ageLocal', age);
 				
 				SIL_Console(str);
@@ -816,7 +853,7 @@ function SIL_SlashCommand(command)
 		SIL_StartScore('player', true, false);
 		local score, age, items = SIL_ProcessInspect(UnitGUID('player'), false);
 		
-		SIL_Console(L['Addon Name'].." - v"..SIL_Version.." "..SIL_Release);
+		SIL_Console(L['Addon Name'].." - v"..SIL_Version);
 		SIL_Console(L['Help Help']);
 		SIL_Console(L['Help Clear']);
 		SIL_Console(L['Help Advanced']);
@@ -828,7 +865,7 @@ function SIL_SlashCommand(command)
 		
 		if ( score ) then
 			SIL_Console('-----------------------');
-			SIL_Console(SIL_Replace(L['Your Score'], 'score', SIL_Round(score, 1)));
+			SIL_Console(SIL_Replace(L['Your Score'], 'score', SIL_FormatScore(score, items)));
 		end
 	end
 end
