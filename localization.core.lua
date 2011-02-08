@@ -2,7 +2,7 @@
 local addonName, L = ...;
 
 L["Addon Description"] = "Adds the Average iLevel (AiL) to the tool tip of other players"
-L["Addon Name"] = "Simple Item Level"
+L["Addon Name"] = "Simple iLevel"
 L["Addon Short Name"] = "SiL"
 L["Age Days"] = "%age days"
 L["Age Hours"] = "%age hours"
