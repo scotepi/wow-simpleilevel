@@ -1,34 +1,22 @@
 ﻿To Do List for 2.0:
-* Add options for displaying AiL in chat next to names
-* Move to a .xml UI
-* Add a simple UI for displaying party and raid scores
-* Purge cache older then X days
+* Party/Raid/Guild/Cache UI
+* Options UI
+* Perge cache older then X days option
+* Statistics for Party/Raid, min/max/std dev
+* Lib DB, party and raid support
 
-To-Do List for 2.0 and beyond:
-* Add SiL's AiL to your charciter information sheet
-* Add the AiL to the inspect window
-* UI for viwing the cache - porb same time as party/raid ui
-* More mathmatical stats for party and raid, min, max, std dev
-* Fix Score for level 80 heirlooms on 81+ toons
+To-Do List for 3.0:
+* Score next to names in chat
+* Add the score to your information sheet
+* Add the score to the inspect window
 
 Known Issues:
 * Blizzard_InspectUI\InspectPaperDollFrame.lua errors are bugs in the default UI
 * Level 80 heirlooms on level 81+ return the wrong iLevel
 * Doesn't work on heath or mana bars when you target someone, this is a bug, there is no UnitName("mouseover") or UnitGUID("mouseover") there
 
-Changelog for 1:
+Changelog for 1.01:
+
+
+Changelog for 1: 2011-02-08
 * Moved change log
-
-Changelog for 0.71: 2011-02-04
-* Added realm support to the cache
-* Moved padding value to localization
-
-Changelog for 0.7: 2011-02-03
-* Cleaned up party and raid display some more, removing age when its current, less then 30sec
-* This will most likely become 1.0 for 4.0.6 patch
-* Fixed the advanced line to be a single line insted of double, no more spacing issue with localization
-* Added colorization to all scores!
-	White->Yellow = 1-200
-	Yellow->Green = 200-333
-	Green->Blue = 333-376
-	More to come when t12 iLevel is known
