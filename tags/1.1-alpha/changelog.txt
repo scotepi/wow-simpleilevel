@@ -1,0 +1,26 @@
+﻿Known Issues:
+* Blizzard_InspectUI\InspectPaperDollFrame.lua errors are bugs in the default UI
+* Level 80 heirlooms on level 81+ return the wrong iLevel
+* Doesn't work on heath or mana bars when you target someone, this is a bug, there is no UnitName("mouseover") or UnitGUID("mouseover") there
+
+Changelog for 1.1:
+* Fixed the addon title in the TOC
+* Automatically refresh scores on gear changes for player, party, raid and target '/sil autoscan' to toggle
+* Moved to FrameXML for the UI elements
+* Added min/max and table of score for Party/Raid return
+* Added /sil purge <days> to clear only select cache
+* Added some Russian localization, thanks KVVV
+
+Changelog for 1.0: 2011-02-08
+* Moved change log
+
+=========================================================
+To Do List for 2.0:
+* Party/Raid/Guild/Cache UI
+* Options UI
+* Add LibDB plugins for showing your AiL, Party AiL and Raid AiL
+
+To-Do List for 3.0:
+* Score next to names in chat
+* Add the score to your information sheet
+* Add the score to the inspect window
