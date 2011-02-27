@@ -1,8 +1,7 @@
 ﻿-- Local Variables
 local addonName, L = ...;
-local SIL_Loaded = false;
-local SIL_Debug = false;
-local SIL_Version = 1.0;
+SIL_Debug = false;
+SIL_Version = 1.1;
 
 -- Color constants
 local SIL_ColorIndex = {0,200,333,379,1000};
@@ -19,43 +18,65 @@ local SIL_Colors = {
 	[1000] = 	{['r']=255,	['g']=0,	['b']=0,	['p']=379},
 };
 
-
-function SIL_OnEvent(SIL_Nil, eventName, arg1, arg2, arg3)
-	if ( eventName == 'ADDON_LOADED' ) and not ( SIL_Loaded ) then
-		
-		-- This is a first load
-		if not ( SIL_Settings ) or not ( SIL_CacheGUID ) then
-			SIL_Initialize();
-		end
-		
-		-- This is a newer version
-		if ( SIL_Version > SIL_Settings['version'] ) then
-			SIL_Upgrade();
-		end
-		
-		-- Tell the player we have been loaded
-		SIL_Console(SIL_Replace(L['Loading Addon'], 'version', SIL_Version));
-		SIL_Loaded = true;
-		
-		-- Debug if its the devs alt
-		if ( UnitGUID('player') == '0x058000000657392B' ) then
-			SIL_Debug = true;
-		end
+function SIL_OnLoad(self)
+	
+	-- Debug if its the devs alt
+	if ( UnitGUID('player') == '0x058000000657392B' ) then
+		SIL_Debug = true;
 	end
 	
-	if ( eventName == 'PLAYER_TARGET_CHANGED' ) then
+	-- Never been here before
+	if not ( SIL_Settings ) or not ( SIL_CacheGUID ) then
+		SIL_Initialize();
+	end
+	
+	-- This is a newer version
+	if ( SIL_Version > SIL_Settings['version'] ) then
+		SIL_Upgrade();
+	end
+	
+	-- Tell the player we have been loaded
+	SIL_Console(SIL_Replace(L['Loading Addon'], 'version', SIL_Version));
+	
+
+	
+	-- Add slash handlers
+	SlashCmdList["SIMPLEILEVEL"] = SIL_SlashCommand;
+	SLASH_SIMPLEILEVEL1 = "/sil";
+	SLASH_SIMPLEILEVEL3 = "/silvl";
+	SLASH_SIMPLEILEVEL2 = "/simpleitemlevel";
+
+	-- Register Events
+	self:RegisterEvent("PLAYER_TARGET_CHANGED");	-- Initating the inspect process
+	self:RegisterEvent("INSPECT_READY");			-- Finishing the inspect process
+	self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");	-- Showing and updating tool tips
+	SIL_AutoscanRegister();							-- Someones gear has changed
+end
+
+function SIL_OnEvent(self, event, arg1, arg2, arg3)
+	
+	-- Target has changed to start inspecting
+	if ( event == 'PLAYER_TARGET_CHANGED' ) then
 		SIL_StartScore('target', false, true);
 	end
 	
-	if ( eventName == 'INSPECT_READY' ) then	
+	-- We supposedly can now have a full inspect
+	if ( event == 'INSPECT_READY' ) then	
 		SIL_ProcessInspect(arg1); 
 	end
 	
 	-- Mouse over someone
-	if ( eventName == 'UPDATE_MOUSEOVER_UNIT' ) and not ( InCombatLockdown() ) then
+	if ( event == 'UPDATE_MOUSEOVER_UNIT' ) and not ( InCombatLockdown() ) then
 		SIL_ShowTooltip();
 	end
+	
+	-- Someone, player, target, party or raid changed gear
+	if ( event == 'UNIT_PORTRAIT_UPDATE' ) and not ( InCombatLockdown() ) and ( CanInspect(arg1) ) then
+		SIL_Console("Auto Inspect '"..arg1.."' "..UnitName(arg1), true);
+		SIL_StartScore(arg1, false, false);
+	end
 end;
+
 
 --[[
 	SIL_Initialize();
@@ -67,8 +88,17 @@ function SIL_Initialize()
 	SIL_Settings = {}
 	SIL_Settings['age'] = 1800;				-- How long till information is refreshed
 	SIL_Settings['advanced'] = false;		-- Display extra information in the tooltips
+	SIL_Settings['autoscan'] = true;		-- Automaticly scan for changes
 	SIL_Settings['version'] = SIL_Version;	-- Version for future referance
 end;
+
+function SIL_AutoscanRegister()
+	if ( SIL_Settings['autoscan'] ) then
+		SimpleILevel:RegisterEvent("UNIT_PORTRAIT_UPDATE");
+	else 
+		SimpleILevel:UnregisterEvent("UNIT_PORTRAIT_UPDATE");
+	end
+end
 
 --[[
 	SIL_Upgrade();
@@ -78,11 +108,23 @@ function SIL_Upgrade()
 	
 	local oldVersion = SIL_Settings['version'];
 	
+	SIL_Console("Upgrading "..oldVersion.." to "..SIL_Version, true);
+	
+	-- Added class and auto scan
+	if ( oldVersion < 1.1 ) then
+		for guid,info in pairs(SIL_CacheGUID) do
+			SIL_CacheGUID['class'] = nil;
+		end
+		SIL_Settings['autoscan'] = true;
+		SIL_Console("Upgrad: Adding Class", true);
+	end
+	
 	-- Added realm information
 	if ( oldVersion < 0.71 ) then
 		for guid,info in pairs(SIL_CacheGUID) do
 			SIL_CacheGUID['realm'] = nil;
 		end
+		SIL_Console("Upgrad: Adding Realm Info", true);
 	end
 	
 	-- Removed accuracy
@@ -282,9 +324,11 @@ function SIL_StartScore(target, refresh, tooltip)
 			
 			-- Start some information if we haven't seen them before
 			if not ( SIL_CacheGUID[guid] ) then
+				local class, classFileName = UnitClass(target);
 				SIL_CacheGUID[guid] = {};
 				SIL_CacheGUID[guid]['name'] = name;
 				SIL_CacheGUID[guid]['realm'] = realm;
+				SIL_CacheGUID[guid]['class'] = classFileName;
 				SIL_Console(name.." New", true);
 			else
 				SIL_Console(name.." reFresh", true);
@@ -460,7 +504,7 @@ end
 
 --[[
 	SIL_ColorScore(score);
-	returns hex color for the a score
+	returns hex, r, g, b color for the a score
 ]]
 function SIL_ColorScore(score, items)
 	-- Default to white
@@ -505,9 +549,9 @@ function SIL_ColorScore(score, items)
 	
 	-- There are some missing items so gray
 	if ( items ) and ( items < 6 ) then
-		return SIL_RGBtoHex(0.5,0.5,0.5);
+		return SIL_RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
 	else
-		return SIL_RGBtoHex(r,g,b);
+		return SIL_RGBtoHex(r,g,b), r, g, b;
 	end
 end
 
@@ -549,6 +593,9 @@ function SIL_Party(output)
 	if ( GetNumPartyMembers() > 0 ) then
 		local partySize = 0;
 		local partyTotal = 0;
+		local party = {};
+		local partyMin = false;
+		local partyMax = 0;
 		
 		-- Add yourself
 		SIL_StartScore('player', true, false);
@@ -557,15 +604,18 @@ function SIL_Party(output)
 		if ( score ) then
 			partySize = partySize + 1;
 			partyTotal = partyTotal + score;
-			
+			table.insert(party, { ['name'] = name, ['score'] = score, ['age'] = age, ['level'] = UnitLevel('player'), });
+			partyMin = score;
+			partyMax = score;
+				
 			if ( output ) then
 			
 				local str = L['Party Member Score'];
-						
+				
 				if ( age < 30 ) then
 					str = L['Party Member Score Fresh'];
 				end
-						
+				
 				str = SIL_Replace(str, 'name', SIL_Strpad(UnitName('player'), L["Max UnitName"]));
 				str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 				str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
@@ -595,6 +645,16 @@ function SIL_Party(output)
 					partySize = partySize + 1;
 					partyTotal = partyTotal + score;
 					
+					table.insert(party, { ['name'] = name, ['score'] = score, ['age'] = age, ['level'] = UnitLevel('party'..i), });
+					
+					if ( score < partyMin ) then
+						partyMin = score;
+					end
+					
+					if ( score > partyMax ) then
+						partyMax = score;
+					end
+					
 					if ( output ) then
 						
 						local str = L['Party Member Score'];
@@ -606,7 +666,7 @@ function SIL_Party(output)
 						str = SIL_Replace(str, 'name', SIL_Strpad(name, L["Max UnitName"]));
 						str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
-				
+						
 						SIL_Console(str);
 					end
 				else
@@ -629,7 +689,7 @@ function SIL_Party(output)
 				SIL_Console(str);
 			end
 			
-			return partyAverage, partyTotal, partySize;
+			return partyAverage, partyTotal, partySize, partyMin, partyMax, party;
 		else 
 			return false;
 		end
@@ -647,10 +707,13 @@ end
 	returns false or raidAverage, raidTotal, raidSize
 ]]
 function SIL_Raid(output)
+	local raid = {};
 	
 	if ( UnitInRaid("player") ) then
 		local raidSize = 0;
 		local raidTotal = 0;
+		local raidMin = false;
+		local raidMax = 0;
 		
 		for i = 1, 40 do
 			name, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(i);
@@ -674,6 +737,19 @@ function SIL_Raid(output)
 				if ( score ) then
 					raidSize = raidSize + 1;
 					raidTotal = raidTotal + score;
+					table.insert(raid, { ['name'] = name, ['score'] = score, ['age'] = age, ['level'] = level, });
+					
+					if not ( raidMin ) then
+						raidMin = score;
+					end
+						
+					if ( score < raidMin ) then
+						raidMin = score;
+					end
+					
+					if ( score > raidMax ) then
+						raidMax = score;
+					end
 					
 					if ( output ) then
 						
@@ -683,11 +759,10 @@ function SIL_Raid(output)
 							str = L['Raid Member Score Fresh'];
 						end
 						
-						
 						str = SIL_Replace(str, 'name', SIL_Strpad(name, L["Max UnitName"]));
 						str = SIL_Replace(str, 'score', SIL_FormatScore(score, items));
 						str = SIL_Replace(str, 'ageLocal', SIL_AgeToText(age));
-				
+						
 						SIL_Console(str);
 					end
 				else
@@ -710,7 +785,7 @@ function SIL_Raid(output)
 				SIL_Console(str);
 			end
 			
-			return raidAverage, raidTotal, raidSize;
+			return raidAverage, raidTotal, raidSize, raidMin, raidMax, raid;
 		else 
 			return false;
 		end
@@ -750,7 +825,7 @@ function SIL_SlashCommand(command)
 			SIL_Debug = true;
 		end
 
-	-- Toggle debug mode
+	-- Toggle advanced tooltips mode
 	elseif ( command == "advanced" ) then
 		if ( SIL_Settings['advanced'] ) then
 			SIL_Console(L['Slash Advanced Off']);
@@ -760,6 +835,17 @@ function SIL_SlashCommand(command)
 			SIL_Settings['advanced'] = true;
 		end
 	
+	-- Toggle automatic scanning
+	elseif ( command == "autoscan" ) then
+		if ( SIL_Settings['autoscan'] ) then
+			SIL_Console(L['Slash Autoscan Off']);
+			SIL_Settings['autoscan'] = false;
+		else
+			SIL_Console(L['Slash Autoscan On']);
+			SIL_Settings['autoscan'] = true;
+		end
+		SIL_AutoscanRegister();	
+		
 	-- Get the AiL of your target
 	elseif ( command == "target" ) or (( command == "get" ) and ( value == '' )) then
 		
@@ -816,7 +902,11 @@ function SIL_SlashCommand(command)
 		else
 			SIL_Console(SIL_Replace(L['Slash Target Score False'], 'target', value));
 		end
-	
+	-- Perge the Cache
+	elseif ( command == "purge") and ( number ) then
+		local count = SIL_PurgeCache(number);
+		SIL_Console(SIL_Replace(L['Purge Notification'], 'num', count));
+		
 	-- Set the max age
 	elseif (( command == "cache" ) or ( command == "age" )) and ( number ) then
 		SIL_Settings['age'] = number;
@@ -840,8 +930,10 @@ function SIL_SlashCommand(command)
 		
 		SIL_Console(L['Addon Name'].." - v"..SIL_Version);
 		SIL_Console(L['Help Help']);
+		SIL_Console(L['Help Purge']);
 		SIL_Console(L['Help Clear']);
 		SIL_Console(L['Help Advanced']);
+		SIL_Console(L['Help Autoscan']);
 		SIL_Console(L['Help Target']);
 		SIL_Console(L['Help Get']);
 		SIL_Console(L['Help Age']);
@@ -854,6 +946,40 @@ function SIL_SlashCommand(command)
 		end
 	end
 end
+
+
+--[[
+	SIL_PurgeCache(days)
+	purge the clache older then days
+	returns count
+]]
+function SIL_PurgeCache(days)
+	if ( tonumber(days) ) then
+		local maxAge = time() - ( tonumber(days) * 86400 );
+		local count = 0;
+		
+		for guid,info in pairs(SIL_CacheGUID) do
+			if ( info['time'] < maxAge ) then
+				SIL_CacheGUID[guid] = nil;
+				count = 1 + count;
+			end
+		end
+		
+		return count;
+	else
+		return false;
+	end
+end
+
+
+
+
+--------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+------------------------------------------- Local Functions --------------------------------
+--------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+
 
 --[[
 	SIL_Replace(string, variable, value)
@@ -871,8 +997,8 @@ end
 
 --[[
 	SIL_Round(number, decimals)
-	from http://www.wowpedia.org/Round
-	returns a rounded number
+	from http://www.wowpedia.org/SIL_Round
+	returns a SIL_Rounded number
 ]]
 function SIL_Round(number, decimals)
     return (("%%.%df"):format(decimals)):format(number)
@@ -881,7 +1007,7 @@ end
 --[[
 	SIL_RGBtoHex(r, g, b)
 	from http://www.wowpedia.org/RGBPercToHex
-	returns a rounded number
+	returns a SIL_Rounded number
 ]]
 function SIL_RGBtoHex(r, g, b)
 	r = r <= 1 and r >= 0 and r or 0
@@ -892,7 +1018,7 @@ end
 
 --[[
 	SIL_Console(message, debugMode);
-	ouputs a message to the console, if debugMode=true and SIL_Debug outputs the debug info 
+	ouputs a message to the SIL_Console, if debugMode=true and SIL_Debug outputs the debug info 
 ]]
 function SIL_Console(message, debugMode) 
 	if ( SIL_Debug ) and ( debugMode ) then
@@ -922,17 +1048,3 @@ function SIL_Strpad(str, length, pad)
 	
 	return str;
 end
-
--- Create the frame and register the events
-local f = CreateFrame("Frame", "SimpleItemLevel", UIParent);
-f:SetScript("OnEvent", SIL_OnEvent);
-f:RegisterEvent("ADDON_LOADED");			-- Processing settings
-f:RegisterEvent("PLAYER_TARGET_CHANGED");	-- Initating the inspect process
-f:RegisterEvent("INSPECT_READY");			-- Finishing the inspect process
-f:RegisterEvent("UPDATE_MOUSEOVER_UNIT");	-- Showing and updating tool tips
-
--- Set up the slash command information
-SlashCmdList["SIMPLEILEVEL"] = SIL_SlashCommand;
-SLASH_SIMPLEILEVEL1 = "/sil";
-SLASH_SIMPLEILEVEL3 = "/silvl";
-SLASH_SIMPLEILEVEL2 = "/simpleitemlevel";
