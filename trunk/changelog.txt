@@ -6,7 +6,10 @@
 * Moved T11 down 1 iLevel to 278
 * Added placeholder for T11 color, purple, 378-391
 * Added zhCN translation thanks zhTW?!?
+* Also included a no-lib version that doesn't include Ace3 however it is still required
+* Tool Tips now show in combat however inspecting/refreshing will not happen in combat
 
 ===== To-Do =====
 * LibDB/Mini Map Button for some options
 -- Inc printing to party/raid
+* Fix layout of the options UI

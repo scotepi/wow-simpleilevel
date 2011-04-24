@@ -5,7 +5,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true)
 --LibStub("AceEvent-3.0"):Embed(SIL);
 
 SIL_VersionMajor = 2.0;
-SIL_VersionMinor = 1;
+SIL_VersionMinor = 2;
 SIL_Version = SIL_VersionMajor..'-'..SIL_VersionMinor;
 
 local options = {
