@@ -1,15 +1,7 @@
-﻿<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
-..\FrameXML\UI.xsd">
-	<Script file="localization.enUS.lua" />
-	<Script file="localization.zhTW.lua" />
-	<Script file="localization.ruRU.lua" />
+<Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+	<Script file="Locals\enUS.lua" />
+	<Script file="Locals\zhTW.lua" />
+	<Script file="Locals\zhCN.lua" />
+	<Script file="Locals\ruRU.lua" />
 	<Script file="SimpleILevel.lua" />
-
-	<Frame name="SimpleILevel" parent="UIParent" hidden="true">
-		<Scripts>
-			<OnLoad function="SIL_OnLoad" />
-			<OnEvent function="SIL_OnEvent" />
-		</Scripts>
-	</Frame>
-	
 </Ui>

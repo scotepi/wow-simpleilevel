@@ -1,26 +1,12 @@
-﻿Known Issues:
-* Blizzard_InspectUI\InspectPaperDollFrame.lua errors are bugs in the default UI
-* Level 80 heirlooms on level 81+ return the wrong iLevel
-* Doesn't work on heath or mana bars when you target someone, this is a bug, there is no UnitName("mouseover") or UnitGUID("mouseover") there
+===== 2.0 =====
+* Moved over to Ace3, sorry but this addon was getting to big to not use libs
+-- This also means it is a class layout and should be much esier to introduce LDB and UI's
+* Added a options UI, <3 AceConfig
+* Removed DOM from all files, now its ANSI as UTF-8 (PHP taught me DOM's are bad! doh!)
+* Moved T11 down 1 iLevel to 278
+* Added placeholder for T11 color, purple, 378-391
+* Added zhCN translation thanks zhTW?!?
 
-Changelog for 1.1:
-* Fixed the addon title in the TOC
-* Automatically refresh scores on gear changes for player, party, raid and target '/sil autoscan' to toggle
-* Moved to FrameXML for the UI elements
-* Added min/max and table of score for Party/Raid return
-* Added /sil purge <days> to clear only select cache
-* Added some Russian localization, thanks KVVV
-
-Changelog for 1.0: 2011-02-08
-* Moved change log
-
-=========================================================
-To Do List for 2.0:
-* Party/Raid/Guild/Cache UI
-* Options UI
-* Add LibDB plugins for showing your AiL, Party AiL and Raid AiL
-
-To-Do List for 3.0:
-* Score next to names in chat
-* Add the score to your information sheet
-* Add the score to the inspect window
+===== To-Do =====
+* LibDB/Mini Map Button for some options
+-- Inc printing to party/raid
