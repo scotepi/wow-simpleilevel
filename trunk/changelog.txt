@@ -8,8 +8,11 @@
 * Added zhCN translation thanks zhTW?!?
 * Also included a no-lib version that doesn't include Ace3 however it is still required
 * Tool Tips now show in combat however inspecting/refreshing will not happen in combat
+* Added LibDB and LibDBIcon, we have a minimap icon!
+* Cleaned up options ui
+* Cleaned up the code some
+* Removed no-lib version until i figure it out
 
 ===== To-Do =====
-* LibDB/Mini Map Button for some options
--- Inc printing to party/raid
-* Fix layout of the options UI
+* Reporting of party/raid to party/raid/guild/say/tell
+* UI for showing party/raid/cache

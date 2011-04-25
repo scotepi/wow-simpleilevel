@@ -3,5 +3,6 @@
 	<Script file="Locals\zhTW.lua" />
 	<Script file="Locals\zhCN.lua" />
 	<Script file="Locals\ruRU.lua" />
+	<Script file="settings.lua" />
 	<Script file="SimpleILevel.lua" />
 </Ui>
