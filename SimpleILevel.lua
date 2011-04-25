@@ -1,121 +1,16 @@
 SIL = LibStub("AceAddon-3.0"):NewAddon("SimpleILevel", "AceEvent-3.0", "AceConsole-3.0")
-SIL:SetEnabledState(true)
-
-local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true)
---LibStub("AceEvent-3.0"):Embed(SIL);
-
-SIL_VersionMajor = 2.0;
-SIL_VersionMinor = 2;
-SIL_Version = SIL_VersionMajor..'-'..SIL_VersionMinor;
-
-local options = {
-	name = L['Help Options'],
-	type = "group",
-	args = {
-		clear = {
-			name = L['Help Clear'],
-			desc = L['Help Clear Desc'],
-			type = "execute",
-			func = function(i) SIL:Reset(); end,
-			confirm = true
-		},
-		advanced = {
-			name = L['Help Advanced'],
-			desc = L['Help Advanced Desc'],
-			type = "toggle",
-			set = function(i,v) SIL_Settings['advanced'] = v; end,
-			get = function(i) return SIL_Settings['advanced']; end
-		},
-		autoscan = {
-			name = L['Help Autoscan'],
-			desc = L['Help Autoscan Desc'],
-			type = "toggle",
-			set = function(i,v) SIL:Autoscan(v); end,
-			get = function(i) return SIL_Settings['autoscan']; end
-		},
-		purge = {
-			name = L['Help Purge'],
-			desc = L['Help Purge Desc'],
-			type = "input",
-			validate = function(i,v) 
-				if not (tonumber(v)) then 
-					SIL:Print(L['Help Purge Error']); return L['Help Purge Error'];
-				else 
-					local count = SIL:PurgeCache(number); 
-						if not count then count = 0; end 
-					SIL:Print(SIL:Replace(L['Purge Notification'], 'num', count));
-				end; end,
-		},
-		age = {
-			name = L['Help Age'],
-			desc = L['Help Age Desc'],
-			type = "range",
-			min = 1,
-			softMax = 240,
-			step = 1,
-			bigStep = 15,
-			get = function(i) return (SIL_Settings['age'] / 60); end,
-			set = function(i,v) SIL_Settings['age'] = tonumber(tonumber(v) * 60);  end
-		},
-		party = {
-			name = L['Help Party'],
-			desc = L['Help Party Desc'],
-			type = "execute",
-			hidden = true,
-			guiHidden = true,
-			func = function(i) SIL:Party(true); end
-		},
-		raid = {
-			name = L['Help Raid'],
-			desc = L['Help Raid Desc'],
-			type = "execute",
-			hidden = true,
-			guiHidden = true,
-			func = function(i) SIL:Raid(true); end
-		},
-		
-		-- Console Only
-		get = {
-			name = L['Help Get'],
-			desc = L['Help Get Desc'],
-			type = "input",
-			set = function(i) SIL:ForceGet(target); end,
-			hidden = true,
-			guiHidden = true,
-			cmdHidden = false,
-		},
-		target = {
-			name = L['Help Target'],
-			desc = L['Help Target Desc'],
-			type = "input",
-			set = function(i) SIL:ForceGet(target); end,
-			hidden = true,
-			guiHidden = true,
-			cmdHidden = false,
-		},
-	},
-};
-LibStub("AceConfig-3.0"):RegisterOptionsTable("SimpleILevel", options, {"sil", "silev", "simpleilevel"});
-SILo = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("SimpleILevel");
-
--- Color constants
-local SIL_ColorIndex = {0,200,333,378,390,1000};
-local SIL_Colors = {
-	-- White base color
-	[0] = 		{['r']=255,	['g']=255,	['b']=255,	['p']=0,},
-	-- Yellow for wrath dungeon gear
-	[200] = 	{['r']=255,	['g']=204,	['b']=0,	['p']=0,},
-	-- Green for cata dungeon
-	[333] = 	{['r']=0,	['g']=204,	['b']=0,	['p']=200,},
-	-- Blue for heroic t11 final gear
-	[378] = 	{['r']=0,	['g']=102,	['b']=204,	['p']=333,},
-	-- Purple for t11 on
-	[390] = 	{['r']=163,	['g']=23,	['b']=238,	['p']=378,},
-	-- Red for a max score
-	[1000] = 	{['r']=255,	['g']=0,	['b']=0,	['p']=390},
-};
+local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
+SIL_AC = LibStub:GetLibrary("AceConfig-3.0");
+SIL_ACD = LibStub:GetLibrary("AceConfigDialog-3.0");
+SIL_LDB = LibStub:GetLibrary("LibDataBroker-1.1");
+SIL_LDBIcon = SIL_LDB and LibStub("LibDBIcon-1.0");
 
 function SIL:OnInitialize()
+	
+	-- Version Info
+	self.versionMajor = 2.0;
+	self.versionMinor = 3;
+	self.version = self.versionMajor..'-r'..self.versionMinor;
 	
 	-- Never been here before
 	if not ( SIL_Settings ) or not ( SIL_CacheGUID ) then
@@ -123,9 +18,28 @@ function SIL:OnInitialize()
 	end
 	
 	-- Check for a newer version
-	if ( SIL_VersionMajor > SIL_Settings['version'] ) then
+	if ( self.versionMajor > SIL_Settings['version'] ) then
 		self:Update();
 	end
+	
+	-- Start LDB
+	self.db = SIL_LDB:NewDataObject("SimpleILevel", {
+		type = "launcher",
+		icon = "Interface\\Icons\\inv_misc_armorkit_24",
+		OnClick = function(f,b)
+					SIL:OpenMenu();
+			end,
+		OnTooltipShow = function(tt)
+							tt:AddLine(L["Addon Name"]);
+		end,
+		});
+	
+	-- Start the minimap icon
+	SIL_LDBIcon:Register("SimpleILevel", self.db, { hide = not SIL_Settings['minimap'], });
+	
+	-- Register Options
+	SIL_AC:RegisterOptionsTable("SimpleILevel", SIL_Options, {"sil", "silev", "simpleilevel"});
+	SIL_ACD:AddToBlizOptions("SimpleILevel");
 	
 	-- Tell the player we have been loaded
 	self:Print(self:Replace(L['Loading Addon'], 'version', SIL_Version));
@@ -169,23 +83,32 @@ end
 
 -- Update to a newer version
 function SIL:Update()
-
+	
+	-- Minimap Icon
+	if (SIL_Settings['version'] >= 2.0 and SIL_Settings['versionMinor'] <= 3) then
+		SIL_Settings['minimap'] = true;
+	end
+	
 	-- Sorry but we can't support every old version
 	if (SIL_Settings['version'] < 1.2) then
 		self:Reset();
 	end
+	
+	SIL_Settings['version'] = self.versionMajor;
+	SIL_Settings['versionMinor'] = self.versionMinor;
 end
 
 -- Reset the settings
 function SIL:Reset()
 	self:Print(L["Slash Clear"]);
-	SIL_CacheGUID = {};						-- Table if information about toons
+	SIL_CacheGUID = {};								-- Table if information about toons
 	SIL_Settings = {}
-	SIL_Settings['age'] = 1800;				-- How long till information is refreshed
-	SIL_Settings['advanced'] = false;			-- Display extra information in the tooltips
-	SIL_Settings['autoscan'] = true;			-- Automaticly scan for changes
-	SIL_Settings['version'] = SIL_VersionMajor;-- Version for future referance
-	SIL_Settings['versionMinor'] = SIL_VersionMinor;
+	SIL_Settings['age'] = 1800;						-- How long till information is refreshed
+	SIL_Settings['advanced'] = false;				-- Display extra information in the tooltips
+	SIL_Settings['autoscan'] = true;				-- Automaticly scan for changes
+	SIL_Settings['minimap'] = true;					-- Minimap Icon
+	SIL_Settings['version'] = self.VersionMajor;	-- Version for future referance
+	SIL_Settings['versionMinor'] = self.versionMinor;
 end
 
 -- Clear the cache
@@ -862,6 +785,53 @@ end
 
 
 
+function SIL:ToggleAdvanced()
+	if ( SIL_Settings['advanced'] ) then
+		SIL_Settings['advanced'] = false;
+	else
+		SIL_Settings['advanced'] = true;
+	end
+end
+
+function SIL:ToggleAutoscan()
+	if ( SIL_Settings['autoscan'] ) then
+		SIL_Settings['autoscan'] = false;
+	else
+		SIL_Settings['autoscan'] = true;
+	end
+	
+	SIL:Autoscan(SIL_Settings['autoscan']);
+end
+
+function SIL:ToggleMinimap()
+	if ( SIL_Settings['minimap'] ) then
+		SIL_Settings['minimap'] = false;
+		SIL_LDBIcon:Hide("SimpleILevel");
+	else
+		SIL_Settings['minimap'] = true;
+		SIL_LDBIcon:Show("SimpleILevel");
+	end
+end
+
+function SIL:SetAdvanced(v)
+	SIL_Settings['advanced'] = v;
+end
+
+function SIL:SetAutoscan(v)
+	SIL_Settings['autoscan'] = v;
+	
+	SIL:Autoscan(SIL_Settings['autoscan']);
+end
+
+function SIL:SetMinimap(v)
+	SIL_Settings['minimap'] = v;
+	
+	if ( SIL_Settings['minimap'] ) then
+		SIL_LDBIcon:Show("SimpleILevel");
+	else
+		SIL_LDBIcon:Hide("SimpleILevel");
+	end
+end
 
 
 
@@ -869,3 +839,132 @@ end
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- Open the options window
+function SIL:ShowOptions()
+	SIL_ACD:Open("SimpleILevel");
+end
+
+-- From Skada
+--
+-- Current Layout
+	-- Party
+	-- Raid
+	-- ----
+	-- Advanced
+	-- AutoScan 
+	-- ----
+	-- My Score
+function SIL:OpenMenu(window) 
+	if not self.silmenu then
+		self.silmenu = CreateFrame("Frame", "SILMenu")
+	end
+	local menu = self.silmenu
+	
+	-- Get the score started for the menu
+	SIL:StartScore('player', true, false);
+	local score, age, items = SIL:ProcessInspect(UnitGUID('player'), false);
+		
+	menu.displayMode = "MENU";
+	local info = {};
+	menu.initialize = function(self,level)
+		if not level then return end
+		wipe(info);
+		
+		-- Title
+		info.isTitle = 1;
+		info.text = L["Addon Name"];
+		info.notCheckable = 1;
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Spacer
+		wipe(info);
+		info.disabled = 1;
+		info.notCheckable = 1;
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Party
+		wipe(info);
+		info.text = L["Help Party"];
+		info.func = function() SIL:Party(true) end;
+		info.notCheckable = 1;
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Raid
+		wipe(info);
+		info.text = L["Help Raid"];
+		info.func = function() SIL:Raid(true) end;
+		info.notCheckable = 0;
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Spacer
+		wipe(info);
+		info.disabled = 1;
+		info.notCheckable = 1;
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Advanced Tool tip
+		wipe(info);
+		info.text = L["Help Advanced"];
+		info.func = function() SIL:ToggleAdvanced(); end;
+		info.checked = SIL_Settings['advanced'];
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Autoscan
+		wipe(info);
+		info.text = L["Help Autoscan"];
+		info.func = function() SIL:ToggleAutoscan(); end;
+		info.checked = SIL_Settings['autoscan'];
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Minimap
+		wipe(info);
+		info.text = L["Help Minimap"];
+		info.func = function() SIL:ToggleMinimap(); end;
+		info.checked = SIL_Settings['minimap'];
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- Spacer
+		wipe(info);
+		info.disabled = 1;
+		info.notCheckable = 1;
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- My Score
+		wipe(info);
+		info.text = L['Help Options'];
+		info.func = function() SIL:ShowOptions(); end;
+		info.notCheckable = 1;
+		UIDropDownMenu_AddButton(info, level);
+		
+		-- My Score
+		wipe(info);
+		info.text = SIL:Replace(L['Your Score'], 'score', SIL:FormatScore(score, items));
+		info.notClickable = 1;
+		info.notCheckable = 1;
+		UIDropDownMenu_AddButton(info, level);
+	end
+	
+	local x,y = GetCursorPosition(UIParent);
+	ToggleDropDownMenu(1, nil, menu, "UIParent", x / UIParent:GetEffectiveScale() , y / UIParent:GetEffectiveScale());
+end

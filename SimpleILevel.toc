@@ -9,11 +9,8 @@
 ## Notes-zhCN: 提示栏显示其它玩家的平均物品等级
 
 ## Author: Scotepi
-## Version: 2.0-2
+## Version: 2.0-r3
 ## SavedVariables: SIL_Settings, SIL_CacheGUID
-#@no-lib-strip@
-# Dependencies: LibStub, CallbackHandler-1.0, AceAddon-3.0, AceEvent-3.0, AceLocale-3.0, AceGUI-3.0, AceConsole-3.0, AceConfig-3.0
-#@end-no-lib-strip@.
 
 embeds.xml
 SimpleILevel.xml

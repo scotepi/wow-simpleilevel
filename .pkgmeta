@@ -23,3 +23,11 @@ externals:
 	Libs/AceConfig-3.0:
         url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceConfig-3.0
         tag: latest
+	Libs/LibDataBroker:
+        url: git://github.com/tekkub/libdatabroker-1-1.git
+        tag: latest
+	Libs/LibDBIcon-1.0:
+        url: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
+        tag: latest
+
+enable-nolib-creation: no
