@@ -44,7 +44,7 @@ SIL_Options = {
 			desc = L['Help Minimap Desc'],
 			type = "toggle",
 			set = function(i,v) SIL:SetMinimap(v); end,
-			get = function(i) return SIL_Settings['minimap']; end,
+			get = function(i) return not SIL_Settings['minimap']['hide']; end,
 			order = 3,
 		},
 		
