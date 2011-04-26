@@ -9,7 +9,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 3;
+	self.versionMinor = 4;
 	self.version = self.versionMajor..'-r'..self.versionMinor;
 	
 	-- Never been here before
@@ -35,14 +35,14 @@ function SIL:OnInitialize()
 		});
 	
 	-- Start the minimap icon
-	SIL_LDBIcon:Register("SimpleILevel", self.db, { hide = not SIL_Settings['minimap'], });
+	SIL_LDBIcon:Register("SimpleILevel", self.db, SIL_Settings['minimap']);
 	
 	-- Register Options
 	SIL_AC:RegisterOptionsTable("SimpleILevel", SIL_Options, {"sil", "silev", "simpleilevel"});
 	SIL_ACD:AddToBlizOptions("SimpleILevel");
 	
 	-- Tell the player we have been loaded
-	self:Print(self:Replace(L['Loading Addon'], 'version', SIL_Version));
+	self:Print(self:Replace(L['Loading Addon'], 'version', self.version));
 	
 	-- Register Events
 	self:RegisterEvent("PLAYER_TARGET_CHANGED");
@@ -85,12 +85,14 @@ end
 function SIL:Update()
 	
 	-- Minimap Icon
-	if (SIL_Settings['version'] >= 2.0 and SIL_Settings['versionMinor'] <= 3) then
-		SIL_Settings['minimap'] = true;
+	if (SIL_Settings['version'] >= 2.0 and SIL_Settings['versionMinor'] <= 4) then
+		SIL_Settings['minimap'] = { hide = false, };
+	elseif (SIL_Settings['version'] >= 2.0 and SIL_Settings['versionMinor'] <= 3) then
+		SIL_Settings['minimap'] = { hide = false, };
 	end
 	
 	-- Sorry but we can't support every old version
-	if (SIL_Settings['version'] < 1.2) then
+	if (SIL_Settings['version'] < 2.0) then
 		self:Reset();
 	end
 	
@@ -106,7 +108,7 @@ function SIL:Reset()
 	SIL_Settings['age'] = 1800;						-- How long till information is refreshed
 	SIL_Settings['advanced'] = false;				-- Display extra information in the tooltips
 	SIL_Settings['autoscan'] = true;				-- Automaticly scan for changes
-	SIL_Settings['minimap'] = true;					-- Minimap Icon
+	SIL_Settings['minimap'] = { hide = false, };	-- Minimap Icon
 	SIL_Settings['version'] = self.VersionMajor;	-- Version for future referance
 	SIL_Settings['versionMinor'] = self.versionMinor;
 end
@@ -275,11 +277,17 @@ function SIL:Heirloom(level)
 end
 
 -- Formate the score
-function SIL:FormatScore(score, items)
+function SIL:FormatScore(score, items, color)
+	if ( type(color) == "nil" ) then color = true; end
+	
 	local hexColor = self:ColorScore(score, items);
 	local score = self:Round(score, 1);
 	
-	return '|cFF'..hexColor..score..'|r';
+	if ( color ) then
+		return '|cFF'..hexColor..score..'|r';
+	else
+		return score;
+	end
 end
 
 function SIL:ColorScore(score, items)
@@ -451,7 +459,9 @@ function SIL:AgeToText(age)
 	end
 end
 
-function SIL:Party(output)
+function SIL:Party(output, dest, to)
+	if not ( dest ) then dest = "print"; end
+	
 	if ( GetNumPartyMembers() > 0 ) then
 		local partySize = 0;
 		local partyTotal = 0;
@@ -478,11 +488,16 @@ function SIL:Party(output)
 					str = L['Party Member Score Fresh'];
 				end
 				
+				if ( dest == "print" ) then
+					str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+				else
+					str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+				end
+				
 				str = self:Replace(str, 'name', self:Strpad(UnitName('player'), L["Max UnitName"]));
-				str = self:Replace(str, 'score', self:FormatScore(score, items));
 				str = self:Replace(str, 'ageLocal', self:AgeToText(age));
 				
-				self:Print(str);
+				self:PrintTo(str, dest, to);
 			end
 		end
 		
@@ -525,15 +540,21 @@ function SIL:Party(output)
 							str = L['Party Member Score Fresh'];
 						end
 						
+						if ( dest == "print" ) then
+							str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+						else
+							str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+						end
+						
 						str = self:Replace(str, 'name', self:Strpad(name, L["Max UnitName"]));
-						str = self:Replace(str, 'score', self:FormatScore(score, items));
 						str = self:Replace(str, 'ageLocal', self:AgeToText(age));
 						
-						self:Print(str);
+						self:PrintTo(str, dest, to);
 					end
 				else
 					if ( output ) then
-						self:Print(self:Replace(L['Party Member Score False'], 'name', self:Strpad(name, L["Max UnitName"])));
+						local str = self:Replace(L['Party Member Score False'], 'name', self:Strpad(name, L["Max UnitName"]));
+						self:PrintTo(str, dest, to);
 					end
 				end
 			end
@@ -543,12 +564,19 @@ function SIL:Party(output)
 			local partyAverage = partyTotal / partySize;
 			
 			if ( output ) then
-				self:Print("------------------------");
+				self:PrintTo("------------------------", dest, to);
 				
-				local str = self:Replace(L['Party Score'], 'score', self:FormatScore(partyAverage));
+				local str = L['Party Score'];
+				
+				if ( dest == "print" ) then
+					str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+				else
+					str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+				end
+				
 				str = self:Replace(str, 'number', partySize);
 				
-				self:Print(str);
+				self:PrintTo(str, dest, to);
 			end
 			
 			return partyAverage, partyTotal, partySize, partyMin, partyMax, party;
@@ -564,7 +592,8 @@ function SIL:Party(output)
 	end
 end
 
-function SIL:Raid(output)
+function SIL:Raid(output, dest, to)
+	if not ( dest ) then dest = "print"; end
 	local raid = {};
 	
 	if ( UnitInRaid("player") ) then
@@ -617,15 +646,20 @@ function SIL:Raid(output)
 							str = L['Raid Member Score Fresh'];
 						end
 						
+						if ( dest == "print" ) then
+							str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+						else
+							str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+						end
+						
 						str = self:Replace(str, 'name', self:Strpad(name, L["Max UnitName"]));
-						str = self:Replace(str, 'score', self:FormatScore(score, items));
 						str = self:Replace(str, 'ageLocal', self:AgeToText(age));
 						
-						self:Print(str);
+						self:PrintTo(str, dest, to);
 					end
 				else
 					if ( output ) then
-						self:Print(self:Replace(L['Raid Member Score False'], 'name', self:Strpad(name, L["Max UnitName"])));
+						self:PrintTo(self:Replace(L['Raid Member Score False'], 'name', self:Strpad(name, L["Max UnitName"])), dest, to);
 					end
 				end
 			end
@@ -635,12 +669,19 @@ function SIL:Raid(output)
 			local raidAverage = raidTotal / raidSize;
 			
 			if ( output ) then
-				self:Print("------------------------");
+				self:PrintTo("------------------------", dest, to);
 				
-				local str = self:Replace(L['Raid Score'], 'score', self:FormatScore(raidAverage));
+				local str = L['Raid Score'];
+				
+				if ( dest == "print" ) then
+					str = self:Replace(str, 'score', self:FormatScore(raidAverage, items, true));
+				else
+					str = self:Replace(str, 'score', self:FormatScore(raidAverage, items, false));
+				end
+				
 				str = self:Replace(str, 'number', raidSize);
 				
-				self:Print(str);
+				self:PrintTo(str, dest, to);
 			end
 			
 			return raidAverage, raidTotal, raidSize, raidMin, raidMax, raid;
@@ -783,6 +824,18 @@ function SIL:ProcessInspect(guid, tooltip)
 	end
 end
 
+function SIL:PrintTo(message, channel, to)
+	if ( channel == "print" ) then
+		SIL:Print(message);
+	elseif ( channel == "WHISPER" ) then
+		SendChatMessage(message, WHISPER, to);
+	elseif ( channel ) then
+		SendChatMessage(message, channel);
+	else
+		SIL:Print(message);
+	end
+end
+
 
 
 function SIL:ToggleAdvanced()
@@ -804,12 +857,12 @@ function SIL:ToggleAutoscan()
 end
 
 function SIL:ToggleMinimap()
-	if ( SIL_Settings['minimap'] ) then
-		SIL_Settings['minimap'] = false;
-		SIL_LDBIcon:Hide("SimpleILevel");
-	else
-		SIL_Settings['minimap'] = true;
+	if ( SIL_Settings['minimap']['hide'] ) then
+		SIL_Settings['minimap']['hide'] = false;
 		SIL_LDBIcon:Show("SimpleILevel");
+	else
+		SIL_Settings['minimap']['hide'] = true;
+		SIL_LDBIcon:Hide("SimpleILevel");
 	end
 end
 
@@ -824,12 +877,16 @@ function SIL:SetAutoscan(v)
 end
 
 function SIL:SetMinimap(v)
-	SIL_Settings['minimap'] = v;
+	if ( v ) then
+		SIL_Settings['minimap']['hide'] = false;
+	else 
+		SIL_Settings['minimap']['hide'] = true;
+	end
 	
-	if ( SIL_Settings['minimap'] ) then
-		SIL_LDBIcon:Show("SimpleILevel");
-	else
+	if ( SIL_Settings['minimap']['hide'] ) then
 		SIL_LDBIcon:Hide("SimpleILevel");
+	else
+		SIL_LDBIcon:Show("SimpleILevel");
 	end
 end
 
@@ -869,7 +926,15 @@ end
 --
 -- Current Layout
 	-- Party
+		-- Console
+		-- Party
+		-- Guild
+		-- Say
 	-- Raid
+		-- Consols
+		-- Party
+		-- Guild
+		-- Say
 	-- ----
 	-- Advanced
 	-- AutoScan 
@@ -890,79 +955,156 @@ function SIL:OpenMenu(window)
 	menu.initialize = function(self,level)
 		if not level then return end
 		wipe(info);
-		
-		-- Title
-		info.isTitle = 1;
-		info.text = L["Addon Name"];
-		info.notCheckable = 1;
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Spacer
-		wipe(info);
-		info.disabled = 1;
-		info.notCheckable = 1;
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Party
-		wipe(info);
-		info.text = L["Help Party"];
-		info.func = function() SIL:Party(true) end;
-		info.notCheckable = 1;
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Raid
-		wipe(info);
-		info.text = L["Help Raid"];
-		info.func = function() SIL:Raid(true) end;
-		info.notCheckable = 0;
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Spacer
-		wipe(info);
-		info.disabled = 1;
-		info.notCheckable = 1;
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Advanced Tool tip
-		wipe(info);
-		info.text = L["Help Advanced"];
-		info.func = function() SIL:ToggleAdvanced(); end;
-		info.checked = SIL_Settings['advanced'];
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Autoscan
-		wipe(info);
-		info.text = L["Help Autoscan"];
-		info.func = function() SIL:ToggleAutoscan(); end;
-		info.checked = SIL_Settings['autoscan'];
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Minimap
-		wipe(info);
-		info.text = L["Help Minimap"];
-		info.func = function() SIL:ToggleMinimap(); end;
-		info.checked = SIL_Settings['minimap'];
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- Spacer
-		wipe(info);
-		info.disabled = 1;
-		info.notCheckable = 1;
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- My Score
-		wipe(info);
-		info.text = L['Help Options'];
-		info.func = function() SIL:ShowOptions(); end;
-		info.notCheckable = 1;
-		UIDropDownMenu_AddButton(info, level);
-		
-		-- My Score
-		wipe(info);
-		info.text = SIL:Replace(L['Your Score'], 'score', SIL:FormatScore(score, items));
-		info.notClickable = 1;
-		info.notCheckable = 1;
-		UIDropDownMenu_AddButton(info, level);
+		if level == 1 then
+			
+			-- Title
+			info.isTitle = 1;
+			info.text = L["Addon Name"];
+			info.notCheckable = 1;
+			UIDropDownMenu_AddButton(info, level);
+			
+			-- Spacer
+			wipe(info);
+			info.disabled = 1;
+			info.notCheckable = 1;
+			UIDropDownMenu_AddButton(info, level);
+			
+			if ( GetNumPartyMembers() > 0 ) then
+				-- Party
+				wipe(info);
+				info.text = L["Help Party"];
+				info.notCheckable = 1;
+				info.hasArrow = 1;
+				info.value = { title = L["Help Party"], type = "party", };
+				UIDropDownMenu_AddButton(info, level);
+				
+				if ( UnitInRaid("player") ) then
+					-- Raid
+					wipe(info);
+					info.text = L["Help Raid"];
+					info.notCheckable = 1;
+					info.hasArrow = 1;
+					info.value = { title = L["Help Raid"], type = "raid", };
+					UIDropDownMenu_AddButton(info, level);
+				end
+				
+				-- Spacer
+				wipe(info);
+				info.disabled = 1;
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+			end
+			
+			-- Advanced Tool tip
+			wipe(info);
+			info.text = L["Help Advanced"];
+			info.func = function() SIL:ToggleAdvanced(); end;
+			info.checked = SIL_Settings['advanced'];
+			UIDropDownMenu_AddButton(info, level);
+			
+			-- Autoscan
+			wipe(info);
+			info.text = L["Help Autoscan"];
+			info.func = function() SIL:ToggleAutoscan(); end;
+			info.checked = SIL_Settings['autoscan'];
+			UIDropDownMenu_AddButton(info, level);
+			
+			-- Minimap
+			wipe(info);
+			info.text = L["Help Minimap"];
+			info.func = function() SIL:ToggleMinimap(); end;
+			info.checked = SIL_Settings['minimap'];
+			UIDropDownMenu_AddButton(info, level);
+			
+			-- Spacer
+			wipe(info);
+			info.disabled = 1;
+			info.notCheckable = 1;
+			UIDropDownMenu_AddButton(info, level);
+			
+			-- Options
+			wipe(info);
+			info.text = L['Help Options'];
+			info.func = function() SIL:ShowOptions(); end;
+			info.notCheckable = 1;
+			UIDropDownMenu_AddButton(info, level);
+			
+			-- My Score
+			wipe(info);
+			info.text = SIL:Replace(L['Your Score'], 'score', SIL:FormatScore(score, items));
+			info.notClickable = 1;
+			info.notCheckable = 1;
+			UIDropDownMenu_AddButton(info, level);
+		elseif level == 2 then
+			if type(UIDROPDOWNMENU_MENU_VALUE) == "table" then
+				local v = UIDROPDOWNMENU_MENU_VALUE;
+				
+				wipe(info)
+		        info.isTitle = 1;
+				info.notCheckable = 1;
+		        info.text = v.title;
+		        UIDropDownMenu_AddButton(info, level);
+				
+				-- Console - CHAT_MSG_SYSTEM 
+				wipe(info);
+				info.text = CHAT_MSG_SYSTEM;
+				if ( v.type == "party" ) then
+					info.func = function() SIL:Party(true, "print"); end;
+				elseif ( v.type == "raid" ) then
+					info.func = function() SIL:Raid(true, "print"); end;
+				end
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+				
+				-- Party - CHAT_MSG_PARTY
+				wipe(info);
+				info.text = CHAT_MSG_PARTY;
+				if ( v.type == "party" ) then
+					info.func = function() SIL:Party(true, "PARTY"); end;
+				elseif ( v.type == "raid" ) then
+					info.func = function() SIL:Raid(true, "PARTY"); end;
+				end
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+				
+				-- Raid - CHAT_MSG_RAID 
+				if ( UnitInRaid("player") ) then
+					wipe(info);
+					info.text = CHAT_MSG_RAID;
+					if ( v.type == "party" ) then
+						info.func = function() SIL:Party(true, "RAID"); end;
+					elseif ( v.type == "raid" ) then
+						info.func = function() SIL:Raid(true, "RAID"); end;
+					end
+					info.notCheckable = 1;
+					UIDropDownMenu_AddButton(info, level);
+				end
+				
+				-- Guild - CHAT_MSG_GUILD 
+				if ( IsInGuild() ) then
+					wipe(info);
+					info.text = CHAT_MSG_GUILD;
+					if ( v.type == "party" ) then
+						info.func = function() SIL:Party(true, "GUILD"); end;
+					elseif ( v.type == "raid" ) then
+						info.func = function() SIL:Raid(true, "GUILD"); end;
+					end
+					info.notCheckable = 1;
+					UIDropDownMenu_AddButton(info, level);
+				end
+				
+				-- Say - CHAT_MSG_SAY
+				wipe(info);
+				info.text = CHAT_MSG_SAY;
+				if ( v.type == "party" ) then
+					info.func = function() SIL:Party(true, "SAY"); end;
+				elseif ( v.type == "raid" ) then
+					info.func = function() SIL:Raid(true, "SAY"); end;
+				end
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+			end
+		end
 	end
 	
 	local x,y = GetCursorPosition(UIParent);
