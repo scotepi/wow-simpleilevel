@@ -1,4 +1,4 @@
-## Interface: 40000
+## Interface: 40100
 
 ## Title: Simple iLevel
 ## Notes: Adds the Average iLevel (AiL) to the tool tip of other players
@@ -9,7 +9,7 @@
 ## Notes-zhCN: 提示栏显示其它玩家的平均物品等级
 
 ## Author: Scotepi
-## Version: 2.0-r4
+## Version: 2.0-r10
 ## SavedVariables: SIL_Settings, SIL_CacheGUID
 
 embeds.xml
