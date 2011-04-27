@@ -702,9 +702,9 @@ function SIL:Raid(output, dest, to)
 				local str = L['Raid Score'];
 				
 				if ( dest == "print" ) then
-					str = self:Replace(str, 'score', self:FormatScore(raidAverage, items, true));
+					str = self:Replace(str, 'score', self:FormatScore(raidAverage, 16, true));
 				else
-					str = self:Replace(str, 'score', self:FormatScore(raidAverage, items, false));
+					str = self:Replace(str, 'score', self:FormatScore(raidAverage, 16, false));
 				end
 				
 				str = self:Replace(str, 'number', raidSize);
