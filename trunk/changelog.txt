@@ -1,9 +1,3 @@
-* Fixed old records printing to Party, Raid, Guild and Say
-* Fixed /sil get <name>
-* Fixed /sil target
-* Fixed upgrade function
-* Updated TOC
-
 ===== 2.0 =====
 * Moved over to Ace3, sorry but this addon was getting to big to not use libs
 -- This also means it is a class layout and should be much esier to introduce LDB and UI's
@@ -22,6 +16,11 @@
 * Party and Raid won't show in the menu if you aren't in one
 * Added broadcasting to System, Party, Raid, Guild and Say
 * Minimap now saves position
+* Fixed old records printing to Party, Raid, Guild and Say
+* Fixed /sil get <name>
+* Fixed /sil target
+* Fixed upgrade function
+* Updated TOC
 
 ===== To-Do =====
 * Reporting of party/raid to tell

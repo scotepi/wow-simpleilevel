@@ -9,7 +9,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 10;
+	self.versionMinor = 11;
 	self.version = self.versionMajor..'-r'..self.versionMinor;
 	
 	-- Never been here before
@@ -596,9 +596,9 @@ function SIL:Party(output, dest, to)
 				local str = L['Party Score'];
 				
 				if ( dest == "print" ) then
-					str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+					str = self:Replace(str, 'score', self:FormatScore(partyAverage, items, true));
 				else
-					str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+					str = self:Replace(str, 'score', self:FormatScore(partyAverage, items, false));
 				end
 				
 				str = self:Replace(str, 'number', partySize);
