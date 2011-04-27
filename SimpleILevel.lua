@@ -9,7 +9,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 4;
+	self.versionMinor = 10;
 	self.version = self.versionMajor..'-r'..self.versionMinor;
 	
 	-- Never been here before
@@ -84,18 +84,17 @@ end
 -- Update to a newer version
 function SIL:Update()
 	
-	-- Minimap Icon
-	if (SIL_Settings['version'] >= 2.0 and SIL_Settings['versionMinor'] <= 4) then
-		SIL_Settings['minimap'] = { hide = false, };
-	elseif (SIL_Settings['version'] >= 2.0 and SIL_Settings['versionMinor'] <= 3) then
-		SIL_Settings['minimap'] = { hide = false, };
-	end
-	
 	-- Sorry but we can't support every old version
 	if (SIL_Settings['version'] < 2.0) then
 		self:Reset();
 	end
 	
+	-- Minimap Icon
+	if not( type(SIL_Settings['minimap']) == 'table' ) then
+		SIL_Settings['minimap'] = { hide = false, };
+	end
+	
+	-- Update the records
 	SIL_Settings['version'] = self.versionMajor;
 	SIL_Settings['versionMinor'] = self.versionMinor;
 end
@@ -340,25 +339,38 @@ function SIL:ColorScore(score, items)
 end
 
 function SIL:ForceGet(target)
-	if not ( target ) then
-		target = 'target'
-	end
+	if ( type(target) == 'nil' ) then target = 'target'; end
+	if ( target == '' ) then target = 'target'; end
+	if not ( target ) then target = 'target'; end
 	
-	-- Call by name
+	-- Current target
 	if ( target == 'target' ) then
 		if ( CanInspect('target') ) then
+			SIL:StartScore('target', true, false);
+			local score, age, items = SIL:ProcessInspect(UnitGUID('target'), false);
 			
+			if ( score ) then
+				local str = SIL:Replace(L['Slash Target Score True'], 'target', UnitName('target'));
+				str = SIL:Replace(str, 'score', SIL:FormatScore(score, items));
+				
+				SIL:Print(str);
+				
+			else
+				SIL:Print(L['Slash Target Score False']);
+			end
 		else
 			self:Print(L['Slash Target Score False']);
 		end
+	
+	-- Call by name
 	elseif not ( target == '' ) then
 		local score, age, items = SIL:GetScore(target);
 		
 		if ( score ) then
 			age = self:AgeToText(age);
-				
+			
 			local str = L['Slash Get Score True'];
-			str = self:Replace(str, 'target', target);
+			str = self:Replace(str, 'target', SIL_CacheGUID[SIL:NameToGUID(target)]['name']);
 			str = self:Replace(str, 'score', self:FormatScore(score, items));
 			str = self:Replace(str, 'ageLocal', age);
 			
@@ -440,19 +452,32 @@ function SIL:ColorTest(l,h)
 	end
 end
 
-function SIL:AgeToText(age)
+function SIL:AgeToText(age, color)
+	if ( type(color) == "nul" ) then color = false; end
+	
 	if ( type(age) == 'number' ) then
 		if ( age > 86400 ) then
 			age = self:Round(age / 86400, 2);
-			return self:Replace(L['Age Days'], 'age', '|cFFff0000'..age..'|r');
+			str = L['Age Days'];
+			hex = "ff0000";
 		elseif ( age > 3600 ) then
-			age = self:Round(age / 3600, 1)
-			return self:Replace(L['Age Hours'], 'age', '|cFF33ccff'..age..'|r');
+			age = self:Round(age / 3600, 1);
+			str = L['Age Hours'];
+			hex = "33ccff";
 		elseif ( age > 60 ) then
-			age = self:Round(age / 60, 1)
-			return self:Replace(L['Age Minutes'], 'age', '|cFF00ff00'..age..'|r');
+			age = self:Round(age / 60, 1);
+			str = L['Age Minutes'];
+			hex = "00ff00";
 		else
-			return self:Replace(L['Age Seconds'], 'age', '|cFF00ff00'..age..'|r');
+			age = age;
+			str = L['Age Seconds'];
+			hex = "00ff00";
+		end
+		
+		if ( color ) then
+			return self:Replace(str, 'age', '|cFF'..hex..age..'|r');
+		else
+			return self:Replace(str, 'age', age);
 		end
 	else
 		return 'n/a';
@@ -490,12 +515,13 @@ function SIL:Party(output, dest, to)
 				
 				if ( dest == "print" ) then
 					str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+					str = self:Replace(str, 'ageLocal', self:AgeToText(age, true));
 				else
 					str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+					str = self:Replace(str, 'ageLocal', self:AgeToText(age, false));
 				end
 				
 				str = self:Replace(str, 'name', self:Strpad(UnitName('player'), L["Max UnitName"]));
-				str = self:Replace(str, 'ageLocal', self:AgeToText(age));
 				
 				self:PrintTo(str, dest, to);
 			end
@@ -542,12 +568,13 @@ function SIL:Party(output, dest, to)
 						
 						if ( dest == "print" ) then
 							str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+							str = self:Replace(str, 'ageLocal', self:AgeToText(age, true));
 						else
 							str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+							str = self:Replace(str, 'ageLocal', self:AgeToText(age, false));
 						end
 						
 						str = self:Replace(str, 'name', self:Strpad(name, L["Max UnitName"]));
-						str = self:Replace(str, 'ageLocal', self:AgeToText(age));
 						
 						self:PrintTo(str, dest, to);
 					end
@@ -648,12 +675,13 @@ function SIL:Raid(output, dest, to)
 						
 						if ( dest == "print" ) then
 							str = self:Replace(str, 'score', self:FormatScore(score, items, true));
+							str = self:Replace(str, 'ageLocal', self:AgeToText(age, true));
 						else
 							str = self:Replace(str, 'score', self:FormatScore(score, items, false));
+							str = self:Replace(str, 'ageLocal', self:AgeToText(age, false));
 						end
 						
 						str = self:Replace(str, 'name', self:Strpad(name, L["Max UnitName"]));
-						str = self:Replace(str, 'ageLocal', self:AgeToText(age));
 						
 						self:PrintTo(str, dest, to);
 					end
