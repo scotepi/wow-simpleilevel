@@ -1,0 +1,30 @@
+* Fixed old records printing to Party, Raid, Guild and Say
+* Fixed /sil get <name>
+* Fixed /sil target
+* Fixed upgrade function
+* Updated TOC
+
+===== 2.0 =====
+* Moved over to Ace3, sorry but this addon was getting to big to not use libs
+-- This also means it is a class layout and should be much esier to introduce LDB and UI's
+* Added a options UI, <3 AceConfig
+* Removed DOM from all files, now its ANSI as UTF-8 (PHP taught me DOM's are bad! doh!)
+* Moved T11 down 1 iLevel to 278
+* Added placeholder for T11 color, purple, 378-391
+* Added zhCN translation thanks zhTW?!?
+* Also included a no-lib version that doesn't include Ace3 however it is still required
+* Tool Tips now show in combat however inspecting/refreshing will not happen in combat
+* Added LibDB and LibDBIcon, we have a minimap icon!
+* Cleaned up options ui
+* Cleaned up the code some
+* Removed no-lib version until i figure it out
+* Fixed loading version
+* Party and Raid won't show in the menu if you aren't in one
+* Added broadcasting to System, Party, Raid, Guild and Say
+* Minimap now saves position
+
+===== To-Do =====
+* Reporting of party/raid to tell
+* UI for showing party/raid/cache'
+* no-lib option
+* remove color from age on say/pary/raid
