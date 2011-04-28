@@ -11,7 +11,7 @@ function SIL:OnInitialize()
 	-- Version Info
 	self.versionMajor = 2.0;
 	self.versionMinor = 16;
-	self.version = '2.0.16b';
+	self.version = '2.0.16rc1';
 	SIL_Version = self.version;
 	
 	-- Load the DB
