@@ -1,3 +1,7 @@
+* Added automatic purging of old items when you log in
+* Added party and raid score to the drop down so it doesn't need to be run to get a rough idea
+* Moved settings over to AceDB, do I love Ace to much?
+
 ===== 2.0 =====
 * Moved over to Ace3, sorry but this addon was getting to big to not use libs
 -- This also means it is a class layout and should be much esier to introduce LDB and UI's
@@ -24,6 +28,5 @@
 
 ===== To-Do =====
 * Reporting of party/raid to tell
-* UI for showing party/raid/cache'
+* UI for showing party/raid/cache
 * no-lib option
-* remove color from age on say/pary/raid

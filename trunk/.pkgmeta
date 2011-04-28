@@ -23,6 +23,9 @@ externals:
 	Libs/AceConfig-3.0:
         url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceConfig-3.0
         tag: latest
+	Libs/AceDB-3.0:
+        url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceDB-3.0
+        tag: latest
 	Libs/LibDataBroker:
         url: git://github.com/tekkub/libdatabroker-1-1.git
         tag: latest
