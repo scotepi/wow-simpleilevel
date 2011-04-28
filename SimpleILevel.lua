@@ -4,26 +4,28 @@ SIL_AC = LibStub:GetLibrary("AceConfig-3.0");
 SIL_ACD = LibStub:GetLibrary("AceConfigDialog-3.0");
 SIL_LDB = LibStub:GetLibrary("LibDataBroker-1.1");
 SIL_LDBIcon = SIL_LDB and LibStub("LibDBIcon-1.0");
+SIL_Version = '2.0';
 
 function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 11;
-	self.version = self.versionMajor..'-r'..self.versionMinor;
+	self.versionMinor = 15;
+	self.version = '2.0.15b';
+	SIL_Version = self.version;
 	
-	-- Never been here before
-	if not ( SIL_Settings ) or not ( SIL_CacheGUID ) then
-		self:Reset();
-	end
+	-- Load the DB
+	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
+	self.db.version = self.VersionMajor;
+	self.db.versionMinor = self.VersionMinor;
 	
-	-- Check for a newer version
-	if ( self.versionMajor > SIL_Settings['version'] ) then
-		self:Update();
+	-- Make sure we can cache
+	if not ( type(SIL_CacheGUID) == 'table' ) then
+		SIL_CacheGUID = {};
 	end
 	
 	-- Start LDB
-	self.db = SIL_LDB:NewDataObject("SimpleILevel", {
+	self.ldb = SIL_LDB:NewDataObject("SimpleILevel", {
 		type = "launcher",
 		icon = "Interface\\Icons\\inv_misc_armorkit_24",
 		OnClick = function(f,b)
@@ -35,9 +37,10 @@ function SIL:OnInitialize()
 		});
 	
 	-- Start the minimap icon
-	SIL_LDBIcon:Register("SimpleILevel", self.db, SIL_Settings['minimap']);
+	SIL_LDBIcon:Register("SimpleILevel", self.ldb, self.db.global.minimap);
 	
 	-- Register Options
+	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self.db.global.purge / 24);
 	SIL_AC:RegisterOptionsTable("SimpleILevel", SIL_Options, {"sil", "silev", "simpleilevel"});
 	SIL_ACD:AddToBlizOptions("SimpleILevel");
 	
@@ -48,18 +51,10 @@ function SIL:OnInitialize()
 	self:RegisterEvent("PLAYER_TARGET_CHANGED");
 	self:RegisterEvent("INSPECT_READY");
 	self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
-	self:Autoscan(SIL_Settings['autoscan']);
-end
-
--- Fix events for auto scanning
-function SIL:Autoscan(toggle)
-	if ( toggle ) then
-		self:RegisterEvent("UNIT_PORTRAIT_UPDATE", "PLAYER_TARGET_CHANGED");
-	else 
-		self:UnregisterEvent("UNIT_PORTRAIT_UPDATE");
-	end
+	self:Autoscan(self.db.global.autoscan);
 	
-	SIL_Settings['autoscan'] = toggle;
+	-- Auto Purge the cache
+	SIL:AutoPurge(true);
 end
 
 function SIL:PLAYER_TARGET_CHANGED(e, target)
@@ -80,42 +75,35 @@ function SIL:UPDATE_MOUSEOVER_UNIT()
 	self:ShowTooltip();
 end
 
-
--- Update to a newer version
-function SIL:Update()
-	
-	-- Sorry but we can't support every old version
-	if (SIL_Settings['version'] < 2.0) then
-		self:Reset();
-	end
-	
-	-- Minimap Icon
-	if not( type(SIL_Settings['minimap']) == 'table' ) then
-		SIL_Settings['minimap'] = { hide = false, };
-	end
-	
-	-- Update the records
-	SIL_Settings['version'] = self.versionMajor;
-	SIL_Settings['versionMinor'] = self.versionMinor;
-end
-
 -- Reset the settings
 function SIL:Reset()
 	self:Print(L["Slash Clear"]);
-	SIL_CacheGUID = {};								-- Table if information about toons
-	SIL_Settings = {}
-	SIL_Settings['age'] = 1800;						-- How long till information is refreshed
-	SIL_Settings['advanced'] = false;				-- Display extra information in the tooltips
-	SIL_Settings['autoscan'] = true;				-- Automaticly scan for changes
-	SIL_Settings['minimap'] = { hide = false, };	-- Minimap Icon
-	SIL_Settings['version'] = self.VersionMajor;	-- Version for future referance
-	SIL_Settings['versionMinor'] = self.versionMinor;
+	self.db.global:ResetProfile();
+	SIL:SetMinimap(true);
 end
 
 -- Clear the cache
-function SIL:PurgeCache(days)
-	if ( tonumber(days) ) then
-		local maxAge = time() - ( tonumber(days) * 86400 );
+function SIL:AutoPurge(silent)
+	if ( self.db.global.purge > 0 ) then
+		local count = SIL:PurgeCache(self.db.global.purge);
+		
+		if not ( silent ) then
+			SIL:Print(SIL:Replace(L['Purge Notification'], 'num', count));
+		end
+		
+		return count;
+	else
+		if not ( silent ) then
+			SIL:Print(L['Purge Notification False']);
+		end
+		
+		return false;
+	end
+end
+
+function SIL:PurgeCache(hours)
+	if ( tonumber(hours) ) then
+		local maxAge = time() - ( tonumber(hours) * 3600 );
 		local count = 0;
 		
 		for guid,info in pairs(SIL_CacheGUID) do
@@ -411,7 +399,7 @@ function SIL:ShowTooltip()
 				GameTooltip:Show();
 				
 				-- Update the advanced info too
-				if ( SIL_Settings['advanced'] ) then
+				if ( self.db.global.advanced ) then
 					_G["GameTooltipTextLeft"..i+1]:SetText(textAdvanced);
 					GameTooltip:Show();
 				end
@@ -428,7 +416,7 @@ function SIL:ShowTooltip()
 			GameTooltip:AddDoubleLine(textLeft, textRight);
 			GameTooltip:Show();
 			
-			if ( SIL_Settings['advanced'] ) then
+			if ( self.db.global.advanced ) then
 				GameTooltip:AddLine(textAdvanced);
 				GameTooltip:Show();
 			end
@@ -745,7 +733,7 @@ function SIL:StartScore(target, refresh, tooltip)
 		local score, age, items = self:GetScore(guid);
 		
 		-- We have a score and its under age and has over 5 items
-		if ( score ) and ( age < SIL_Settings['age'] ) and ( items > 5 ) then
+		if ( score ) and ( age < self.db.global.age ) and ( items > 5 ) then
 			
 			if ( tooltip ) then
 				self:ShowTooltip();
@@ -866,63 +854,100 @@ end
 
 
 
+
+
+
+---- Settings ----
 function SIL:ToggleAdvanced()
-	if ( SIL_Settings['advanced'] ) then
-		SIL_Settings['advanced'] = false;
+	if ( self.db.global.advanced ) then
+		self.db.global.advanced = false;
 	else
-		SIL_Settings['advanced'] = true;
+		self.db.global.advanced = true;
 	end
 end
 
 function SIL:ToggleAutoscan()
-	if ( SIL_Settings['autoscan'] ) then
-		SIL_Settings['autoscan'] = false;
+	if ( self.db.global.autoscan ) then
+		self.db.global.autoscan = false;
 	else
-		SIL_Settings['autoscan'] = true;
+		self.db.global.autoscan = true;
 	end
 	
-	SIL:Autoscan(SIL_Settings['autoscan']);
+	SIL:Autoscan(self.db.global.autoscan);
 end
 
 function SIL:ToggleMinimap()
-	if ( SIL_Settings['minimap']['hide'] ) then
-		SIL_Settings['minimap']['hide'] = false;
+	if ( self.db.global.minimap.hide ) then
+		self.db.global.minimap.hide = false;
 		SIL_LDBIcon:Show("SimpleILevel");
 	else
-		SIL_Settings['minimap']['hide'] = true;
+		self.db.global.minimap.hide = true;
 		SIL_LDBIcon:Hide("SimpleILevel");
 	end
 end
 
 function SIL:SetAdvanced(v)
-	SIL_Settings['advanced'] = v;
+	self.db.global.advanced = v;
 end
 
 function SIL:SetAutoscan(v)
-	SIL_Settings['autoscan'] = v;
+	self.db.global.autoscan = v;
 	
-	SIL:Autoscan(SIL_Settings['autoscan']);
+	SIL:Autoscan(self.db.global.autoscan);
 end
 
 function SIL:SetMinimap(v)
 	if ( v ) then
-		SIL_Settings['minimap']['hide'] = false;
+		self.db.global.minimap.hide = false;
 	else 
-		SIL_Settings['minimap']['hide'] = true;
+		self.db.global.minimap.hide = true;
 	end
 	
-	if ( SIL_Settings['minimap']['hide'] ) then
+	if ( self.db.global.minimap.hide ) then
 		SIL_LDBIcon:Hide("SimpleILevel");
 	else
 		SIL_LDBIcon:Show("SimpleILevel");
 	end
 end
 
+function SIL:SetPurge(hours)
+	self.db.global.purge = hours;
+	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self.db.global.purge / 24);
+end
 
+function SIL:Autoscan(toggle)
+	if ( toggle ) then
+		self:RegisterEvent("UNIT_PORTRAIT_UPDATE", "PLAYER_TARGET_CHANGED");
+	else 
+		self:UnregisterEvent("UNIT_PORTRAIT_UPDATE");
+	end
+	
+	self.db.global.autoscan = toggle;
+end
 
+function SIL:GetAdvanced()
+	return self.db.global.advanced;
+end
 
+function SIL:GetAutoscan()
+	return self.db.global.autoscan;
+end
 
+function SIL:GetMinimap()
+	return not self.db.global.minimap.hide;
+end
 
+function SIL:GetAge()
+	return self.db.global.age;
+end
+
+function SIL:SetAge(sec)
+	self.db.global.age = sec;
+end
+
+function SIL:GetPurge()
+	return self.db.global.purge;
+end
 
 
 
@@ -977,7 +1002,20 @@ function SIL:OpenMenu(window)
 	-- Get the score started for the menu
 	SIL:StartScore('player', true, false);
 	local score, age, items = SIL:ProcessInspect(UnitGUID('player'), false);
-		
+	
+	-- Party
+	local partyAverage, partyTotal, partySize = false, false, false;
+	local raidAverage, raidTotal, raidSize = false, false, false;
+	if ( GetNumPartyMembers() > 0 ) then
+		partyAverage, partyTotal, partySize = SIL:Party(false);
+		partyAverage = SIL:FormatScore(partyAverage);
+	
+		if ( UnitInRaid("player") ) then
+			raidAverage, raidTotal, raidSize = SIL:Raid(false);
+			raidAverage = SIL:FormatScore(raidAverage);
+		end
+	end
+	
 	menu.displayMode = "MENU";
 	local info = {};
 	menu.initialize = function(self,level)
@@ -987,7 +1025,7 @@ function SIL:OpenMenu(window)
 			
 			-- Title
 			info.isTitle = 1;
-			info.text = L["Addon Name"];
+			info.text = L["Addon Name"]..' '..SIL_Version;
 			info.notCheckable = 1;
 			UIDropDownMenu_AddButton(info, level);
 			
@@ -1000,7 +1038,7 @@ function SIL:OpenMenu(window)
 			if ( GetNumPartyMembers() > 0 ) then
 				-- Party
 				wipe(info);
-				info.text = L["Help Party"];
+				info.text = L["Help Party"]..' '..partyAverage;
 				info.notCheckable = 1;
 				info.hasArrow = 1;
 				info.value = { title = L["Help Party"], type = "party", };
@@ -1009,7 +1047,7 @@ function SIL:OpenMenu(window)
 				if ( UnitInRaid("player") ) then
 					-- Raid
 					wipe(info);
-					info.text = L["Help Raid"];
+					info.text = L["Help Party"]..' '..raidAverage;
 					info.notCheckable = 1;
 					info.hasArrow = 1;
 					info.value = { title = L["Help Raid"], type = "raid", };
@@ -1027,21 +1065,21 @@ function SIL:OpenMenu(window)
 			wipe(info);
 			info.text = L["Help Advanced"];
 			info.func = function() SIL:ToggleAdvanced(); end;
-			info.checked = SIL_Settings['advanced'];
+			info.checked = SIL:GetAdvanced();
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- Autoscan
 			wipe(info);
 			info.text = L["Help Autoscan"];
 			info.func = function() SIL:ToggleAutoscan(); end;
-			info.checked = SIL_Settings['autoscan'];
+			info.checked = SIL:GetAutoscan();
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- Minimap
 			wipe(info);
 			info.text = L["Help Minimap"];
 			info.func = function() SIL:ToggleMinimap(); end;
-			info.checked = SIL_Settings['minimap'];
+			info.checked = SIL:GetMinimap();
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- Spacer
@@ -1063,6 +1101,7 @@ function SIL:OpenMenu(window)
 			info.notClickable = 1;
 			info.notCheckable = 1;
 			UIDropDownMenu_AddButton(info, level);
+			
 		elseif level == 2 then
 			if type(UIDROPDOWNMENU_MENU_VALUE) == "table" then
 				local v = UIDROPDOWNMENU_MENU_VALUE;
@@ -1129,6 +1168,24 @@ function SIL:OpenMenu(window)
 				elseif ( v.type == "raid" ) then
 					info.func = function() SIL:Raid(true, "SAY"); end;
 				end
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+				
+				-- Spacer
+				wipe(info);
+				info.disabled = 1;
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+				
+				-- Group Score
+				wipe(info);
+				if ( v.type == "party" ) then
+					info.text = partyAverage..' / '..partySize;
+				elseif ( v.type == "raid" ) then
+					info.text = raidAverage..' / '..raidSize;
+				end
+				
+				info.notClickable = 1;
 				info.notCheckable = 1;
 				UIDropDownMenu_AddButton(info, level);
 			end

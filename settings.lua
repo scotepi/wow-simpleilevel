@@ -28,7 +28,7 @@ SIL_Options = {
 			desc = L['Help Advanced Desc'],
 			type = "toggle",
 			set = function(i,v) SIL:SetAdvanced(v); end,
-			get = function(i) return SIL_Settings['advanced']; end,
+			get = function(i) return SIL:GetAdvanced(); end,
 			order = 1,
 		},
 		autoscan = {
@@ -36,7 +36,7 @@ SIL_Options = {
 			desc = L['Help Autoscan Desc'],
 			type = "toggle",
 			set = function(i,v) SIL:SetAutoscan(v); end,
-			get = function(i) return SIL_Settings['autoscan']; end,
+			get = function(i) return SIL:GetAutoscan(); end,
 			order = 2,
 		},
 		minimap = {
@@ -44,7 +44,7 @@ SIL_Options = {
 			desc = L['Help Minimap Desc'],
 			type = "toggle",
 			set = function(i,v) SIL:SetMinimap(v); end,
-			get = function(i) return not SIL_Settings['minimap']['hide']; end,
+			get = function(i) return SIL:GetMinimap(); end,
 			order = 3,
 		},
 		
@@ -55,12 +55,33 @@ SIL_Options = {
 			min = 1,
 			softMax = 240,
 			step = 1,
-			get = function(i) return (SIL_Settings['age'] / 60); end,
-			set = function(i,v) SIL_Settings['age'] = tonumber(tonumber(v) * 60);  end,
+			get = function(i) return (SIL:GetAge() / 60); end,
+			set = function(i,v) v = tonumber(tonumber(v) * 60); SIL:SetAge(v); end,
 			order = 20,
 			width = "full",
 		},
 		
+		autoPurge = {
+			name = L['Help Purge Auto'],
+			desc = L['Help Purge Auto Desc'],
+			type = "range",
+			min = 0,
+			softMax = 30,
+			step = 1,
+			get = function(i) return (SIL:GetPurge() / 24); end,
+			set = function(i,v) SIL:SetPurge(v * 24);  end,
+			order = 21,
+			width = "full",
+		},
+		
+		purge = {
+			name = L['Help Purge'],
+			desc = L['Help Purge Desc'],
+			type = "execute",
+			func = function(i) SIL:AutoPurge(false); end,
+			confirm = true,
+			order = 49,
+		},
 		clear = {
 			name = L['Help Clear'],
 			desc = L['Help Clear Desc'],
@@ -68,23 +89,6 @@ SIL_Options = {
 			func = function(i) SIL:Reset(); end,
 			confirm = true,
 			order = 50,
-			width = "full",
-		},
-		
-		purge = {
-			name = L['Help Purge'],
-			desc = L['Help Purge Desc'],
-			type = "input",
-			validate = function(i,v) 
-				if not (tonumber(v)) then 
-					SIL:Print(L['Help Purge Error']); return L['Help Purge Error'];
-				else 
-					local count = SIL:PurgeCache(number); 
-						if not count then count = 0; end 
-					SIL:Print(SIL:Replace(L['Purge Notification'], 'num', count));
-				end; end,
-			order = 49,
-			width = "full",
 		},
 		
 		party = {
@@ -123,5 +127,20 @@ SIL_Options = {
 			guiHidden = true,
 			cmdHidden = false,
 		},
+		
+	},
+};
+
+SIL_Defaults = {
+	global = {
+		age = 1800,				-- How long till information is refreshed
+		purge = 0,				-- How often to automaticly purge
+		advanced = false,		-- Display extra information in the tooltips
+		autoscan = true,		-- Automaticly scan for changes
+		minimap = {
+			hide = false,		-- Minimap Icon
+		},
+		version = 1,			-- Version for future referance
+		versionMinor = 1,
 	},
 };
