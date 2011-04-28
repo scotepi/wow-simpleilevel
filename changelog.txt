@@ -1,6 +1,4 @@
-* Added automatic purging of old items when you log in
-* Added party and raid score to the drop down so it doesn't need to be run to get a rough idea
-* Moved settings over to AceDB, do I love Ace to much?
+* Fixed minimap menu while in combat
 
 ===== 2.0 =====
 * Moved over to Ace3, sorry but this addon was getting to big to not use libs
@@ -25,6 +23,9 @@
 * Fixed /sil target
 * Fixed upgrade function
 * Updated TOC
+* Added automatic purging of old items when you log in
+* Added party and raid score to the drop down so it doesn't need to be run to get a rough idea
+* Moved settings over to AceDB, do I love Ace to much?
 
 ===== To-Do =====
 * Reporting of party/raid to tell

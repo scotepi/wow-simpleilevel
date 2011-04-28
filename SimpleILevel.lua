@@ -10,8 +10,8 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 15;
-	self.version = '2.0.15b';
+	self.versionMinor = 16;
+	self.version = '2.0.16b';
 	SIL_Version = self.version;
 	
 	-- Load the DB
@@ -267,13 +267,18 @@ end
 function SIL:FormatScore(score, items, color)
 	if ( type(color) == "nil" ) then color = true; end
 	
-	local hexColor = self:ColorScore(score, items);
-	local score = self:Round(score, 1);
-	
-	if ( color ) then
-		return '|cFF'..hexColor..score..'|r';
+	if ( tonumber(score) ) then
+		local score = tonumber(score);
+		local hexColor = self:ColorScore(score, items);
+		local score = self:Round(score, 1);
+		
+		if ( color ) then
+			return '|cFF'..hexColor..score..'|r';
+		else
+			return score;
+		end
 	else
-		return score;
+		return 'xx';
 	end
 end
 
