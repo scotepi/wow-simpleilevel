@@ -1,5 +1,5 @@
 -- Default localization - enUS
-local L = LibStub("AceLocale-3.0"):NewLocale("SimpleILevel", "enUS", true)
+local L = LibStub("AceLocale-3.0"):NewLocale("SimpleILevel", "enUS", true);
 
 if ( L ) then
 L["Addon Description"] = "Adds the Average iLevel (AiL) to the tool tip of other players"

@@ -1,4 +1,8 @@
 * Fixed minimap menu while in combat
+* Fixed autoscan, forgot to add the event function ><
+* Disabled party and raid while in combat
+* Disabled minimap menu while in combat
+* Think I fixed translations
 
 ===== 2.0 =====
 * Moved over to Ace3, sorry but this addon was getting to big to not use libs
