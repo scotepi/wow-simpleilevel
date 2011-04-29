@@ -1,7 +1,6 @@
 -- Default localization - enUS
 local L = LibStub("AceLocale-3.0"):NewLocale("SimpleILevel", "enUS", true);
 
-if ( L ) then
 L["Addon Description"] = "Adds the Average iLevel (AiL) to the tool tip of other players"
 L["Addon Name"] = "Simple iLevel"
 L["Addon Short Name"] = "SiL"
@@ -59,4 +58,3 @@ L["Tool Tip Advanced"] = "%localizedAge old"
 L["Tool Tip Left"] = "Average iLevel:"
 L["Tool Tip Right"] = "%score"
 L["Your Score"] = "Your AiL is %score"
-end
