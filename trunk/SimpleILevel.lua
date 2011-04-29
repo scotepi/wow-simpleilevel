@@ -10,8 +10,8 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 17;
-	self.version = '2.0.17a';
+	self.versionMinor = 18;
+	self.version = '2.0.18rc2';
 	SIL_Version = self.version;
 	
 	-- Load the DB
@@ -1075,7 +1075,7 @@ function SIL:OpenMenu(window)
 				if ( UnitInRaid("player") ) then
 					-- Raid
 					wipe(info);
-					info.text = L["Help Party"]..' '..raidAverage;
+					info.text = L["Help Raid"]..' '..raidAverage;
 					info.notCheckable = 1;
 					info.hasArrow = 1;
 					info.value = { title = L["Help Raid"], type = "raid", };
