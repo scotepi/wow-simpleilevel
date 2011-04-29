@@ -10,8 +10,8 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 16;
-	self.version = '2.0.16rc1';
+	self.versionMinor = 17;
+	self.version = '2.0.17rc2';
 	SIL_Version = self.version;
 	
 	-- Load the DB
@@ -73,6 +73,16 @@ end
 
 function SIL:UPDATE_MOUSEOVER_UNIT()
 	self:ShowTooltip();
+end
+
+function SIL:UNIT_PORTRAIT_UPDATE(e, unitID)
+	
+	-- Don't do anything in combat
+	if ( InCombatLockdown() ) then return end
+	
+	if ( unitID ) and ( CanInspect(unitID) ) then
+		self:StartScore(unitID, true, false);
+	end
 end
 
 -- Reset the settings
@@ -478,6 +488,10 @@ function SIL:AgeToText(age, color)
 end
 
 function SIL:Party(output, dest, to)
+
+	-- Don't do anything in combat
+	if ( InCombatLockdown() ) then return end
+	
 	if not ( dest ) then dest = "print"; end
 	
 	if ( GetNumPartyMembers() > 0 ) then
@@ -613,6 +627,10 @@ function SIL:Party(output, dest, to)
 end
 
 function SIL:Raid(output, dest, to)
+	
+	-- Don't do anything in combat
+	if ( InCombatLockdown() ) then return end
+	
 	if not ( dest ) then dest = "print"; end
 	local raid = {};
 	
@@ -922,7 +940,7 @@ end
 
 function SIL:Autoscan(toggle)
 	if ( toggle ) then
-		self:RegisterEvent("UNIT_PORTRAIT_UPDATE", "PLAYER_TARGET_CHANGED");
+		self:RegisterEvent("UNIT_PORTRAIT_UPDATE");
 	else 
 		self:UnregisterEvent("UNIT_PORTRAIT_UPDATE");
 	end
@@ -998,11 +1016,16 @@ end
 	-- AutoScan 
 	-- ----
 	-- My Score
-function SIL:OpenMenu(window) 
+function SIL:OpenMenu(window)
+	
+	-- Don't do anything in combat
+	if ( InCombatLockdown() ) then return end
+	
 	if not self.silmenu then
 		self.silmenu = CreateFrame("Frame", "SILMenu")
 	end
 	local menu = self.silmenu
+	
 	
 	-- Get the score started for the menu
 	SIL:StartScore('player', true, false);
