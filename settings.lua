@@ -127,6 +127,15 @@ SIL_Options = {
 			guiHidden = true,
 			cmdHidden = false,
 		},
+		options = {
+			name = L['Help Options'],
+			desc = L['Help Options Desc'],
+			type = "input",
+			set = function(i) SIL:ShowOptions(); end,
+			hidden = true,
+			guiHidden = true,
+			cmdHidden = false,
+		},
 		
 	},
 };

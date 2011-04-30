@@ -1,39 +1,23 @@
-* Fixed raid menu option
-
-
 ===== 2.0 =====
-* Moved over to Ace3, sorry but this addon was getting to big to not use libs
--- This also means it is a class layout and should be much esier to introduce LDB and UI's
-* Added a options UI, <3 AceConfig
-* Removed DOM from all files, now its ANSI as UTF-8 (PHP taught me DOM's are bad! doh!)
+* Updated TOC to 4.1
+* Moved the addon over to Ace3 for just about everything
+* Added a options UI for configuration
+* Added minimap button for quick access to some new options
+-- Live-ish updating of party/raid scores if Autoscan is enabled
+-- Reporting of party/raid AiL to Party, Raid, Guild and Say
+* Fixed file encoding again, removed DOM from localization files
 * Moved T11 down 1 iLevel to 278
-* Added placeholder for T11 color, purple, 378-391
+* Added placeholder for T12 color, purple, 378-391
 * Added zhCN translation thanks zhTW?!?
-* Also included a no-lib version that doesn't include Ace3 however it is still required
 * Tool Tips now show in combat however inspecting/refreshing will not happen in combat
-* Added LibDB and LibDBIcon, we have a minimap icon!
-* Cleaned up options ui
-* Cleaned up the code some
-* Removed no-lib version until i figure it out
-* Fixed loading version
-* Party and Raid won't show in the menu if you aren't in one
-* Added broadcasting to System, Party, Raid, Guild and Say
-* Minimap now saves position
-* Fixed old records printing to Party, Raid, Guild and Say
-* Fixed /sil get <name>
-* Fixed /sil target
-* Fixed upgrade function
-* Updated TOC
-* Added automatic purging of old items when you log in
-* Added party and raid score to the drop down so it doesn't need to be run to get a rough idea
-* Moved settings over to AceDB, do I love Ace to much?
-* Fixed minimap menu while in combat
-* Fixed autoscan, forgot to add the event function ><
-* Disabled party and raid while in combat
-* Disabled minimap menu while in combat
-* Think I fixed translations
+* Added automatic purging of old items when you log in, UI allows setting by Day
+-- If you want to set it for a value less then a day "/run SIL:PurgeCache(hours);"
+* Added and updated some slash commands, see the addon desciption
+* Addon name should now be localized everywhere
 
 ===== To-Do =====
 * Reporting of party/raid to tell
+-- http://www.wowpedia.org/Creating_simple_pop-up_dialog_boxes
 * UI for showing party/raid/cache
 * no-lib option
+* Use LDB to show current AiL of you/party/raid

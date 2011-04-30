@@ -1,17 +1,17 @@
-SIL = LibStub("AceAddon-3.0"):NewAddon("SimpleILevel", "AceEvent-3.0", "AceConsole-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
+SIL = LibStub("AceAddon-3.0"):NewAddon(L['Addon Name'], "AceEvent-3.0", "AceConsole-3.0")
 SIL_AC = LibStub:GetLibrary("AceConfig-3.0");
 SIL_ACD = LibStub:GetLibrary("AceConfigDialog-3.0");
 SIL_LDB = LibStub:GetLibrary("LibDataBroker-1.1");
 SIL_LDBIcon = SIL_LDB and LibStub("LibDBIcon-1.0");
-SIL_Version = '2.0';
+SIL_Version = '2.0.20';
 
 function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 18;
-	self.version = '2.0.18rc2';
+	self.versionMinor = 20;
+	self.version = '2.0.20';
 	SIL_Version = self.version;
 	
 	-- Load the DB
@@ -25,7 +25,7 @@ function SIL:OnInitialize()
 	end
 	
 	-- Start LDB
-	self.ldb = SIL_LDB:NewDataObject("SimpleILevel", {
+	self.ldb = SIL_LDB:NewDataObject(L['Addon Name'], {
 		type = "launcher",
 		icon = "Interface\\Icons\\inv_misc_armorkit_24",
 		OnClick = function(f,b)
@@ -37,12 +37,12 @@ function SIL:OnInitialize()
 		});
 	
 	-- Start the minimap icon
-	SIL_LDBIcon:Register("SimpleILevel", self.ldb, self.db.global.minimap);
+	SIL_LDBIcon:Register(L['Addon Name'], self.ldb, self.db.global.minimap);
 	
 	-- Register Options
 	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self.db.global.purge / 24);
-	SIL_AC:RegisterOptionsTable("SimpleILevel", SIL_Options, {"sil", "silev", "simpleilevel"});
-	SIL_ACD:AddToBlizOptions("SimpleILevel");
+	SIL_AC:RegisterOptionsTable(L['Addon Name'], SIL_Options, {"sil", "silev", "simpleilevel"});
+	SIL_ACD:AddToBlizOptions(L['Addon Name']);
 	
 	-- Tell the player we have been loaded
 	self:Print(self:Replace(L['Loading Addon'], 'version', self.version));
@@ -902,10 +902,10 @@ end
 function SIL:ToggleMinimap()
 	if ( self.db.global.minimap.hide ) then
 		self.db.global.minimap.hide = false;
-		SIL_LDBIcon:Show("SimpleILevel");
+		SIL_LDBIcon:Show(L['Addon Name']);
 	else
 		self.db.global.minimap.hide = true;
-		SIL_LDBIcon:Hide("SimpleILevel");
+		SIL_LDBIcon:Hide(L['Addon Name']);
 	end
 end
 
@@ -927,9 +927,9 @@ function SIL:SetMinimap(v)
 	end
 	
 	if ( self.db.global.minimap.hide ) then
-		SIL_LDBIcon:Hide("SimpleILevel");
+		SIL_LDBIcon:Hide(L['Addon Name']);
 	else
-		SIL_LDBIcon:Show("SimpleILevel");
+		SIL_LDBIcon:Show(L['Addon Name']);
 	end
 end
 
@@ -995,7 +995,7 @@ end
 
 -- Open the options window
 function SIL:ShowOptions()
-	SIL_ACD:Open("SimpleILevel");
+	SIL_ACD:Open(L['Addon Name']);
 end
 
 -- From Skada
