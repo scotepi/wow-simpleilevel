@@ -1,3 +1,6 @@
+* Added a spacer between System and Party output in Minimap submenu
+* Fixed a possible error with auto perging
+
 ===== 2.0 =====
 * Updated TOC to 4.1
 * Moved the addon over to Ace3 for just about everything
