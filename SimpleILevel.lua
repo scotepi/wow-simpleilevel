@@ -4,14 +4,14 @@ SIL_AC = LibStub:GetLibrary("AceConfig-3.0");
 SIL_ACD = LibStub:GetLibrary("AceConfigDialog-3.0");
 SIL_LDB = LibStub:GetLibrary("LibDataBroker-1.1");
 SIL_LDBIcon = SIL_LDB and LibStub("LibDBIcon-1.0");
-SIL_Version = '2.0.20';
+SIL_Version = '2.0.21';
 
 function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.0;
-	self.versionMinor = 20;
-	self.version = '2.0.20';
+	self.versionMinor = 21;
+	self.version = '2.0.21';
 	SIL_Version = self.version;
 	
 	-- Load the DB
@@ -117,7 +117,7 @@ function SIL:PurgeCache(hours)
 		local count = 0;
 		
 		for guid,info in pairs(SIL_CacheGUID) do
-			if ( info['time'] < maxAge ) then
+			if ( type(info['time']) == "number" ) and( info['time'] < maxAge ) then
 				SIL_CacheGUID[guid] = nil;
 				count = 1 + count;
 			end
@@ -1148,6 +1148,12 @@ function SIL:OpenMenu(window)
 				elseif ( v.type == "raid" ) then
 					info.func = function() SIL:Raid(true, "print"); end;
 				end
+				info.notCheckable = 1;
+				UIDropDownMenu_AddButton(info, level);
+				
+				-- Spacer
+				wipe(info);
+				info.disabled = 1;
 				info.notCheckable = 1;
 				UIDropDownMenu_AddButton(info, level);
 				
