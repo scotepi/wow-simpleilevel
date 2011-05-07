@@ -1,7 +1,15 @@
-* Added a spacer between System and Party output in Minimap submenu
-* Fixed a possible error with auto perging
+===== 2.1 =====
+* Changed LDB Type, this means that it may not show up on some display addons however it may show up on some new ones, you can revert by typing /sil ldbText
+* Added text to LDB for your score, party score and raid score, you can remove the label by typing /sil ldbLabel
+* Removed party menu while in raid, changed over to group menu instead /sil group or /sil group <say,party,raid,battleground,guild,officer> to report to said channel
+* Colored class names in System Output
+* Almost finished Russian localization, thanks Xargasus
 
-===== 2.0 =====
+===== 2.0.21 =====
+* Added a spacer between System and Party output in Minimap sub menu
+* Fixed a possible error with auto purging
+
+===== 2.0.20 =====
 * Updated TOC to 4.1
 * Moved the addon over to Ace3 for just about everything
 * Added a options UI for configuration
