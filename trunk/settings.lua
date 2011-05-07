@@ -12,7 +12,7 @@ SIL_Colors = {
 	[333] = 	{['r']=0,	['g']=204,	['b']=0,	['p']=200,},
 	-- Blue for heroic t11 final gear
 	[378] = 	{['r']=0,	['g']=102,	['b']=204,	['p']=333,},
-	-- Purple for t11 on
+	-- Purple for t12
 	[390] = 	{['r']=163,	['g']=23,	['b']=238,	['p']=378,},
 	-- Red for a max score
 	[1000] = 	{['r']=255,	['g']=0,	['b']=0,	['p']=390},
@@ -23,56 +23,105 @@ SIL_Options = {
 	name = L['Help Options'],
 	type = "group",
 	args = {
-		advanced = {
-			name = L['Help Advanced'],
-			desc = L['Help Advanced Desc'],
-			type = "toggle",
-			set = function(i,v) SIL:SetAdvanced(v); end,
-			get = function(i) return SIL:GetAdvanced(); end,
+		general = {
+			name = L['Help General'],
+			type = "group",
+			inline = true,
 			order = 1,
+			args = {
+					advanced = {
+					name = L['Help Advanced'],
+					desc = L['Help Advanced Desc'],
+					type = "toggle",
+					set = function(i,v) SIL:SetAdvanced(v); end,
+					get = function(i) return SIL:GetAdvanced(); end,
+					order = 1,
+				},
+				autoscan = {
+					name = L['Help Autoscan'],
+					desc = L['Help Autoscan Desc'],
+					type = "toggle",
+					set = function(i,v) SIL:SetAutoscan(v); end,
+					get = function(i) return SIL:GetAutoscan(); end,
+					order = 2,
+				},
+				minimap = {
+					name = L['Help Minimap'],
+					desc = L['Help Minimap Desc'],
+					type = "toggle",
+					set = function(i,v) SIL:SetMinimap(v); end,
+					get = function(i) return SIL:GetMinimap(); end,
+					order = 3,
+				},
+				age = {
+					name = L['Help Age'],
+					desc = L['Help Age Desc'],
+					type = "range",
+					min = 1,
+					softMax = 240,
+					step = 1,
+					get = function(i) return (SIL:GetAge() / 60); end,
+					set = function(i,v) v = tonumber(tonumber(v) * 60); SIL:SetAge(v); end,
+					order = 20,
+					width = "full",
+				},
+				
+				autoPurge = {
+					name = L['Help Purge Auto'],
+					desc = L['Help Purge Auto Desc'],
+					type = "range",
+					min = 0,
+					softMax = 30,
+					step = 1,
+					get = function(i) return (SIL:GetPurge() / 24); end,
+					set = function(i,v) SIL:SetPurge(v * 24);  end,
+					order = 21,
+					width = "full",
+				},
+			},
 		},
-		autoscan = {
-			name = L['Help Autoscan'],
-			desc = L['Help Autoscan Desc'],
-			type = "toggle",
-			set = function(i,v) SIL:SetAutoscan(v); end,
-			get = function(i) return SIL:GetAutoscan(); end,
+		
+		
+		ldbOpt = {
+			name = L['Help LDB'],
+			type = "group",
+			inline = true,
 			order = 2,
-		},
-		minimap = {
-			name = L['Help Minimap'],
-			desc = L['Help Minimap Desc'],
-			type = "toggle",
-			set = function(i,v) SIL:SetMinimap(v); end,
-			get = function(i) return SIL:GetMinimap(); end,
-			order = 3,
+			args = {
+				ldbText = {
+					name = L['Help LDB Text'],
+					desc = L['Help LDB Text Desc'],
+					type = "toggle",
+					get = function(i) return SIL:GetLDB(); end,
+					set = function(i,v) SIL:SetLDB(v); end,
+					order = 1,
+				},
+				ldbLabel = {
+					name = L['Help LDB Source'],
+					desc = L['Help LDB Source Desc'],
+					type = "toggle",
+					get = function(i) return SIL:GetLDBlabel(); end,
+					set = function(i,v) SIL:SetLDBlabel(v); end,
+					order = 2,
+				},
+				ldbRefresh = {
+					name = L['Help LDB Refresh'],
+					desc = L['Help LDB Refresh Desc'],
+					type = "range",
+					min = 1,
+					softMax = 300,
+					step = 1,
+					get = function(i) return SIL:GetLDBrefresh(); end,
+					set = function(i,v) SIL:SetLDBrefresh(v); end,
+					order = 20,
+					width = "full",
+				},
+			},
 		},
 		
-		age = {
-			name = L['Help Age'],
-			desc = L['Help Age Desc'],
-			type = "range",
-			min = 1,
-			softMax = 240,
-			step = 1,
-			get = function(i) return (SIL:GetAge() / 60); end,
-			set = function(i,v) v = tonumber(tonumber(v) * 60); SIL:SetAge(v); end,
-			order = 20,
-			width = "full",
-		},
 		
-		autoPurge = {
-			name = L['Help Purge Auto'],
-			desc = L['Help Purge Auto Desc'],
-			type = "range",
-			min = 0,
-			softMax = 30,
-			step = 1,
-			get = function(i) return (SIL:GetPurge() / 24); end,
-			set = function(i,v) SIL:SetPurge(v * 24);  end,
-			order = 21,
-			width = "full",
-		},
+		
+		
 		
 		purge = {
 			name = L['Help Purge'],
@@ -91,24 +140,33 @@ SIL_Options = {
 			order = 50,
 		},
 		
+		-- Console Only
 		party = {
-			name = L['Help Party'],
-			desc = L['Help Party Desc'],
-			type = "execute",
+			name = L['Help Group'],
+			desc = L['Help Group Desc'],
+			type = "input",
 			hidden = true,
-			guiHidden = true,
-			func = function(i) SIL:Party(true); end
+			set = function(i,v) SIL:GroupOutput(v); end,
+			get = function() return ''; end,
 		},
 		raid = {
-			name = L['Help Raid'],
-			desc = L['Help Raid Desc'],
-			type = "execute",
+			name = L['Help Group'],
+			desc = L['Help Group Desc'],
+			type = "input",
+			hidden = true,
+			set = function(i,v) SIL:GroupOutput(v); end,
+			get = function() return ''; end,
+		},
+		group = {
+			name = L['Help Group'],
+			desc = L['Help Group Desc'],
+			type = "input",
 			hidden = true,
 			guiHidden = true,
-			func = function(i) SIL:Raid(true); end
+			cmdHidden = false,
+			set = function(i,v) SIL:GroupOutput(v); end,
+			get = function() return ''; end,
 		},
-		
-		-- Console Only
 		get = {
 			name = L['Help Get'],
 			desc = L['Help Get Desc'],
@@ -151,5 +209,8 @@ SIL_Defaults = {
 		},
 		version = 1,			-- Version for future referance
 		versionMinor = 1,
+		ldbText = true,			-- LDB Text
+		ldbLabel = true,		-- LDB Label
+		ldbRefresh = 30,		-- LDB Refresh Rate
 	},
 };
