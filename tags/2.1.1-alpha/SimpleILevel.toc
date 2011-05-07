@@ -1,0 +1,18 @@
+## Interface: 40100
+
+## Title: SimpleiLevel
+## Notes: Adds the Average iLevel (AiL) to the tool tip of other players
+
+## Title-zhTW: 簡易物品等級
+## Notes-zhTW: 提示欄顯示其他玩家的平均物品等級
+## Title-zhCN: 简易物品等级
+## Notes-zhCN: 提示栏显示其它玩家的平均物品等级
+
+## Author: Scotepi
+## Version: 2.1.1b
+## SavedVariables: SIL_Settings, SIL_CacheGUID
+
+## X-Category: Information
+
+embeds.xml
+SimpleILevel.xml
