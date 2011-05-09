@@ -11,7 +11,7 @@
 ## Notes-ruRU: очистить все настройки и кэш
 
 ## Author: Scotepi
-## Version: 2.1.2a
+## Version: 2.1.3a
 ## SavedVariables: SIL_Settings, SIL_CacheGUID
 
 ## X-Category: Information

@@ -17,7 +17,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 2;
+	self.versionMinor = 3;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
@@ -1219,7 +1219,10 @@ function SIL:GroupOutput(dest, to)
 	
 	-- Find out if its a valid dest
 	for fixed,loc in pairs(SIL_Channels) do
-		if ( string.upper(dest) == string.upper(loc) ) then
+		if ( dest == string.upper(loc) ) then
+			dest = fixed;
+			valid = true;
+		elseif ( dest == string.upper(fixed) ) then
 			dest = fixed;
 			valid = true;
 		end
