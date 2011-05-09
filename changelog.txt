@@ -4,6 +4,7 @@
 * Removed party menu while in raid, changed over to group menu instead /sil group or /sil group <say,party,raid,battleground,guild,officer> to report to said channel
 * Colored class names in System Output
 * Almost finished Russian localization, thanks Xargasus
+* Group output <chat type> should be localized, /sil group <chat type>
 
 ===== 2.0.21 =====
 * Added a spacer between System and Party output in Minimap sub menu
