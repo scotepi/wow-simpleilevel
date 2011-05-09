@@ -17,7 +17,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 1;
+	self.versionMinor = 2;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
@@ -139,13 +139,13 @@ function SIL:AutoPurge(silent)
 		local count = SIL:PurgeCache(self.db.global.purge);
 		
 		if not ( silent ) then
-			SIL:Print(SIL:Replace(L['Purge Notification'], 'num', count));
+			self:Print(self:Replace(L['Purge Notification'], 'num', count));
 		end
 		
 		return count;
 	else
 		if not ( silent ) then
-			SIL:Print(L['Purge Notification False']);
+			self:Print(L['Purge Notification False']);
 		end
 		
 		return false;
@@ -1203,21 +1203,30 @@ end
 
 function SIL:GroupOutput(dest, to)	
 	local groupAvg, groupSize, group, groupMin, groupMax = self:GroupScore(true);
+	local valid = false;
 	
-	if not ( dest ) then dest = "SYSTEM"; end
-	if ( dest == '' ) then dest = "SYSTEM"; end
+	if not ( dest ) then dest = "SYSTEM"; valid = true; end
+	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
 	dest = string.upper(dest);
 	
 	-- Some short codes
-	if ( dest == 'P' ) then dest = 'PARTY' end
-	if ( dest == 'R' ) then dest = 'RAID' end
-	if ( dest == 'BG' ) then dest = 'BATTLEGROUND' end
-	if ( dest == 'G' ) then dest = 'GUILD' end
-	if ( dest == 'O' ) then dest = 'OFFICER' end
-	if ( dest == 'S' ) then dest = 'SAY' end
+	if ( dest == 'P' ) then dest = 'PARTY'; valid = true; end
+	if ( dest == 'R' ) then dest = 'RAID' valid = true; end
+	if ( dest == 'BG' ) then dest = 'BATTLEGROUND' valid = true; end
+	if ( dest == 'G' ) then dest = 'GUILD' valid = true; end
+	if ( dest == 'O' ) then dest = 'OFFICER' valid = true; end
+	if ( dest == 'S' ) then dest = 'SAY' valid = true; end
+	
+	-- Find out if its a valid dest
+	for fixed,loc in pairs(SIL_Channels) do
+		if ( string.upper(dest) == string.upper(loc) ) then
+			dest = fixed;
+			valid = true;
+		end
+	end
 	
 	-- Default to system
-	if not (( dest == 'SYSTEM' ) or ( dest == 'PARTY' ) or ( dest == 'RAID' ) or ( dest == 'GUILD' ) or ( dest == 'SAY' ) or ( dest == 'BATTLEGROUND' ) or ( dest == 'OFFICER' )) then
+	if not ( valid ) then
 		dest = "SYSTEM";
 	end
 	
@@ -1238,11 +1247,11 @@ function SIL:GroupOutput(dest, to)
 	-- Loop everyone
 	for i,info in pairs(group) do
 		local name = info.name;
-		local str = L['Group Member Score'];
+		local str = "%name (%score)";
 		local score = 0;
 		local items = 0;
 		
-		if ( info.items and info.total ) then
+		if ( info.score ) then
 			items = info.items;
 			score = info.score;
 		else 
