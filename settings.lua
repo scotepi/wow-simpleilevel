@@ -21,18 +21,20 @@ SIL_Colors = {
 -- Suported channel localization table
 SIL_Channels = {};
 SIL_Channels['SYSTEM'] = string.lower(CHAT_MSG_SYSTEM);
+SIL_Channels['GROUP'] = string.lower(GROUP);
 SIL_Channels['PARTY'] = string.lower(CHAT_MSG_PARTY);
 SIL_Channels['RAID'] = string.lower(CHAT_MSG_RAID);
 SIL_Channels['GUILD'] = string.lower(CHAT_MSG_GUILD);
 SIL_Channels['SAY'] = string.lower(CHAT_MSG_SAY);
 SIL_Channels['BATTLEGROUND'] = string.lower(CHAT_MSG_BATTLEGROUND);
 SIL_Channels['OFFICER'] = string.lower(CHAT_MSG_OFFICER);
-SIL_ChannelsString = string.lower(CHAT_MSG_SYSTEM..','..CHAT_MSG_PARTY..','..CHAT_MSG_RAID..','..CHAT_MSG_GUILD..','..CHAT_MSG_SAY..','..CHAT_MSG_BATTLEGROUND..','..CHAT_MSG_OFFICER);
+SIL_ChannelsString = string.lower(CHAT_MSG_SYSTEM..','..GROUP..','..CHAT_MSG_PARTY..','..CHAT_MSG_RAID..','..CHAT_MSG_GUILD..','..CHAT_MSG_SAY..','..CHAT_MSG_BATTLEGROUND..','..CHAT_MSG_OFFICER);
 L['Help Group Desc'] = string.gsub(L['Help Group Desc'], '%%local', SIL_ChannelsString);
 
 -- Options for AceOptions
 SIL_Options = {
 	name = L['Help Options'],
+	desc = L['Addon Description'],
 	type = "group",
 	args = {
 		general = {
