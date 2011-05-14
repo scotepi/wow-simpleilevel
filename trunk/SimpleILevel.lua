@@ -17,7 +17,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 3;
+	self.versionMinor = 4;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
@@ -1214,6 +1214,7 @@ function SIL:GroupOutput(dest, to)
 	if ( dest == 'R' ) then dest = 'RAID' valid = true; end
 	if ( dest == 'BG' ) then dest = 'BATTLEGROUND' valid = true; end
 	if ( dest == 'G' ) then dest = 'GUILD' valid = true; end
+	if ( dest == 'U' ) then dest = 'GROUP' valid = true; end
 	if ( dest == 'O' ) then dest = 'OFFICER' valid = true; end
 	if ( dest == 'S' ) then dest = 'SAY' valid = true; end
 	
@@ -1231,6 +1232,17 @@ function SIL:GroupOutput(dest, to)
 	-- Default to system
 	if not ( valid ) then
 		dest = "SYSTEM";
+	end
+	
+	-- Figure out GROUP
+	if ( dest == 'GROUP' ) then
+		if ( UnitInRaid("player") ) then
+			dest = 'RAID';
+		elseif ( GetNumPartyMembers() > 0 ) then
+			dest = 'PARTY';
+		else
+			dest = 'SAY';
+		end
 	end
 	
 	-- Output the header
@@ -1254,7 +1266,7 @@ function SIL:GroupOutput(dest, to)
 		local score = 0;
 		local items = 0;
 		
-		if ( info.score ) then
+		if ( info.score ) and ( info.score > 0 ) then
 			items = info.items;
 			score = info.score;
 		else 
