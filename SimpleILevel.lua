@@ -8,6 +8,11 @@ SIL_Version = GetAddOnMetadata("SimpleILevel", "Version");
 
 function SIL:OnInitialize()
 	
+	-- Make sure we can cache
+	if not ( type(SIL_CacheGUID) == 'table' ) then
+		SIL_CacheGUID = {};
+	end
+	
 	-- Pull in some meta data
 	self.version = GetAddOnMetadata("SimpleILevel", "Version");
 	self.category = GetAddOnMetadata("SimpleILevel", "X-Category");
@@ -17,18 +22,13 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 4;
+	self.versionMinor = 5;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
 	self:Update();
 	self.db.global.version = self.versionMajor;
 	self.db.global.versionMinor = self.versionMinor;
-	
-	-- Make sure we can cache
-	if not ( type(SIL_CacheGUID) == 'table' ) then
-		SIL_CacheGUID = {};
-	end
 	
 	local ldbObj = {
 		type = "data source",
@@ -319,7 +319,7 @@ function SIL:SetScore(items, total, guid)
 end
 
 -- Get a relative iLevel on Heirlooms
-function SIL:Heirloom(level)
+function SIL:Heirloom(level, itemLink)
 	--[[
 		Here is how I came to the level 81-85 bracket
 		200 = level of 80 instance gear
@@ -328,6 +328,19 @@ function SIL:Heirloom(level)
 		so then that means
 		85 - 80 = 5 * 26.6 = 133 + 200 = 333
 	]]
+	
+	-- We only care if they are above 80
+	if ( level > 80 ) then
+		local _, _, Color, Ltype, itemId, Enchant, Gem1, Gem2, Gem3, Gem4, Suffix, Unique, LinkLvl, reforging, Name = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?");
+		itemId = tonumber(itemId);
+		
+		-- Downgrade it to 80 if found
+		for k,eid in pairs(SIL_Heirlooms[80]) do
+			if ( eid == itemId ) then
+				level = 80;
+			end
+		end
+	end
 	
 	if ( level > 80 ) then
 		return (( level - 80 ) * 26.6) + 200;
@@ -646,7 +659,7 @@ function SIL:ProcessInspect(guid, tooltip)
 								
 								-- special processing for Heirlooms
 								if ( itemRarity == 7 ) then
-									itemLevel = self:Heirloom(UnitLevel(target));
+									itemLevel = self:Heirloom(UnitLevel(target), itemLink);
 								end
 								
 								totalItems = totalItems + 1;

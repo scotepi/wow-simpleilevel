@@ -6,6 +6,9 @@
 * Almost finished Russian localization, thanks Xargasus
 * Group output <chat type> should be localized, /sil group <chat type>
 
+* Heirlooms now max out properly. If it maxes at 80 will be a ilevel 200 on a level 81.
+* Fixed a initialization order error
+
 ===== 2.0.21 =====
 * Added a spacer between System and Party output in Minimap sub menu
 * Fixed a possible error with auto purging
