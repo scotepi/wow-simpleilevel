@@ -28,7 +28,7 @@ SIL_Channels['GUILD'] = string.lower(CHAT_MSG_GUILD);
 SIL_Channels['SAY'] = string.lower(CHAT_MSG_SAY);
 SIL_Channels['BATTLEGROUND'] = string.lower(CHAT_MSG_BATTLEGROUND);
 SIL_Channels['OFFICER'] = string.lower(CHAT_MSG_OFFICER);
-SIL_ChannelsString = string.lower(CHAT_MSG_SYSTEM..','..GROUP..','..CHAT_MSG_PARTY..','..CHAT_MSG_RAID..','..CHAT_MSG_GUILD..','..CHAT_MSG_SAY..','..CHAT_MSG_BATTLEGROUND..','..CHAT_MSG_OFFICER);
+SIL_ChannelsString = 'system,group,party,raid,guild,say,battleground,officer';
 L['Help Group Desc'] = string.gsub(L['Help Group Desc'], '%%local', SIL_ChannelsString);
 
 -- Options for AceOptions

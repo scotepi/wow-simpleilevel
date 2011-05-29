@@ -22,7 +22,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 5;
+	self.versionMinor = 7;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
@@ -607,6 +607,9 @@ function SIL:StartScore(target, refresh, tooltip)
 			SIL_CacheGUID[guid]['tooltip'] = tooltip;
 			
 			-- Start the inspect
+			if ( InspectFrame ) then
+				InspectFrame.unit = target; -- I think this will fix GetGuildInfo() errors
+			end
 			NotifyInspect(target);
 			
 			-- Pass 1 and 2nd pass will be after the event fires
@@ -924,24 +927,13 @@ function SIL:OpenMenu(window)
 			info.notCheckable = 1;
 			UIDropDownMenu_AddButton(info, level);
 			
+			-- Some sort of group
 			if ( GetNumPartyMembers() > 0 ) then
-			
 				wipe(info);
 				info.notCheckable = 1;
 				info.hasArrow = 1;
-				info.func = function() SIL:GroupOutput("SYSTEM"); end;
-				
-				
-				-- Party
 				info.text = L["Help Group"]..' '..groupScore;
-				info.value = { title = L["Help Group"], type = "party", };
-				
-				-- Raid
-				if ( UnitInRaid("player") ) then
-					info.text = L["Help Group"]..' '..groupScore;
-					info.value = { title = L["Help Group"], type = "raid", };
-				end
-				
+				info.value = {};
 				UIDropDownMenu_AddButton(info, level);
 				
 				-- Spacer
@@ -1006,7 +998,7 @@ function SIL:OpenMenu(window)
 				wipe(info)
 		        info.isTitle = 1;
 				info.notCheckable = 1;
-		        info.text = v.title;
+		        info.text = L["Help Group"];
 		        UIDropDownMenu_AddButton(info, level);
 				
 				-- Console - CHAT_MSG_SYSTEM 
@@ -1038,6 +1030,15 @@ function SIL:OpenMenu(window)
 					UIDropDownMenu_AddButton(info, level);
 				end
 				
+				-- BG - CHAT_MSG_RAID 
+				if ( UnitInBattleground("player") ) then
+					wipe(info);
+					info.text = CHAT_MSG_BATTLEGROUND;
+					info.func = function() SIL:GroupOutput("BG"); end;
+					info.notCheckable = 1;
+					UIDropDownMenu_AddButton(info, level);
+				end
+				
 				-- Guild - CHAT_MSG_GUILD 
 				if ( IsInGuild() ) then
 					wipe(info);
@@ -1045,6 +1046,15 @@ function SIL:OpenMenu(window)
 					info.func = function() SIL:GroupOutput("GUILD"); end;
 					info.notCheckable = 1;
 					UIDropDownMenu_AddButton(info, level);
+					
+					-- Officer - CHAT_MSG_OFFICER
+					if ( SIL:CanOfficerChat() ) then
+						wipe(info);
+						info.text = CHAT_MSG_OFFICER;
+						info.func = function() SIL:GroupOutput("OFFICER"); end;
+						info.notCheckable = 1;
+						UIDropDownMenu_AddButton(info, level);
+					end
 				end
 				
 				-- Say - CHAT_MSG_SAY
@@ -1080,7 +1090,9 @@ function SIL:UpdateLDB(force)
 	if ( self.db.global.ldbText ) then
 		local label = '';
 		
-		if ( UnitInRaid("player") ) then
+		if ( UnitInBattleground("player") ) then
+			label = CHAT_MSG_BATTLEGROUND;
+		elseif ( UnitInRaid("player") ) then
 			label = CHAT_MSG_RAID;
 		elseif ( GetNumPartyMembers() > 0 ) then
 			label = CHAT_MSG_PARTY;
@@ -1094,19 +1106,22 @@ function SIL:UpdateLDB(force)
 		
 			local score = SIL:GroupScore(false);
 			
-			if ( tonumber(score) ) then
+			if ( tonumber(score) ) and ( tonumber(score) > 0 ) then
 				text = self:FormatScore(score);
 				
-				-- print("Updating LDB:", label, text);
 				-- Log it
 				self.ldbUpdated = time();
 				self.ldbLable = label;
+				
+			---	print('LDB', label, score, text, type(score));
 				
 				if ( self.db.global.ldbLabel ) then
 					text = label..": "..text;
 				end
 				
 				self.ldb.text = text;
+			else
+			---	print("LDB error", score, tonumber(score), type(score));
 			end
 		end
 	else
@@ -1128,7 +1143,7 @@ function SIL:GroupScore(force)
 	local groupMin = 0;
 	local groupMax = 0;
 	
-	-- Add yourself
+	-- Add yourself for party
 	local score = 0;
 	local yourGUID = UnitGUID('player');
 	
@@ -1301,4 +1316,23 @@ function SIL:GroupOutput(dest, to)
 	
 	-- Update LDB
 	self:UpdateLDB(true);
+end
+
+
+function SIL:CanOfficerChat()
+	GuildControlSetRank(select(3,GetGuildInfo("player")));
+	local flags = self:Flags2Table(GuildControlGetRankFlags());
+	return flags[4];
+end
+
+function SIL:Flags2Table(...)
+	local ret = {}
+	for i = 1, select("#", ...) do
+		if (select(i, ...)) then
+			ret[i] = true;
+		else
+			ret[i] = false;
+		end
+	end
+	return ret;
 end
