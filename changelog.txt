@@ -1,11 +1,12 @@
 ===== 2.1 =====
 * Changed LDB Type, this means that it may not show up on some display addons however it may show up on some new ones, you can revert by typing /sil ldbText
 * Added text to LDB for your score, party score and raid score, you can remove the label by typing /sil ldbLabel
-* Removed party menu while in raid, changed over to group menu instead /sil group or /sil group <say,party,raid,battleground,guild,officer> to report to said channel
+* Removed party menu while in raid, changed over to group menu instead /sil group or /sil group <say,party,raid,battleground,guild,officer> to report to said channel or the short version <s,p,r,bg,g,o>
 * Colored class names in System Output
-* Almost finished Russian localization, thanks Xargasus
-* Group output <chat type> should be localized, /sil group <chat type>
+* Almost finished Russian localization
 * Heirlooms now max out properly. If it maxes at 80 will be a ilevel 200 on a level 81.
+* Hopefully fixed inspect errors
+* Added BG and Officer output to the LDB menu
 
 ===== 2.0.21 =====
 * Added a spacer between System and Party output in Minimap sub menu
