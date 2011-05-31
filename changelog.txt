@@ -1,3 +1,8 @@
+===== 2.1.x =====
+* Fixed a error for when using /sil group in combat
+* Added score to the paper doll frame
+* Added another tool tip hook to hopefully get the tool tip in more locations
+
 ===== 2.1 =====
 * Changed LDB Type, this means that it may not show up on some display addons however it may show up on some new ones, you can revert by typing /sil ldbText
 * Added text to LDB for your score, party score and raid score, you can remove the label by typing /sil ldbLabel
@@ -34,4 +39,3 @@
 -- http://www.wowpedia.org/Creating_simple_pop-up_dialog_boxes
 * UI for showing party/raid/cache
 * no-lib option
-* Use LDB to show current AiL of you/party/raid
