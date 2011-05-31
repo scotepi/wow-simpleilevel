@@ -22,7 +22,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 7;
+	self.versionMinor = 8;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
@@ -76,6 +76,13 @@ function SIL:OnInitialize()
 	
 	-- Auto Purge the cache
 	SIL:AutoPurge(true);
+	
+	-- Add Hooks
+	GameTooltip:HookScript("OnTooltipSetUnit", function(v) SIL:TooltipHook(v); end);
+
+	-- Add to Paperdoll
+	PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(statFrame, unit) SIL:UpdatePaperDollFrame(statFrame, unit); end };
+	table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, "SimpleiLevel");
 end
 
 function SIL:Update()
@@ -459,15 +466,32 @@ function SIL:ForceGet(target)
 			
 			self:Print(str);
 		else
-			self:Print(self:Replace(L['Slash Get Score False'], 'target', value));
+			self:Print(self:Replace(L['Slash Get Score False'], 'target', target));
 		end
 	else 
-		self:Print(L['Slash Get Score False']);
+		self:Print(L['Slash Target Score False']);
 	end
 end
 
-function SIL:ShowTooltip()
-	local guid = UnitGUID("mouseover");
+function SIL:TooltipHook()
+	local name, unit = GameTooltip:GetUnit();
+	local guid = false;
+	
+	if ( unit ) then
+		guid = UnitGUID(unit);
+	elseif ( name ) then
+		guid = SIL:NameToGUID(name);
+	end
+	
+	if ( tonumber(guid) > 0 ) then
+		SIL:ShowTooltip(guid)
+	end
+end
+
+function SIL:ShowTooltip(guid)
+	if not ( guid ) then
+		guid = UnitGUID("mouseover");
+	end
 	
 	if ( self:HasScore(guid) ) then
 		
@@ -1233,6 +1257,11 @@ function SIL:GroupOutput(dest, to)
 	local groupAvg, groupSize, group, groupMin, groupMax = self:GroupScore(true);
 	local valid = false;
 	
+	if not ( type(group) == 'table') then
+		error("Group is not a table");
+		return;
+	end
+	
 	if not ( dest ) then dest = "SYSTEM"; valid = true; end
 	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
 	dest = string.upper(dest);
@@ -1335,4 +1364,15 @@ function SIL:Flags2Table(...)
 		end
 	end
 	return ret;
+end
+
+function SIL:UpdatePaperDollFrame(statFrame, unit)
+	local score, age, items = SIL:GetScore('player', true);
+	local formated = SIL:FormatScore(score, items, false);
+	
+	PaperDollFrame_SetLabelAndText(statFrame, L["Addon Name"], formated, false);
+	statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L["Addon Name"]..FONT_COLOR_CODE_CLOSE;
+	statFrame.tooltip2 = L["Score Desc"];
+	
+	statFrame:Show();
 end
