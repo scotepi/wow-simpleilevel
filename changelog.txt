@@ -1,7 +1,8 @@
-===== 2.1.x =====
+===== 2.1.9 =====
 * Fixed a error for when using /sil group in combat
 * Added score to the paper doll frame
 * Added another tool tip hook to hopefully get the tool tip in more locations
+* SIL:NameToGUID(name, realm) now accepts 'Name-Realm' for a name
 
 ===== 2.1 =====
 * Changed LDB Type, this means that it may not show up on some display addons however it may show up on some new ones, you can revert by typing /sil ldbText

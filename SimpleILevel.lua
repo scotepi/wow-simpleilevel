@@ -22,7 +22,7 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 8;
+	self.versionMinor = 9;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
@@ -34,7 +34,7 @@ function SIL:OnInitialize()
 		type = "data source",
 		icon = "Interface\\Icons\\inv_misc_armorkit_24",
 		label = L['Addon Name'],
-		text = "n/a",
+		text = L["Unknown Score"],
 		category = self.category,
 		version = self.version,
 		OnClick = function(f,b)
@@ -223,6 +223,12 @@ function SIL:GUIDtoName(guid)
 end
 
 function SIL:NameToGUID(name, realm)
+	if not name then return false end
+	
+	if not ( realm ) then
+		name, realm = strsplit('-', name, 2);
+	end
+	
 	if ( name ) then
 		name = strlower(name);
 		
@@ -375,7 +381,7 @@ function SIL:FormatScore(score, items, color)
 			return score;
 		end
 	else
-		return 'xx';
+		return L["Unknown Score"];
 	end
 end
 
