@@ -489,6 +489,9 @@ function SIL:TooltipHook()
 		guid = SIL:NameToGUID(name);
 	end
 	
+	-- Break without a GUID
+	if not ( guid ) then return end
+	
 	if ( tonumber(guid) > 0 ) then
 		SIL:ShowTooltip(guid)
 	end
