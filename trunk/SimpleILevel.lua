@@ -1266,10 +1266,8 @@ function SIL:GroupOutput(dest, to)
 	local groupAvg, groupSize, group, groupMin, groupMax = self:GroupScore(true);
 	local valid = false;
 	
-	if not ( type(group) == 'table') then
-		error("Group is not a table");
-		return;
-	end
+	-- Can't do anything
+	if not ( type(group) == 'table') then return end
 	
 	if not ( dest ) then dest = "SYSTEM"; valid = true; end
 	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
