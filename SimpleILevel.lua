@@ -22,13 +22,13 @@ function SIL:OnInitialize()
 	
 	-- Version Info
 	self.versionMajor = 2.1;
-	self.versionMinor = 9;
+	self.versionRev = 'r'..@project-revision@;
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
 	self:Update();
 	self.db.global.version = self.versionMajor;
-	self.db.global.versionMinor = self.versionMinor;
+--	self.db.global.versionMinor = self.versionMinor;
 	
 	local ldbObj = {
 		type = "data source",

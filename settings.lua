@@ -222,7 +222,7 @@ SIL_Defaults = {
 			hide = false,		-- Minimap Icon
 		},
 		version = 1,			-- Version for future referance
-		versionMinor = 1,
+--		versionMinor = 1,
 		ldbText = true,			-- LDB Text
 		ldbLabel = true,		-- LDB Label
 		ldbRefresh = 30,		-- LDB Refresh Rate
