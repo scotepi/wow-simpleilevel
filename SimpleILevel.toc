@@ -14,6 +14,8 @@
 ## Version: @project-version@
 ## SavedVariables: SIL_Settings, SIL_CacheGUID
 
+## OptionalDeps: Ace3, CallbackHandler, LibDBIcon
+
 ## X-Category: Information
 
 embeds.xml
