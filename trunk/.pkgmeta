@@ -1,3 +1,5 @@
+package-as: SimpleILevel
+
 externals:
     Libs/LibStub:
         url: svn://svn.wowace.com/wow/libstub/mainline/trunk
@@ -30,4 +32,11 @@ externals:
         url: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
         tag: latest
 
+tools-used: 
+    - libdatabroker-1-1
+	
 enable-nolib-creation: no
+
+anual-changelog:
+    filename: changelog.txt
+    markup-type: textile
