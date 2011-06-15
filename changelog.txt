@@ -1,10 +1,14 @@
-===== 2.1.9 =====
+== 2.2.x ==
+* Added realm information for everyone
+* Added a option to toggle paper doll information
+
+=== 2.1.9 ===
 * Fixed a error for when using /sil group in combat
 * Added score to the paper doll frame
 * Added another tool tip hook to hopefully get the tool tip in more locations
 * SIL:NameToGUID(name, realm) now accepts 'Name-Realm' for a name
 
-===== 2.1 =====
+== 2.1 ==
 * Changed LDB Type, this means that it may not show up on some display addons however it may show up on some new ones, you can revert by typing /sil ldbText
 * Added text to LDB for your score, party score and raid score, you can remove the label by typing /sil ldbLabel
 * Removed party menu while in raid, changed over to group menu instead /sil group or /sil group <say,party,raid,battleground,guild,officer> to report to said channel or the short version <s,p,r,bg,g,o>
@@ -14,11 +18,11 @@
 * Hopefully fixed inspect errors
 * Added BG and Officer output to the LDB menu
 
-===== 2.0.21 =====
+=== 2.0.21 ===
 * Added a spacer between System and Party output in Minimap sub menu
 * Fixed a possible error with auto purging
 
-===== 2.0.20 =====
+=== 2.0.20 ===
 * Updated TOC to 4.1
 * Moved the addon over to Ace3 for just about everything
 * Added a options UI for configuration
@@ -35,8 +39,9 @@
 * Added and updated some slash commands, see the addon desciption
 * Addon name should now be localized everywhere
 
-===== To-Do =====
+== To-Do ==
 * Reporting of party/raid to tell
 -- http://www.wowpedia.org/Creating_simple_pop-up_dialog_boxes
 * UI for showing party/raid/cache
 * no-lib option
+* fix inspecting code

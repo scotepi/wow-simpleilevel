@@ -67,6 +67,14 @@ SIL_Options = {
 					get = function(i) return SIL:GetMinimap(); end,
 					order = 3,
 				},
+				cinfo = {
+					name = L['Help Paperdoll'],
+					desc = L['Help Paperdoll Desc'],
+					type = "toggle",
+					set = function(i,v) SIL:SetPaperdoll(v); end,
+					get = function(i) return SIL:GetPaperdoll(); end,
+					order = 3,
+				},
 				age = {
 					name = L['Help Age'],
 					desc = L['Help Age Desc'],
@@ -218,6 +226,7 @@ SIL_Defaults = {
 		purge = 0,				-- How often to automaticly purge
 		advanced = false,		-- Display extra information in the tooltips
 		autoscan = true,		-- Automaticly scan for changes
+		cinfo = true,			-- Character Info/Paperdoll info
 		minimap = {
 			hide = false,		-- Minimap Icon
 		},

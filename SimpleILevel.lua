@@ -5,6 +5,7 @@ local aceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0");
 local LDB = LibStub:GetLibrary("LibDataBroker-1.1");
 local LDBIcon = LDB and LibStub("LibDBIcon-1.0");
 SIL_Version = GetAddOnMetadata("SimpleILevel", "Version");
+SIL_Debug = false;
 
 function SIL:OnInitialize()
 	
@@ -21,14 +22,14 @@ function SIL:OnInitialize()
 	self:Print(self:Replace(L['Loading Addon'], 'version', self.version));
 	
 	-- Version Info
-	self.versionMajor = 2.1;
-	self.versionRev = 'r'..@project-revision@;
+	self.versionMajor = 2.2;
+	self.versionRev = 'r@project-revision@';
 	
 	-- Load the DB
 	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
 	self:Update();
 	self.db.global.version = self.versionMajor;
---	self.db.global.versionMinor = self.versionMinor;
+	self.db.global.versionMinor = self.versionMinor;
 	
 	local ldbObj = {
 		type = "data source",
@@ -81,12 +82,26 @@ function SIL:OnInitialize()
 	GameTooltip:HookScript("OnTooltipSetUnit", function(v) SIL:TooltipHook(v); end);
 
 	-- Add to Paperdoll
-	PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(statFrame, unit) SIL:UpdatePaperDollFrame(statFrame, unit); end };
 	table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, "SimpleiLevel");
+	if ( self.db.global.cinfo ) then
+		PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+	else
+		PAPERDOLL_STATINFO['SimpleiLevel'] = nil;
+	end
 end
 
 function SIL:Update()
-
+	
+	-- Add realm information for everyone
+	if not ( self.db.global.version ) or ( self.db.global.version < 2.2 ) then
+		local realm = GetRealmName();
+		for guid,info in pairs(SIL_CacheGUID) do
+			if not ( SIL_CacheGUID[guid]['realm'] ) or ( SIL_CacheGUID[guid]['realm'] == '' ) then
+				SIL_CacheGUID[guid]['realm'] = realm;
+			end
+		end
+	end
+	
 	-- Add a score for everyone in the DB
 	if not ( self.db.global.version ) or ( self.db.global.version < 2.1 ) then
 		for guid,info in pairs(SIL_CacheGUID) do
@@ -216,7 +231,7 @@ end
 
 function SIL:GUIDtoName(guid)
 	if ( SIL_CacheGUID[guid] ) then
-		return SIL_CacheGUID[guid]['name'];
+		return SIL_CacheGUID[guid].name, SIL_CacheGUID[guid].realm;
 	else
 		return false;
 	end
@@ -225,8 +240,14 @@ end
 function SIL:NameToGUID(name, realm)
 	if not name then return false end
 	
+	-- Try and get the realm from the name-realm
 	if not ( realm ) then
 		name, realm = strsplit('-', name, 2);
+	end
+	
+	-- If no realm then set it to current realm
+	if not ( realm ) or ( realm == '' ) then
+		realm = GetRealmName();
 	end
 	
 	if ( name ) then
@@ -282,6 +303,11 @@ function SIL:AddPlayer(guid, name, realm, class)
 	if ( guid ) and ( name ) and ( class ) then
 		if not ( SIL_CacheGUID[guid] ) then
 			SIL_CacheGUID[guid] = {};
+		end
+		
+		if not ( realm ) or ( realm == '' ) then
+			self:Debug('Setting Realm', realm, type(realm), GetRealmName());
+			realm = GetRealmName();
 		end
 		
 		SIL_CacheGUID[guid]['name'] = name;
@@ -843,6 +869,10 @@ function SIL:GetMinimap()
 	return not self.db.global.minimap.hide;
 end
 
+function SIL:GetPaperdoll()
+	return self.db.global.cinfo;
+end
+
 function SIL:GetAge()
 	return self.db.global.age;
 end
@@ -869,6 +899,17 @@ end
 
 function SIL:GetLDBrefresh()
 	return self.db.global.ldbRefresh;
+end
+
+function SIL:SetPaperdoll(v)
+	self.db.global.cinfo = v;
+	
+	if ( v ) then
+		PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+	else
+		PAPERDOLL_STATINFO['SimpleiLevel'] = nil;
+		-- Should put code to remove from PAPERDOLL_STATCATEGORIES here but it doesn't seam required, this will be fixed on next reload anyway
+	end
 end
 
 function SIL:SetLDB(v)
@@ -903,6 +944,14 @@ function SIL:ToggleLDBlabel()
 	end
 	
 	self:UpdateLDB(true);
+end
+
+function SIL:TogglePaperdoll()
+	if ( self.db.global.cinfo ) then
+		self:SetPaperdoll(false);
+	else
+		self:SetPaperdoll(true);
+	end
 end
 
 
@@ -1382,4 +1431,10 @@ function SIL:UpdatePaperDollFrame(statFrame, unit)
 	statFrame.tooltip2 = L["Score Desc"];
 	
 	statFrame:Show();
+end
+
+function SIL:Debug(...)
+	if ( SIL_Debug ) then
+		print('Debug: ', ...);
+	end
 end
