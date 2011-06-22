@@ -1,0 +1,50 @@
+== 2.2.x ==
+* Added realm information for everyone
+* Added a option to toggle paper doll information
+* Removed dupe group score value from ldb
+* score, 0, totalItems, itemTable = SIL:ProcessInspect(guid, updateTooltip); added itemTable 
+* Added /sil group tell <name> and /sil group channel <number>
+* Rough version of adding hooks for tooltip and inspecting
+
+=== 2.1.9 ===
+* Fixed a error for when using /sil group in combat
+* Added score to the paper doll frame
+* Added another tool tip hook to hopefully get the tool tip in more locations
+* SIL:NameToGUID(name, realm) now accepts 'Name-Realm' for a name
+
+== 2.1 ==
+* Changed LDB Type, this means that it may not show up on some display addons however it may show up on some new ones, you can revert by typing /sil ldbText
+* Added text to LDB for your score, party score and raid score, you can remove the label by typing /sil ldbLabel
+* Removed party menu while in raid, changed over to group menu instead /sil group or /sil group <say,party,raid,battleground,guild,officer> to report to said channel or the short version <s,p,r,bg,g,o>
+* Colored class names in System Output
+* Almost finished Russian localization
+* Heirlooms now max out properly. If it maxes at 80 will be a ilevel 200 on a level 81.
+* Hopefully fixed inspect errors
+* Added BG and Officer output to the LDB menu
+
+=== 2.0.21 ===
+* Added a spacer between System and Party output in Minimap sub menu
+* Fixed a possible error with auto purging
+
+=== 2.0.20 ===
+* Updated TOC to 4.1
+* Moved the addon over to Ace3 for just about everything
+* Added a options UI for configuration
+* Added minimap button for quick access to some new options
+-- Live-ish updating of party/raid scores if Autoscan is enabled
+-- Reporting of party/raid AiL to Party, Raid, Guild and Say
+* Fixed file encoding again, removed DOM from localization files
+* Moved T11 down 1 iLevel to 278
+* Added placeholder for T12 color, purple, 378-391
+* Added zhCN translation thanks zhTW?!?
+* Tool Tips now show in combat however inspecting/refreshing will not happen in combat
+* Added automatic purging of old items when you log in, UI allows setting by Day
+-- If you want to set it for a value less then a day "/run SIL:PurgeCache(hours);"
+* Added and updated some slash commands, see the addon desciption
+* Addon name should now be localized everywhere
+
+== To-Do ==
+* Reporting of group score to tell/channel via ui
+-- http://www.wowpedia.org/Creating_simple_pop-up_dialog_boxes
+* UI for showing party/raid/cache
+* no-lib option
