@@ -1,6 +1,10 @@
 == 2.2.x ==
 * Added realm information for everyone
 * Added a option to toggle paper doll information
+* Removed dupe group score value from ldb
+* score, 0, totalItems, itemTable = SIL:ProcessInspect(guid, updateTooltip); added itemTable 
+* Added /sil group tell <name> and /sil group channel <number>
+* Rough version of adding hooks for tooltip and inspecting
 
 === 2.1.9 ===
 * Fixed a error for when using /sil group in combat
@@ -40,8 +44,7 @@
 * Addon name should now be localized everywhere
 
 == To-Do ==
-* Reporting of party/raid to tell
+* Reporting of group score to tell/channel via ui
 -- http://www.wowpedia.org/Creating_simple_pop-up_dialog_boxes
 * UI for showing party/raid/cache
 * no-lib option
-* fix inspecting code

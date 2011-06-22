@@ -186,7 +186,7 @@ SIL_Options = {
 			hidden = true,
 			guiHidden = true,
 			cmdHidden = false,
-			set = function(i,v) SIL:GroupOutput(v); end,
+			set = function(i,v) dest, to = strsplit(' ', v, 2); SIL:GroupOutput(dest, to); end,
 			get = function() return ''; end,
 		},
 		get = {
