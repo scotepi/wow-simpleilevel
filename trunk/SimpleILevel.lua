@@ -88,6 +88,10 @@ function SIL:OnInitialize()
 	else
 		PAPERDOLL_STATINFO['SimpleiLevel'] = nil;
 	end
+	
+	-- Setup Hooks
+	self.hookTooltip = {};
+	self.hookInspect = {};
 end
 
 function SIL:Update()
@@ -306,7 +310,6 @@ function SIL:AddPlayer(guid, name, realm, class)
 		end
 		
 		if not ( realm ) or ( realm == '' ) then
-			self:Debug('Setting Realm', realm, type(realm), GetRealmName());
 			realm = GetRealmName();
 		end
 		
@@ -325,9 +328,15 @@ function SIL:GetScore(target, force)
 	
 	-- If a score is forced the input becomes unitId, true
 	if ( force ) then
-		self:StartScore(target, true, false);
-		self:ProcessInspect(UnitGUID(target), false);
-		target = UnitGUID(target);
+		local guid = UnitGUID(target);
+		
+		if ( guid ) then
+			self:StartScore(target, true, false);
+			self:ProcessInspect(UnitGUID(target), false);
+			target = UnitGUID(target);
+		else
+			return false;
+		end
 	end
 	
 	target = self:GetGUID(target);
@@ -469,11 +478,11 @@ function SIL:ForceGet(target)
 	if ( target == 'target' ) then
 		if ( CanInspect('target') ) then
 			self:StartScore('target', true, false);
-			local score, age, items = SIL:ProcessInspect(UnitGUID('target'), false);
+			local score, age, items = self:ProcessInspect(UnitGUID('target'), false);
 			
 			if ( score ) then
 				local str = SIL:Replace(L['Slash Target Score True'], 'target', UnitName('target'));
-				str = SIL:Replace(str, 'score', SIL:FormatScore(score, items));
+				str = self:Replace(str, 'score', self:FormatScore(score, items));
 				
 				self:Print(str);
 				
@@ -519,7 +528,7 @@ function SIL:TooltipHook()
 	if not ( guid ) then return end
 	
 	if ( tonumber(guid) > 0 ) then
-		SIL:ShowTooltip(guid)
+		self:ShowTooltip(guid)
 	end
 end
 
@@ -538,49 +547,57 @@ function SIL:ShowTooltip(guid)
 		
 		local textAdvanced = self:Replace(L['Tool Tip Advanced'], 'localizedAge', self:AgeToText(age));
 		
-		-- Loop tooltip text to check if its alredy there
-		local ttLines = GameTooltip:NumLines();
-		local ttUpdated = false;
+		self:AddTooltipText(textLeft, textRight, textAdvanced);
 		
-		for i = 1,ttLines do
-					
-			-- If the static text matches
-			if ( _G["GameTooltipTextLeft"..i]:GetText() == textLeft ) then
-				
-				-- Update the text
-				_G["GameTooltipTextLeft"..i]:SetText(textLeft);
-				_G["GameTooltipTextRight"..i]:SetText(textRight);
-				GameTooltip:Show();
-				
-				-- Update the advanced info too
-				if ( self.db.global.advanced ) then
-					_G["GameTooltipTextLeft"..i+1]:SetText(textAdvanced);
-					GameTooltip:Show();
-				end
-				
-				-- Rember that we have updated the tool tip so we wont again
-				ttUpdated = true;
-				break;
-			end
-		end
-		
-		-- Tool tip is new
-		if not ( ttUpdated ) then
-			
-			GameTooltip:AddDoubleLine(textLeft, textRight);
-			GameTooltip:Show();
-			
-			if ( self.db.global.advanced ) then
-				GameTooltip:AddLine(textAdvanced);
-				GameTooltip:Show();
-			end
-		end
+		-- Run Hooks
+		self:RunHooks('tooltip', guid);
 		
 		return true;
 	else
 		return false;
 	end
-end;
+end
+
+function SIL:AddTooltipText(textLeft, textRight, textAdvanced)
+	
+	-- Loop tooltip text to check if its alredy there
+	local ttLines = GameTooltip:NumLines();
+	local ttUpdated = false;
+	
+	for i = 1,ttLines do
+				
+		-- If the static text matches
+		if ( _G["GameTooltipTextLeft"..i]:GetText() == textLeft ) then
+			
+			-- Update the text
+			_G["GameTooltipTextLeft"..i]:SetText(textLeft);
+			_G["GameTooltipTextRight"..i]:SetText(textRight);
+			GameTooltip:Show();
+			
+			-- Update the advanced info too
+			if ( self.db.global.advanced ) and ( textAdvanced ) then
+				_G["GameTooltipTextLeft"..i+1]:SetText(textAdvanced);
+				GameTooltip:Show();
+			end
+			
+			-- Rember that we have updated the tool tip so we wont again
+			ttUpdated = true;
+			break;
+		end
+	end
+	
+	-- Tool tip is new
+	if not ( ttUpdated ) then
+		
+		GameTooltip:AddDoubleLine(textLeft, textRight);
+		GameTooltip:Show();
+		
+		if ( self.db.global.advanced ) and ( textAdvanced ) then
+			GameTooltip:AddLine(textAdvanced);
+			GameTooltip:Show();
+		end
+	end
+end
 
 --------------------------------------------------------------------
 --------------------------------------------------------------------
@@ -629,11 +646,10 @@ end
 function SIL:StartScore(target, refresh, tooltip)
 	
 	-- Incombat so we can't do anything
-	if ( InCombatLockdown() ) then 
-		return false;
+	if ( InCombatLockdown() ) then return false; end
 	
 	-- We can inspect the person
-	elseif ( CanInspect(target) ) then
+	if ( CanInspect(target) ) then
 		local guid = UnitGUID(target);
 		local name, realm = UnitName(target);
 		
@@ -662,13 +678,15 @@ function SIL:StartScore(target, refresh, tooltip)
 			self:AddPlayer(guid, name, realm, class);
 			
 			-- Update the target information for this person
-			SIL_CacheGUID[guid]['target'] = target;
-			SIL_CacheGUID[guid]['tooltip'] = tooltip;
+			SIL_CacheGUID[guid].target = target;
+			SIL_CacheGUID[guid].tooltip = tooltip;
 			
-			-- Start the inspect
+			-- Fix for inspect frame bugs
 			if ( InspectFrame ) then
-				InspectFrame.unit = target; -- I think this will fix GetGuildInfo() errors
+				InspectFrame.unit = target;
 			end
+			
+			-- Start the server query
 			NotifyInspect(target);
 			
 			-- Pass 1 and 2nd pass will be after the event fires
@@ -684,76 +702,77 @@ end
 function SIL:ProcessInspect(guid, tooltip)
 	
 	-- Incombat so we can't do anything
-	if ( InCombatLockdown() ) then 
-		return false;
+	if ( InCombatLockdown() ) then return false; end
 	
-	else
+	-- Make sure the function has been called properly
+	if not ( tonumber(guid) ) then error('No GUID for SIL:ProcessInspect()'); return false; end
+	if not ( SIL_CacheGUID[guid] ) then error('There is no cache for '..guid); return false; end
+	
+	local name = self:GUIDtoName(guid);
+	local target = SIL_CacheGUID[guid].target; -- Last known target
+	
+	-- Figure out wether or not to display the tooltip
+	if not ( tooltip ) and not ( tooltip == false ) then
+		tooltip = SIL_CacheGUID[guid].tooltip;
+	end
+	
+	-- Can we still inspect them?
+	if ( target ) and ( CanInspect(target) ) then
+	
+		local totalItems = 0;
+		local totalScore = 0;
+		local items = {};
 		
-		-- We have some more information about this person
-		if ( SIL_CacheGUID[guid] ) then
-			local name = self:GUIDtoName(guid);
-			local target = SIL_CacheGUID[guid]['target'];
+		-- Loop all items
+		for i = 1, 18 do
 			
-			-- Figure out wether or not to display the tooltip
-			if not ( tooltip ) and not ( tooltip == false ) then
-				tooltip = SIL_CacheGUID[guid]['tooltip'];
-			end
-			
-			-- Can we still inspect them?
-			if ( target ) and ( CanInspect(target) ) then
-			
-				local totalItems = 0;
-				local totalScore = 0;
+			-- Skip the Shirt
+			if ( i ~= 4 ) then
+				local itemLink = GetInventoryItemLink(target, i);
 				
-				-- Loop all items
-				for i = 1, 18 do
+				-- We have a item link
+				if ( itemLink ) then
+					local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
 					
-					-- Skip the Shirt
-					if ( i ~= 4 ) then
-						local itemLink = GetInventoryItemLink(target, i);
+					-- We have a valid itemLevel and its above white 1, and below artificat 6
+					if ( itemLevel ) then
 						
-						-- We have a item link
-						if ( itemLink ) then
-							local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
-							
-							-- We have a valid itemLevel and its above white 1, and below artificat 6
-							if ( itemLevel ) then
-								
-								-- special processing for Heirlooms
-								if ( itemRarity == 7 ) then
-									itemLevel = self:Heirloom(UnitLevel(target), itemLink);
-								end
-								
-								totalItems = totalItems + 1;
-								totalScore = totalScore + itemLevel;
-							end
+						-- special processing for Heirlooms
+						if ( itemRarity == 7 ) then
+							itemLevel = self:Heirloom(UnitLevel(target), itemLink);
 						end
+						
+						items[i] = itemLink;
+						
+						totalItems = totalItems + 1;
+						totalScore = totalScore + itemLevel;
 					end
 				end
-				
-				-- We have some items to give a score for!
-				if ( totalItems > 0 ) then
-					
-					-- Set there score
-					self:SetScore(totalItems, totalScore, guid);
-					
-					-- Get the score back, this is dumb but it avoids dupe code
-					local score = self:GetScore(guid);
-					
-					if ( tooltip ) then
-						self:ShowTooltip();
-					end
-					
-					return score, 0, totalItems;
-				else
-					return false;
-				end
-			else
-				return false;
 			end
+		end
+		
+		-- We have some items to give a score for!
+		if ( totalItems > 0 ) then
+			
+			-- Set there score
+			self:SetScore(totalItems, totalScore, guid);
+			
+			-- Get the score back, this is dumb but it avoids dupe code
+			local score = self:GetScore(guid);
+			
+			if ( tooltip ) then
+				self:ShowTooltip();
+			end
+			
+			-- Run Callbacks
+			self:RunHooks('inspect', guid, items);
+			
+			return score, 0, totalItems, items;
 		else
 			return false;
 		end
+	else
+		return false;
 	end
 end
 
@@ -761,7 +780,9 @@ function SIL:PrintTo(message, channel, to)
 	if ( channel == "print" ) or ( channel == "SYSTEM" ) then
 		SIL:Print(message);
 	elseif ( channel == "WHISPER" ) then
-		SendChatMessage(message, WHISPER, to);
+		SendChatMessage(message, 'WHISPER', nil, to);
+	elseif ( channel == "CHANNEL" ) then
+		SendChatMessage(message, 'CHANNEL', nil, to);
 	elseif ( channel ) then
 		SendChatMessage(message, channel);
 	else
@@ -1145,19 +1166,6 @@ function SIL:OpenMenu(window)
 				info.func = function() SIL:GroupOutput("SAY"); end;
 				info.notCheckable = 1;
 				UIDropDownMenu_AddButton(info, level);
-				
-				-- Spacer
-				wipe(info);
-				info.disabled = 1;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
-				
-				-- Group Score
-				wipe(info);
-				info.text = groupScore..' / '..groupCount;
-				info.notClickable = 1;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
 			end
 		end
 	end
@@ -1324,12 +1332,16 @@ function SIL:GroupOutput(dest, to)
 	
 	-- Some short codes
 	if ( dest == 'P' ) then dest = 'PARTY'; valid = true; end
-	if ( dest == 'R' ) then dest = 'RAID' valid = true; end
-	if ( dest == 'BG' ) then dest = 'BATTLEGROUND' valid = true; end
-	if ( dest == 'G' ) then dest = 'GUILD' valid = true; end
-	if ( dest == 'U' ) then dest = 'GROUP' valid = true; end
-	if ( dest == 'O' ) then dest = 'OFFICER' valid = true; end
-	if ( dest == 'S' ) then dest = 'SAY' valid = true; end
+	if ( dest == 'R' ) then dest = 'RAID'; valid = true; end
+	if ( dest == 'BG' ) then dest = 'BATTLEGROUND'; valid = true; end
+	if ( dest == 'G' ) then dest = 'GUILD'; valid = true; end
+	if ( dest == 'U' ) then dest = 'GROUP'; valid = true; end
+	if ( dest == 'O' ) then dest = 'OFFICER'; valid = true; end
+	if ( dest == 'S' ) then dest = 'SAY'; valid = true; end
+	if ( dest == 'T' ) then dest = 'WHISPER'; valid = true; end
+	if ( dest == 'W' ) then dest = 'WHISPER'; valid = true; end
+	if ( dest == 'TELL' ) then dest = 'WHISPER'; valid = true; end
+	if ( dest == 'C' ) then dest = 'CHANNEL'; valid = true; end
 	
 	-- Find out if its a valid dest
 	for fixed,loc in pairs(SIL_Channels) do
@@ -1438,3 +1450,68 @@ function SIL:Debug(...)
 		print('Debug: ', ...);
 	end
 end
+
+
+
+function SIL:AddHook(hookType, callback)
+	hookType = strlower(hookType);
+	
+	if ( hookType == 'inspect' ) then
+		table.insert(self.hookInspect, callback);
+	elseif ( hookType == 'tooltip' ) then
+		table.insert(self.hookTooltip, callback);
+	else
+		error('Unknown hook type '..hookType);
+	end
+end
+
+function SIL:RunHooks(hookType, guid, ...)
+	local tbl = nil;
+	
+	if ( hookType == 'inspect' ) then
+		tbl = self.hookInspect;
+	elseif ( hookType == 'tooltip' ) then
+		tbl = self.hookTooltip;
+	end
+	
+	if ( tbl ) and ( type(tbl) == 'table' ) then
+		for i,callback in pairs(tbl) do
+			callback(guid, ...);
+		end
+	end
+end
+
+SIL_cbTemp = {}
+function cbInspect(guid, items)
+	SIL:Debug('Inspect Hook', guid, items);
+	
+	-- reset
+	SIL_cbTemp[guid] = 0;
+	
+	if ( items ) and ( type(items) == 'table' ) then
+		for i,itemLink in pairs(items) do
+			local stats = GetItemStats(itemLink);
+			
+			if ( stats['ITEM_MOD_RESILIENCE_RATING_SHORT'] ) then
+				SIL_cbTemp[guid] = SIL_cbTemp[guid] + stats['ITEM_MOD_RESILIENCE_RATING_SHORT'];
+			end
+		end
+	end
+end
+
+function cbTooltip(guid)
+	local resil = 0;
+	
+	if ( SIL_cbTemp[guid] ) then
+		resil = SIL_cbTemp[guid];
+	end
+	
+	SIL:AddTooltipText('Resilience:', resil);
+end
+
+--[[
+/run SIL_Debug = true; SIL:AddHook('inspect', function(...) cbInspect(...); end); SIL:AddHook('tooltip', function(...) cbTooltip(...); end);
+
+/run SIL_Debug = false;
+
+]]--
