@@ -1,4 +1,4 @@
-## Interface: 40100
+## Interface: 40200
 
 ## Title: SimpleiLevel
 ## Notes: Adds the Average iLevel (AiL) to the tool tip of other players

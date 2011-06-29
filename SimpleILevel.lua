@@ -1321,54 +1321,11 @@ end
 
 function SIL:GroupOutput(dest, to)	
 	local groupAvg, groupSize, group, groupMin, groupMax = self:GroupScore(true);
-	local valid = false;
 	
 	-- Can't do anything
 	if not ( type(group) == 'table') then return end
 	
-	if not ( dest ) then dest = "SYSTEM"; valid = true; end
-	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
-	dest = string.upper(dest);
-	
-	-- Some short codes
-	if ( dest == 'P' ) then dest = 'PARTY'; valid = true; end
-	if ( dest == 'R' ) then dest = 'RAID'; valid = true; end
-	if ( dest == 'BG' ) then dest = 'BATTLEGROUND'; valid = true; end
-	if ( dest == 'G' ) then dest = 'GUILD'; valid = true; end
-	if ( dest == 'U' ) then dest = 'GROUP'; valid = true; end
-	if ( dest == 'O' ) then dest = 'OFFICER'; valid = true; end
-	if ( dest == 'S' ) then dest = 'SAY'; valid = true; end
-	if ( dest == 'T' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'W' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'TELL' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'C' ) then dest = 'CHANNEL'; valid = true; end
-	
-	-- Find out if its a valid dest
-	for fixed,loc in pairs(SIL_Channels) do
-		if ( dest == string.upper(loc) ) then
-			dest = fixed;
-			valid = true;
-		elseif ( dest == string.upper(fixed) ) then
-			dest = fixed;
-			valid = true;
-		end
-	end
-	
-	-- Default to system
-	if not ( valid ) then
-		dest = "SYSTEM";
-	end
-	
-	-- Figure out GROUP
-	if ( dest == 'GROUP' ) then
-		if ( UnitInRaid("player") ) then
-			dest = 'RAID';
-		elseif ( GetNumPartyMembers() > 0 ) then
-			dest = 'PARTY';
-		else
-			dest = 'SAY';
-		end
-	end
+	local dest, to = self:GroupDest(dest, to);
 	
 	-- Output the header
 	if ( dest == "SYSTEM" ) then
@@ -1415,6 +1372,55 @@ function SIL:GroupOutput(dest, to)
 	self:UpdateLDB(true);
 end
 
+function SIL:GroupDest(dest, to)
+	local valid = false;
+	
+	if not ( dest ) then dest = "SYSTEM"; valid = true; end
+	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
+	dest = string.upper(dest);
+	
+	-- Some short codes
+	if ( dest == 'P' ) then dest = 'PARTY'; valid = true; end
+	if ( dest == 'R' ) then dest = 'RAID'; valid = true; end
+	if ( dest == 'BG' ) then dest = 'BATTLEGROUND'; valid = true; end
+	if ( dest == 'G' ) then dest = 'GUILD'; valid = true; end
+	if ( dest == 'U' ) then dest = 'GROUP'; valid = true; end
+	if ( dest == 'O' ) then dest = 'OFFICER'; valid = true; end
+	if ( dest == 'S' ) then dest = 'SAY'; valid = true; end
+	if ( dest == 'T' ) then dest = 'WHISPER'; valid = true; end
+	if ( dest == 'W' ) then dest = 'WHISPER'; valid = true; end
+	if ( dest == 'TELL' ) then dest = 'WHISPER'; valid = true; end
+	if ( dest == 'C' ) then dest = 'CHANNEL'; valid = true; end
+	
+	-- Find out if its a valid dest
+	for fixed,loc in pairs(SIL_Channels) do
+		if ( dest == string.upper(loc) ) then
+			dest = fixed;
+			valid = true;
+		elseif ( dest == string.upper(fixed) ) then
+			dest = fixed;
+			valid = true;
+		end
+	end
+	
+	-- Default to system
+	if not ( valid ) then
+		dest = "SYSTEM";
+	end
+	
+	-- Figure out GROUP
+	if ( dest == 'GROUP' ) then
+		if ( UnitInRaid("player") ) then
+			dest = 'RAID';
+		elseif ( GetNumPartyMembers() > 0 ) then
+			dest = 'PARTY';
+		else
+			dest = 'SAY';
+		end
+	end
+	
+	return dest, to;
+end
 
 function SIL:CanOfficerChat()
 	GuildControlSetRank(select(3,GetGuildInfo("player")));
@@ -1480,38 +1486,3 @@ function SIL:RunHooks(hookType, guid, ...)
 		end
 	end
 end
-
-SIL_cbTemp = {}
-function cbInspect(guid, items)
-	SIL:Debug('Inspect Hook', guid, items);
-	
-	-- reset
-	SIL_cbTemp[guid] = 0;
-	
-	if ( items ) and ( type(items) == 'table' ) then
-		for i,itemLink in pairs(items) do
-			local stats = GetItemStats(itemLink);
-			
-			if ( stats['ITEM_MOD_RESILIENCE_RATING_SHORT'] ) then
-				SIL_cbTemp[guid] = SIL_cbTemp[guid] + stats['ITEM_MOD_RESILIENCE_RATING_SHORT'];
-			end
-		end
-	end
-end
-
-function cbTooltip(guid)
-	local resil = 0;
-	
-	if ( SIL_cbTemp[guid] ) then
-		resil = SIL_cbTemp[guid];
-	end
-	
-	SIL:AddTooltipText('Resilience:', resil);
-end
-
---[[
-/run SIL_Debug = true; SIL:AddHook('inspect', function(...) cbInspect(...); end); SIL:AddHook('tooltip', function(...) cbTooltip(...); end);
-
-/run SIL_Debug = false;
-
-]]--
