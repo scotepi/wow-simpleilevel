@@ -705,8 +705,8 @@ function SIL:ProcessInspect(guid, tooltip)
 	if ( InCombatLockdown() ) then return false; end
 	
 	-- Make sure the function has been called properly
-	if not ( tonumber(guid) ) then error('No GUID for SIL:ProcessInspect()'); return false; end
-	if not ( SIL_CacheGUID[guid] ) then error('There is no cache for '..guid); return false; end
+	if not ( tonumber(guid) ) then return false; end
+	if not ( SIL_CacheGUID[guid] ) then return false; end
 	
 	local name = self:GUIDtoName(guid);
 	local target = SIL_CacheGUID[guid].target; -- Last known target
@@ -1466,8 +1466,6 @@ function SIL:AddHook(hookType, callback)
 		table.insert(self.hookInspect, callback);
 	elseif ( hookType == 'tooltip' ) then
 		table.insert(self.hookTooltip, callback);
-	else
-		error('Unknown hook type '..hookType);
 	end
 end
 
