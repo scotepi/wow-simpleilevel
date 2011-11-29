@@ -2,7 +2,7 @@
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
 -- Coloring
-SIL_ColorIndex = {0,200,333,378,390,1000};
+SIL_ColorIndex = {0,200,333,378,390,416,1000};
 SIL_Colors = {
 	-- White base color
 	[0] = 		{['r']=255,	['g']=255,	['b']=255,	['p']=0,},
@@ -15,7 +15,8 @@ SIL_Colors = {
 	-- Purple for t12
 	[390] = 	{['r']=163,	['g']=23,	['b']=238,	['p']=378,},
 	-- Red for a max score
-	[1000] = 	{['r']=255,	['g']=0,	['b']=0,	['p']=390},
+	[416] = 	{['r']=255,	['g']=0,	['b']=0,	['p']=390},
+	[1000] = 	{['r']=0,	['g']=0,	['b']=0,	['p']=416},
 };
 
 -- Suported channel localization table
