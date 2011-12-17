@@ -1,176 +1,115 @@
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
-SIL = LibStub("AceAddon-3.0"):NewAddon(L['Addon Name'], "AceEvent-3.0", "AceConsole-3.0")
-local aceConfig = LibStub:GetLibrary("AceConfig-3.0");
-local aceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0");
-local LDB = LibStub:GetLibrary("LibDataBroker-1.1");
-local LDBIcon = LDB and LibStub("LibDBIcon-1.0");
-SIL_Version = GetAddOnMetadata("SimpleILevel", "Version");
-SIL_Debug = false;
 
+-- Start SIL
+SIL = LibStub("AceAddon-3.0"):NewAddon(L['Addon Name'], "AceEvent-3.0", "AceConsole-3.0");
+SIL.L = L;
+SIL.category = GetAddOnMetadata("SimpleILevel", "X-Category");
+SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
+SIL.versionMajor = 2.3;                    -- Used for setting versioning
+SIL.versionRev = 'r@project-revision@';    -- Used for information
+SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
+SIL.hookTooltip = {};
+
+-- Load Libs
+SIL.aceConfig = LibStub:GetLibrary("AceConfig-3.0");
+SIL.aceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0");
+SIL.inspect = LibStub:GetLibrary("LibInspect");
+SIL.ldb = LibStub:GetLibrary("LibDataBroker-1.1");
+SIL.ldbIcon = LibStub:GetLibrary("LibDBIcon-1.0");
+
+-- OnLoad
 function SIL:OnInitialize()
-	
-	-- Make sure we can cache
-	if not ( type(SIL_CacheGUID) == 'table' ) then
-		SIL_CacheGUID = {};
-	end
-	
-	-- Pull in some meta data
-	self.version = GetAddOnMetadata("SimpleILevel", "Version");
-	self.category = GetAddOnMetadata("SimpleILevel", "X-Category");
-	
-	-- Tell the player we are being loaded
+    
+    -- Make sure everything is ok with the settings
+    if not type(SIL_CacheGUID) == 'table' then SIL_CacheGUID = {}; end
+    
+    -- Tell the player we are being loaded
 	self:Print(self:Replace(L['Loading Addon'], 'version', self.version));
+    
+    -- Load settings
+    self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
+	self:UpdateSettings();
 	
-	-- Version Info
-	self.versionMajor = 2.2;
-	self.versionRev = 'r@project-revision@';
-	
-	-- Load the DB
-	self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
-	self:Update();
-	self.db.global.version = self.versionMajor;
-	self.db.global.versionMinor = self.versionMinor;
-	
-	local ldbObj = {
-		type = "data source",
-		icon = "Interface\\Icons\\inv_misc_armorkit_24",
-		label = L['Addon Name'],
-		text = L["Unknown Score"],
-		category = self.category,
-		version = self.version,
-		OnClick = function(f,b)
-					SIL:OpenMenu();
-			end,
-		OnTooltipShow = function(tt)
-							tt:AddLine(L['Minimap Click']);
-							tt:AddLine(L['Minimap Click Drag']);
-			end,
-		};
-	
-	-- Set back to a launcher if text is off
-	if not (self.db.global.ldbText ) then
+    -- Set Up LDB
+    local ldbObj = {
+        type = "data source",
+        icon = "Interface\\Icons\\inv_misc_armorkit_24",
+        label = L['Addon Name'],
+        text = L["Unknown Score"],
+        category = self.category,
+        version = self.version,
+        OnClick = function(...) SIL:OpenMenu(...); end,
+        OnTooltipShow = function(tt)
+                            tt:AddLine(L['Minimap Click']);
+                            tt:AddLine(L['Minimap Click Drag']);
+            end,
+    };
+    
+    -- Set back to a launcher if text is off
+	if not self:GetLDB() then
 		ldbObj.type = 'launcher';
 		ldbObj.text = nil;
 	else
-		self:RegisterEvent("PARTY_MEMBERS_CHANGED"); -- I would like to find something lighter then this
+		--self:RegisterEvent("PARTY_MEMBERS_CHANGED"); -- I would like to find something lighter then this
 	end
-	
-	-- Start LDB
-	self.ldb = LDB:NewDataObject(L['Addon Name'], ldbObj);
+    
+    -- Start LDB
+	self.ldb = self.ldb:NewDataObject(L['Addon Name'], ldbObj);
 	self.ldbUpdated = 0;
 	self.ldbLable = '';
-	SIL:UpdateLDB(); -- This may cause excesive loading time...
 	
-	-- Start the minimap icon
-	LDBIcon:Register(L['Addon Name'], self.ldb, self.db.global.minimap);
-	
-	-- Register Options
-	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self.db.global.purge / 24);
-	aceConfig:RegisterOptionsTable(L['Addon Name'], SIL_Options, {"sil", "silev", "simpleilevel"});
-	aceConfigDialog:AddToBlizOptions(L['Addon Name']);
-	
-	-- Register Events
-	self:RegisterEvent("PLAYER_TARGET_CHANGED");
-	self:RegisterEvent("INSPECT_READY");
-	self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
-	self:Autoscan(self.db.global.autoscan);
-	
-	-- Auto Purge the cache
-	SIL:AutoPurge(true);
-	
-	-- Add Hooks
-	GameTooltip:HookScript("OnTooltipSetUnit", function(v) SIL:TooltipHook(v); end);
-
-	-- Add to Paperdoll
-	table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, "SimpleiLevel");
-	if ( self.db.global.cinfo ) then
+    
+    -- Start the minimap icon
+	self.ldbIcon = self.ldbIcon:Register(L['Addon Name'], self.ldb, self.db.global.minimap);
+    
+    -- Register Options
+	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self:GetPurge() / 24);
+	self.aceConfig:RegisterOptionsTable(L['Addon Name'], SIL_Options, {"sil", "silev", "simpleilevel"});
+	self.aceConfigDialog:AddToBlizOptions(L['Addon Name']);
+    
+    -- Add Hooks
+    self.inspect:AddHook('SimpleILevel', 'items', function(...) SIL:ProcessInspect(...); end);
+    GameTooltip:HookScript("OnTooltipSetUnit", function(...) SIL:TooltipHook(...); end);
+    self:Autoscan(self:GetAutoscan());
+    self:RegisterEvent("PLAYER_TARGET_CHANGED");
+    self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
+    self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+    
+    -- Add to Paperdoll - not relevent as of 4.3, well see
+    table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L['Addon Name']);
+	if self:GetPaperdoll() then
 		PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
 		PAPERDOLL_STATINFO['SimpleiLevel'] = nil;
 	end
-	
-	-- Setup Hooks
-	self.hookTooltip = {};
-	self.hookInspect = {};
+    
+    -- Clear the cache
+	self:AutoPurge(true);
+    
+    -- Get working on a score for the player
+    self:StartScore('player');
+    self:UpdateLDB(); -- This may cause excesive loading time...
 end
 
-function SIL:Update()
-	
-	-- Add realm information for everyone
-	if not ( self.db.global.version ) or ( self.db.global.version < 2.2 ) then
-		local realm = GetRealmName();
-		for guid,info in pairs(SIL_CacheGUID) do
-			if not ( SIL_CacheGUID[guid]['realm'] ) or ( SIL_CacheGUID[guid]['realm'] == '' ) then
-				SIL_CacheGUID[guid]['realm'] = realm;
-			end
-		end
-	end
-	
-	-- Add a score for everyone in the DB
-	if not ( self.db.global.version ) or ( self.db.global.version < 2.1 ) then
-		for guid,info in pairs(SIL_CacheGUID) do
-			if not ( info.score ) and ( info.items ) and ( info.total ) then
-				SIL_CacheGUID[guid]['score'] = info.total / info.items;
-			else
-				SIL_CacheGUID[guid]['score'] = 0;
-			end
-		end
-	end
+-- Make sure the database is the latest version
+function SIL:UpdateSettings()
+    
+    -- Update version information
+    self.db.global.version = self.versionMajor;
+    self.db.global.versionMinor = self.versionMinor;
 end
 
-function SIL:PLAYER_TARGET_CHANGED(e, target)
-	if not ( target ) then
-		target = 'target';
-	end
-	
-	if ( CanInspect(target) ) then
-		self:StartScore(target, false, true);
-	end
-end
-
-function SIL:INSPECT_READY(e, guid)
-	self:ProcessInspect(guid);
-end
-
-function SIL:UPDATE_MOUSEOVER_UNIT()
-	self:ShowTooltip();
-end
-
-function SIL:UNIT_PORTRAIT_UPDATE(e, unitID)
-	
-	-- Don't do anything in combat
-	if ( InCombatLockdown() ) then return end
-	
-	if ( unitID ) and ( CanInspect(unitID) ) then
-		self:StartScore(unitID, true, false);
-		
-		self:UpdateLDB();
-	end
-end
-
-function SIL:PARTY_MEMBERS_CHANGED()
-	self:UpdateLDB();
-end
-
--- Reset the settings
-function SIL:Reset()
-	self:Print(L["Slash Clear"]);
-	self.db.global:ResetProfile();
-	SIL:SetMinimap(true);
-end
-
--- Clear the cache
 function SIL:AutoPurge(silent)
-	if ( self.db.global.purge > 0 ) then
-		local count = SIL:PurgeCache(self.db.global.purge);
+	if self:GetPurge() > 0 then
+		local count = self:PurgeCache(self:GetPurge());
 		
-		if not ( silent ) then
+		if not silent then
 			self:Print(self:Replace(L['Purge Notification'], 'num', count));
 		end
 		
 		return count;
 	else
-		if not ( silent ) then
+		if not silent then
 			self:Print(L['Purge Notification False']);
 		end
 		
@@ -179,12 +118,12 @@ function SIL:AutoPurge(silent)
 end
 
 function SIL:PurgeCache(hours)
-	if ( tonumber(hours) ) then
-		local maxAge = time() - ( tonumber(hours) * 3600 );
+	if tonumber(hours) then
+		local maxAge = time() - (tonumber(hours) * 3600);
 		local count = 0;
 		
 		for guid,info in pairs(SIL_CacheGUID) do
-			if ( type(info['time']) == "number" ) and( info['time'] < maxAge ) then
+			if type(info.time) == "number" and info.time < maxAge then
 				SIL_CacheGUID[guid] = nil;
 				count = 1 + count;
 			end
@@ -196,14 +135,143 @@ function SIL:PurgeCache(hours)
 	end
 end
 
-function SIL:Strpad(str, length, pad)
-	if not ( pad ) then
-		pad = ' ';
+function SIL:AddHook(hookType, callback)
+	hookType = strlower(hookType);
+	
+	if hookType == 'tooltip' then
+		table.insert(self.hookTooltip, callback);
+	end
+end
+
+--[[
+    
+    Event Handlers
+    
+]]
+function SIL:PLAYER_TARGET_CHANGED(e, target)
+    if not target then target = 'target'; end
+
+    if CanInspect(target) then
+        self:GetScore(target, true);
+    end
+end
+
+function SIL:UPDATE_MOUSEOVER_UNIT()
+	self:ShowTooltip();
+end
+
+function SIL:PLAYER_EQUIPMENT_CHANGED(e, slot, hasItem)
+    self:StartScore('player');
+end
+
+-- Used for autoscaning the group when people change gear
+function SIL:UNIT_PORTRAIT_UPDATE(e, unitID)
+	if InCombatLockdown() then return end
+	
+	if unitID and CanInspect(unitID) then
+		self:StartScore(unitID);
+        
+        self:UpdateLDB(false);
+	end
+end
+
+-- Used to hook the tooltip to avoid the full tooltip function
+function SIL:TooltipHook()
+	local name, unit = GameTooltip:GetUnit();
+	local guid = false;
+	
+	if unit then
+		guid = UnitGUID(unit);
+	elseif name then
+		guid = SIL:NameToGUID(name);
 	end
 	
+	if tonumber(guid) > 0 then
+		self:ShowTooltip(guid);
+    end
+end
+
+function SIL:Autoscan(toggle)
+	if toggle then
+		self:RegisterEvent("UNIT_PORTRAIT_UPDATE");
+	else 
+		self:UnregisterEvent("UNIT_PORTRAIT_UPDATE");
+	end
+	
+	self.db.global.autoscan = toggle;
+end
+
+--[[
+
+    Slash Handlers
+    
+]]
+-- Reset the settings
+function SIL:SlashReset()
+	self:Print(L["Slash Clear"]);
+	self.db.global:ResetProfile();
+	SIL:SetMinimap(true);
+end
+
+function SIL:SlashGet(name)
+    
+    -- Get score by name
+    if name and not (name == '' or name == 'target') then
+        local score, age, items = self:GetScore(name);
+        
+        if score then
+            age = self:AgeToText(age);
+            
+            local str = L['Slash Get Score True'];
+			str = self:Replace(str, 'target', SIL_CacheGUID[SIL:NameToGUID(name)]['name']);
+			str = self:Replace(str, 'score', self:FormatScore(score, items));
+			str = self:Replace(str, 'ageLocal', age);
+			
+			self:Print(str);
+            
+        -- Nothing :(
+        else
+            local str = L['Slash Get Score False'];
+            str = self:Replace(str, 'target', name);
+            
+            self:Print(str);
+        end
+    
+    -- no name but we can inspect the current target
+    elseif CanInspect('target') then
+        self:SlashTarget();
+    
+    -- why do you ask so much of me but make no sence
+    else
+        self:Print(L["Slash Target Score False"]);
+    end
+end
+
+function SIL:SlashTarget()
+    self:StartScore('target', function(...) SIL:SlashTargetPrint(...); end);
+end
+
+function SIL:SlashTargetPrint(guid, score, items, age)
+    if guid and score then
+        local str = SIL:Replace(L['Slash Target Score True'], 'target', self:GUIDtoName(guid));
+        str = self:Replace(str, 'score', self:FormatScore(score, items));
+        
+        self:Print(str);
+    else
+        self:Print(L['Slash Target Score False']);
+    end
+end
+
+--[[
+
+    Genaric LUA functions
+
+]]
+function SIL:Strpad(str, length, pad)
+	if not pad then pad = ' '; end
 	length = tonumber(length);
 	
-	if ( type(length) == "number" ) then
+	if type(length) == "number" then
 		while string.len(str) < length do
 			str = str..pad;
 		end
@@ -213,7 +281,7 @@ function SIL:Strpad(str, length, pad)
 end
 
 function SIL:Replace(str, var, value)
-	if ( str ) and ( var ) and ( value ) then
+	if str and var and value then
 		str = string.gsub(str, '%%'..var, value);
 	end
 	
@@ -233,8 +301,13 @@ function SIL:RGBtoHex(r, g, b)
 	return string.format("%02x%02x%02x", r*255, g*255, b*255)
 end
 
+--[[
+
+    Basic Functions
+
+]]
 function SIL:GUIDtoName(guid)
-	if ( SIL_CacheGUID[guid] ) then
+	if SIL_CacheGUID[guid] then
 		return SIL_CacheGUID[guid].name, SIL_CacheGUID[guid].realm;
 	else
 		return false;
@@ -245,20 +318,20 @@ function SIL:NameToGUID(name, realm)
 	if not name then return false end
 	
 	-- Try and get the realm from the name-realm
-	if not ( realm ) then
+	if not realm then
 		name, realm = strsplit('-', name, 2);
 	end
 	
 	-- If no realm then set it to current realm
-	if not ( realm ) or ( realm == '' ) then
+	if not realm or realm == '' then
 		realm = GetRealmName();
 	end
 	
-	if ( name ) then
+	if name then
 		name = strlower(name);
 		
 		for guid,info in pairs(SIL_CacheGUID) do
-			if ( strlower(info['name']) == name ) and ( info['realm'] == realm ) then
+			if strlower(info['name']) == name and info['realm'] == realm then
 				return guid;
 			end
 		end
@@ -267,34 +340,25 @@ function SIL:NameToGUID(name, realm)
 	return false;
 end
 
--- Make sure we have a GUID
+-- Get a GUID from just about anything
 function SIL:GetGUID(target)
-	if not ( tonumber(target) ) then
-		return SIL:NameToGUID(target);
-	else
+	if tonumber(target) then
 		return target;
-	end
-end
-
--- Check if someone has a score
-function SIL:HasScore(target)
-	
-	
-	if ( SIL_CacheGUID[target] ) and ( SIL_CacheGUID[target]['items'] ) then
-		return true;
-	else
-		return false;
+	elseif UnitGUID(target) then
+        return UnitGUID(target);
+    else
+		return SIL:NameToGUID(target);
 	end
 end
 
 -- Clear score
 function SIL:ClearScore(target)
-	target = self:GetGUID(target);
+	local guid = self:GetGUID(target);
 	
-	if ( SIL_CacheGUID[target] ) and ( SIL_CacheGUID[target]['items'] )then
-		SIL_CacheGUID[target]['items'] = false;
-		SIL_CacheGUID[target]['total'] = false;
-		SIL_CacheGUID[target]['time'] = false;
+	if SIL_CacheGUID[guid] then
+		SIL_CacheGUID[guid].score = false;
+		SIL_CacheGUID[guid].items = false;
+		SIL_CacheGUID[guid].time = false;
 		
 		return true;
 	else
@@ -302,68 +366,248 @@ function SIL:ClearScore(target)
 	end
 end;
 
-
-function SIL:AddPlayer(guid, name, realm, class)
-	if ( guid ) and ( name ) and ( class ) then
-		if not ( SIL_CacheGUID[guid] ) then
-			SIL_CacheGUID[guid] = {};
+function SIL:AgeToText(age, color)
+	if type(color) == "nul" then color = false; end
+	
+	if type(age) == 'number' then
+		if age > 86400 then
+			age = self:Round(age / 86400, 2);
+			str = L['Age Days'];
+			hex = "ff0000";
+		elseif age > 3600 then
+			age = self:Round(age / 3600, 1);
+			str = L['Age Hours'];
+			hex = "33ccff";
+		elseif age > 60 then
+			age = self:Round(age / 60, 1);
+			str = L['Age Minutes'];
+			hex = "00ff00";
+		else
+			age = age;
+			str = L['Age Seconds'];
+			hex = "00ff00";
 		end
 		
-		if not ( realm ) or ( realm == '' ) then
-			realm = GetRealmName();
+		if color then
+			return self:Replace(str, 'age', '|cFF'..hex..age..'|r');
+		else
+			return self:Replace(str, 'age', age);
 		end
-		
-		SIL_CacheGUID[guid]['name'] = name;
-		SIL_CacheGUID[guid]['realm'] = realm;
-		SIL_CacheGUID[guid]['class'] = class;
-		
-		if not ( SIL_CacheGUID[guid]['score'] ) then
-			SIL_CacheGUID[guid]['score'] = 0;
-		end
+	else
+		return 'n/a';
 	end
 end
 
--- Get someones score
-function SIL:GetScore(target, force)
-	
-	-- If a score is forced the input becomes unitId, true
-	if ( force ) then
-		local guid = UnitGUID(target);
-		
-		if ( guid ) then
-			self:StartScore(target, true, false);
-			self:ProcessInspect(UnitGUID(target), false);
-			target = UnitGUID(target);
+-- Play around with to test how color changes will work
+function SIL:ColorTest(l,h)
+	for i = l,h do
+		self:Print(self:FormatScore(i));
+	end
+end
+
+-- print a message to channel or whisper player/channel
+function SIL:PrintTo(message, channel, to)
+	if channel == "print" or channel == "SYSTEM" then
+		self:Print(message);
+	elseif channel == "WHISPER" then
+		SendChatMessage(message, 'WHISPER', nil, to);
+	elseif channel == "CHANNEL" then
+		SendChatMessage(message, 'CHANNEL', nil, to);
+	elseif channel then
+		SendChatMessage(message, channel);
+	else
+		self:Print(message);
+	end
+end
+
+function SIL:CanOfficerChat()
+	GuildControlSetRank(select(3,GetGuildInfo("player")));
+	local flags = self:Flags2Table(GuildControlGetRankFlags());
+	return flags[4];
+end
+
+function SIL:Flags2Table(...)
+	local ret = {}
+	for i = 1, select("#", ...) do
+		if (select(i, ...)) then
+			ret[i] = true;
 		else
-			return false;
+			ret[i] = false;
 		end
 	end
-	
-	target = self:GetGUID(target);
-	
-	if ( SIL_CacheGUID[target] ) and ( SIL_CacheGUID[target]['items'] ) then
-		local score = SIL_CacheGUID[target]['total'] / SIL_CacheGUID[target]['items'];
-		local age = time() - SIL_CacheGUID[target]['time'];
-		local items = SIL_CacheGUID[target]['items'];
+	return ret;
+end
+
+function SIL:Debug(...)
+	if SIL_Debug then
+		print('SIL Debug: ', ...);
+	end
+end
+
+--[[
+
+    Core Functionality
+    
+]]
+-- Get someones score
+function SIL:GetScore(guid, attemptUpdate)
+    local target = false;
+    
+    if not tonumber(guid) then
+        target = guid;
+        guid = self:GetGUID(target);
+    end
+    
+	if tonumber(guid) and SIL_CacheGUID[guid] and SIL_CacheGUID[guid].score then
+		local score = SIL_CacheGUID[guid].score;
+		local age = time() - SIL_CacheGUID[guid].time;
+		local items = SIL_CacheGUID[guid].items;
 		
+        -- If a target was passed and we are over age
+        if target and (attemptUpdate or self:GetAge() < age) then
+            self:StartScore(target);
+        end
+        
 		return score, age, items;
 	else
-		return false;
+        
+        -- If a target was passed
+        if target then
+            self:StartScore(target);
+        end
+        
+        return false;
 	end
 end
 
--- Set someones score
-function SIL:SetScore(items, total, guid)
-	if ( items ) and ( total ) and ( guid ) then
-		SIL_CacheGUID[guid]['items'] = items;
-		SIL_CacheGUID[guid]['total'] = total;
-		SIL_CacheGUID[guid]['score'] = total / items;
-		SIL_CacheGUID[guid]['time'] = time();
-		
-		return true;
-	else
-		return false;
-	end
+-- Request items to update a score
+function SIL:StartScore(target, callback)
+    if InCombatLockdown() then return false; end
+    if not CanInspect(target) then return false; end
+    
+    local guid = self:AddPlayer(target);
+    
+    if guid then
+        self.action[guid] = callback;
+        
+        local canInspect = self.inspect:RequestData('items', target, true);
+        
+        if not canInspect and callback then
+            callback(false);
+        end
+    else
+        
+        if callback then
+            callback(false);
+        end
+        
+        return false;
+    end
+end
+
+function SIL:ProcessInspect(guid, data, age)
+    if guid and SIL_CacheGUID[guid] and type(data) == 'table' and type(data.items) == 'table' then
+        local totalItems = 0;
+        local totalScore = 0;
+        
+        for i,itemLink in pairs(data.items) do
+            if i ~= INVSLOT_BODY and itemLink then
+                local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
+                
+                if itemLevel then
+                    
+                    if itemRarity == 7 then
+                        itemLevel = self:Heirloom(SIL_CacheGUID[guid].level, itemLink);
+                    end
+                    
+                    totalItems = totalItems + 1;
+                    totalScore = totalScore + itemLevel;
+                end
+            end
+        end
+        
+        if totalItems > 0 then
+            
+            -- Update the DB
+            local score = totalScore / totalItems;
+            self:SetScore(guid, score, totalItems, age)
+            
+            self:Debug('SIL:ProcessInspect time', SIL_CacheGUID[guid].time, time(), age);
+            
+            -- Update the Tooltip
+            self:ShowTooltip();
+            
+            -- Update LDB
+            if self:GetLDB() and guid == UnitGUID('player') then
+                self:UpdateLDB(true);
+            end
+            
+            -- Trigger an event, and pass guid, score, totalItems, age, items
+            self:SendMessage('SIL_HAVE_SCORE', guid, score, items, age, data.items);
+            
+            -- Run any callbacks for this event
+            if self.action[guid] then
+                self.action[guid](guid, score, items, age);
+                self.action[guid] = false;
+            end
+            
+            return true;
+        end
+    end
+end
+
+-- Start or update the DB for a player
+function SIL:AddPlayer(target)  
+    local guid = UnitGUID(target);
+    
+    if guid then
+        local name, realm = UnitName(target);
+        local _, class = UnitClass(target);
+        local level = UnitLevel(target);
+        
+        if not realm then
+            realm = GetRealmName();
+        end
+        
+        if name and realm and class and level then
+            
+            -- Start a table for them
+            if not SIL_CacheGUID[guid] then
+                SIL_CacheGUID[guid] = {};
+            end
+            
+            SIL_CacheGUID[guid].name = name;
+            SIL_CacheGUID[guid].realm = realm;
+            SIL_CacheGUID[guid].guid = guid;
+            SIL_CacheGUID[guid].class = class;
+            SIL_CacheGUID[guid].level = level;
+            SIL_CacheGUID[guid].target = target;
+            
+            if not SIL_CacheGUID[guid].score or SIL_CacheGUID[guid].score ==0 then
+                SIL_CacheGUID[guid].score = false;
+                SIL_CacheGUID[guid].items = false;
+                SIL_CacheGUID[guid].time = false;
+            end
+            
+            return guid;
+        else
+            return false;
+        end
+    else
+        return false;
+    end
+end
+
+function SIL:SetScore(guid, score, items, age)
+    local t = age;
+    
+    if age and type(age) == 'number' and age < 86400 then
+        t = time() - age; 
+    end
+    
+    SIL_CacheGUID[guid].score = score;
+    SIL_CacheGUID[guid].items = items;
+    SIL_CacheGUID[guid].time = t;
 end
 
 -- Get a relative iLevel on Heirlooms
@@ -372,45 +616,45 @@ function SIL:Heirloom(level, itemLink)
 		Here is how I came to the level 81-85 bracket
 		200 = level of 80 instance gear
 		333 = level of 85 instance gear
-		333 - 200 = 133 iLevels / 5 levels = 26.6 iLevel / level
-		so then that means
-		85 - 80 = 5 * 26.6 = 133 + 200 = 333
+		333 - 200 = 133 iLevels / 5 levels = 26.6 iLevel per level
+		so then that means for a level 83
+		83 - 80 = 3 * 26.6 = 79.8 + 200 = 279.8 iLevel
 	]]
 	
-	-- We only care if they are above 80
-	if ( level > 80 ) then
-		local _, _, Color, Ltype, itemId, Enchant, Gem1, Gem2, Gem3, Gem4, Suffix, Unique, LinkLvl, reforging, Name = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?");
+	-- Check for Wrath Heirlooms that max at 80
+	if level > 80 then
+		local _, _, _, _, itemId = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?");
 		itemId = tonumber(itemId);
 		
 		-- Downgrade it to 80 if found
-		for k,eid in pairs(SIL_Heirlooms[80]) do
-			if ( eid == itemId ) then
+		for k,iid in pairs(SIL_Heirlooms[80]) do
+			if iid == itemId then
 				level = 80;
 			end
 		end
 	end
 	
-	if ( level > 80 ) then
-		return (( level - 80 ) * 26.6) + 200;
-	elseif ( level > 70 ) then
-		return (( level - 70 ) * 10) + 100;
-	elseif ( level > 60 ) then
-		return (( level - 60 ) * 4) + 60;
+	if level > 80 then
+		return (( level - 80) * 26.6) + 200;
+	elseif level > 70 then
+		return (( level - 70) * 10) + 100;
+	elseif level > 60 then
+		return (( level - 60) * 4) + 60;
 	else
 		return level;
 	end
 end
 
--- Formate the score
+-- Format the score for color and round it to xxx.x
 function SIL:FormatScore(score, items, color)
-	if ( type(color) == "nil" ) then color = true; end
+	if type(color) == "nil" then color = true; end
 	
-	if ( tonumber(score) ) then
+	if tonumber(score) then
 		local score = tonumber(score);
 		local hexColor = self:ColorScore(score, items);
 		local score = self:Round(score, 1);
 		
-		if ( color ) then
+		if color then
 			return '|cFF'..hexColor..score..'|r';
 		else
 			return score;
@@ -420,14 +664,21 @@ function SIL:FormatScore(score, items, color)
 	end
 end
 
+-- Return the hex, r, g, b of a score
 function SIL:ColorScore(score, items)
-	-- Default to white
+	
+    -- There are some missing items so gray
+	if items and items < 6 then
+		return self:RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
+    end
+    
+    -- Default to white
 	local r,g,b = 1,1,1;
 	
 	local found = false;
 	
 	for i,maxScore in pairs(SIL_ColorIndex) do
-		if ( score < maxScore ) and not ( found ) then
+		if score < maxScore and not found then
 			local colors = SIL_Colors[maxScore];
 			local baseColors = SIL_Colors[colors['p']];
 			
@@ -454,94 +705,27 @@ function SIL:ColorScore(score, items)
 		end
 	end
 	
-	-- Nothing was found so red
-	if not ( found ) then
+	-- Nothing was found so max
+	if not found then
 		r = SIL_Colors[1000]['r'];
 		g = SIL_Colors[1000]['g'];
 		b = SIL_Colors[1000]['b'];
 	end
 	
-	-- There are some missing items so gray
-	if ( items ) and ( items < 6 ) then
-		return self:RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
-	else
-		return self:RGBtoHex(r,g,b), r, g, b;
-	end
-end
-
-function SIL:ForceGet(target)
-	if ( type(target) == 'nil' ) then target = 'target'; end
-	if ( target == '' ) then target = 'target'; end
-	if not ( target ) then target = 'target'; end
-	
-	-- Current target
-	if ( target == 'target' ) then
-		if ( CanInspect('target') ) then
-			self:StartScore('target', true, false);
-			local score, age, items = self:ProcessInspect(UnitGUID('target'), false);
-			
-			if ( score ) then
-				local str = SIL:Replace(L['Slash Target Score True'], 'target', UnitName('target'));
-				str = self:Replace(str, 'score', self:FormatScore(score, items));
-				
-				self:Print(str);
-				
-			else
-				self:Print(L['Slash Target Score False']);
-			end
-		else
-			self:Print(L['Slash Target Score False']);
-		end
-	
-	-- Call by name
-	elseif not ( target == '' ) then
-		local score, age, items = SIL:GetScore(target);
-		
-		if ( score ) then
-			age = self:AgeToText(age);
-			
-			local str = L['Slash Get Score True'];
-			str = self:Replace(str, 'target', SIL_CacheGUID[SIL:NameToGUID(target)]['name']);
-			str = self:Replace(str, 'score', self:FormatScore(score, items));
-			str = self:Replace(str, 'ageLocal', age);
-			
-			self:Print(str);
-		else
-			self:Print(self:Replace(L['Slash Get Score False'], 'target', target));
-		end
-	else 
-		self:Print(L['Slash Target Score False']);
-	end
-end
-
-function SIL:TooltipHook()
-	local name, unit = GameTooltip:GetUnit();
-	local guid = false;
-	
-	if ( unit ) then
-		guid = UnitGUID(unit);
-	elseif ( name ) then
-		guid = SIL:NameToGUID(name);
-	end
-	
-	-- Break without a GUID
-	if not ( guid ) then return end
-	
-	if ( tonumber(guid) > 0 ) then
-		self:ShowTooltip(guid)
-	end
+    local hex = self:RGBtoHex(r,g,b);
+	return hex, r, g, b;
 end
 
 function SIL:ShowTooltip(guid)
-	if not ( guid ) then
+	if not guid then
 		guid = UnitGUID("mouseover");
 	end
 	
-	if ( self:HasScore(guid) ) then
+	if SIL_CacheGUID[guid] and SIL_CacheGUID[guid].score then
 		
 		local score, age, items = self:GetScore(guid);
 		
-		-- Build the tool tip text
+		-- Build the tooltip text
 		local textLeft = '|cFF216bff'..L['Tool Tip Left']..'|r ';
 		local textRight = self:Replace(L['Tool Tip Right'], 'score', self:FormatScore(score, items));
 		
@@ -550,7 +734,11 @@ function SIL:ShowTooltip(guid)
 		self:AddTooltipText(textLeft, textRight, textAdvanced);
 		
 		-- Run Hooks
-		self:RunHooks('tooltip', guid);
+        if self.hookTooltip and type(self.hookTooltip) == 'table' then
+            for i,callback in pairs(self.hookTooltip) do
+                callback(guid);
+            end
+        end
 		
 		return true;
 	else
@@ -558,7 +746,8 @@ function SIL:ShowTooltip(guid)
 	end
 end
 
-function SIL:AddTooltipText(textLeft, textRight, textAdvanced)
+-- Add lines to the tooltip, testLeft must be the same
+function SIL:AddTooltipText(textLeft, textRight, textAdvanced, textAdvancedRight)
 	
 	-- Loop tooltip text to check if its alredy there
 	local ttLines = GameTooltip:NumLines();
@@ -567,7 +756,7 @@ function SIL:AddTooltipText(textLeft, textRight, textAdvanced)
 	for i = 1,ttLines do
 				
 		-- If the static text matches
-		if ( _G["GameTooltipTextLeft"..i]:GetText() == textLeft ) then
+		if _G["GameTooltipTextLeft"..i]:GetText() == textLeft then
 			
 			-- Update the text
 			_G["GameTooltipTextLeft"..i]:SetText(textLeft);
@@ -575,8 +764,15 @@ function SIL:AddTooltipText(textLeft, textRight, textAdvanced)
 			GameTooltip:Show();
 			
 			-- Update the advanced info too
-			if ( self.db.global.advanced ) and ( textAdvanced ) then
-				_G["GameTooltipTextLeft"..i+1]:SetText(textAdvanced);
+			if self.db.global.advanced and textAdvanced then
+                
+                if textAdvancedRight then
+                    _G["GameTooltipTextLeft"..i]:SetText(textAdvanced);
+                    _G["GameTooltipTextRight"..i]:SetText(textAdvancedRight);
+                else
+                    _G["GameTooltipTextLeft"..i+1]:SetText(textAdvanced);
+                end
+                
 				GameTooltip:Show();
 			end
 			
@@ -586,361 +782,103 @@ function SIL:AddTooltipText(textLeft, textRight, textAdvanced)
 		end
 	end
 	
-	-- Tool tip is new
-	if not ( ttUpdated ) then
+	-- Tooltip is new
+	if not ttUpdated then
 		
 		GameTooltip:AddDoubleLine(textLeft, textRight);
 		GameTooltip:Show();
 		
-		if ( self.db.global.advanced ) and ( textAdvanced ) then
-			GameTooltip:AddLine(textAdvanced);
+		if self.db.global.advanced and textAdvanced then
+            if textAdvancedRight then
+                GameTooltip:AddDoubleLine(textAdvanced, textAdvancedRight);
+            else
+                GameTooltip:AddLine(textAdvanced);
+            end
+            
 			GameTooltip:Show();
 		end
 	end
 end
 
---------------------------------------------------------------------
---------------------------------------------------------------------
------------- I got lazy, this is copy and paste, no re-write -------
---------------------------------------------------------------------
---------------------------------------------------------------------
-
-function SIL:ColorTest(l,h)
-	for i = l,h do
-		self:Print(self:FormatScore(i));
-	end
+function SIL:UpdatePaperDollFrame(statFrame, unit)
+	local score, age, items = self:GetScore('player', true);
+	local formated = self:FormatScore(score, items, false);
+	
+	PaperDollFrame_SetLabelAndText(statFrame, L["Addon Name"], formated, false);
+	statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L["Addon Name"]..FONT_COLOR_CODE_CLOSE;
+	statFrame.tooltip2 = L["Score Desc"];
+	
+	statFrame:Show();
 end
 
-function SIL:AgeToText(age, color)
-	if ( type(color) == "nul" ) then color = false; end
-	
-	if ( type(age) == 'number' ) then
-		if ( age > 86400 ) then
-			age = self:Round(age / 86400, 2);
-			str = L['Age Days'];
-			hex = "ff0000";
-		elseif ( age > 3600 ) then
-			age = self:Round(age / 3600, 1);
-			str = L['Age Hours'];
-			hex = "33ccff";
-		elseif ( age > 60 ) then
-			age = self:Round(age / 60, 1);
-			str = L['Age Minutes'];
-			hex = "00ff00";
-		else
-			age = age;
-			str = L['Age Seconds'];
-			hex = "00ff00";
-		end
-		
-		if ( color ) then
-			return self:Replace(str, 'age', '|cFF'..hex..age..'|r');
-		else
-			return self:Replace(str, 'age', age);
-		end
-	else
-		return 'n/a';
-	end
+--[[
+
+    Setters, Getter and Togglers
+
+]]
+
+-- Set
+function SIL:SetAdvanced(v) self.db.global.advanced = v; end
+function SIL:SetLabel(v) self.db.global.showLabel = v; self:UpdateLDB(); end
+function SIL:SetAutoscan(v) self.db.global.autoscan = v; self:Autoscan(v); end
+function SIL:SetAge(seconds) self.db.global.age = seconds; end
+function SIL:SetLDBlabel(v) self.db.global.ldbLabel = v; self:UpdateLDB(true); end
+function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; end
+
+-- Get
+function SIL:GetAdvanced() return self.db.global.advanced; end
+function SIL:GetMinimap() return not self.db.global.minimap.hide; end
+function SIL:GetAutoscan() return self.db.global.autoscan; end
+function SIL:GetPaperdoll() return self.db.global.cinfo; end
+function SIL:GetAge() return self.db.global.age; end
+function SIL:GetPurge() return self.db.global.purge; end
+function SIL:GetLabel() return self.db.global.showLabel; end
+function SIL:GetLDB() return self.db.global.ldbText; end
+function SIL:GetLDBlabel() return self.db.global.ldbLabel; end
+function SIL:GetLDBrefresh() return self.db.global.ldbRefresh; end
+
+-- Toggle
+function SIL:ToggleAdvanced() self:SetAdvanced(not self:GetAdvanced()); end
+function SIL:ToggleMinimap() self:SetMinimap(not self:GetMinimap()); end
+function SIL:ToggleAutoscan() self:SetAutoscan(not self:GetAutoscan()); end
+function SIL:TogglePaperdoll() self:SetPaperdoll(not self:GetPaperdoll()); end
+function SIL:ToggleLabel() self:SetLabel(not self:GetLabel()); end
+function SIL:ToggleLDBlabel() self:SetLDBlabel(not self:GetLDBlabel()); end
+
+-- Advanced sets
+function SIL:SetPurge(hours) 
+    self.db.global.purge = hours; 
+    SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self.db.global.purge / 24); 
 end
 
-function SIL:StartScore(target, refresh, tooltip)
+function SIL:SetMinimap(v) 
+    self.db.global.minimap.hide = not v;
 	
-	-- Incombat so we can't do anything
-	if ( InCombatLockdown() ) then return false; end
-	
-	-- We can inspect the person
-	if ( CanInspect(target) ) then
-		local guid = UnitGUID(target);
-		local name, realm = UnitName(target);
-		
-		-- We want to start from scratch
-		if ( refresh ) then
-			self:ClearScore(guid);
-		end
-		
-		-- Check there score to get all usefull information
-		local score, age, items = self:GetScore(guid);
-		
-		-- We have a score and its under age and has over 5 items
-		if ( score ) and ( age < self.db.global.age ) and ( items > 5 ) then
-			
-			if ( tooltip ) then
-				self:ShowTooltip();
-			end
-			
-			return false;
-		
-		-- We can do something!
-		else
-			
-			-- Start some information if we haven't seen them before
-			local _,class = UnitClass(target);
-			self:AddPlayer(guid, name, realm, class);
-			
-			-- Update the target information for this person
-			SIL_CacheGUID[guid].target = target;
-			SIL_CacheGUID[guid].tooltip = tooltip;
-			
-			-- Fix for inspect frame bugs
-			if ( InspectFrame ) then
-				InspectFrame.unit = target;
-			end
-			
-			-- Start the server query
-			NotifyInspect(target);
-			
-			-- Pass 1 and 2nd pass will be after the event fires
-			self:ProcessInspect(guid, tooltip);
-			
-			return true;
-		end
-	else
-		return false;
-	end
-end
-
-function SIL:ProcessInspect(guid, tooltip)
-	
-	-- Incombat so we can't do anything
-	if ( InCombatLockdown() ) then return false; end
-	
-	-- Make sure the function has been called properly
-	if not ( tonumber(guid) ) then return false; end
-	if not ( SIL_CacheGUID[guid] ) then return false; end
-	
-	local name = self:GUIDtoName(guid);
-	local target = SIL_CacheGUID[guid].target; -- Last known target
-	
-	-- Figure out wether or not to display the tooltip
-	if not ( tooltip ) and not ( tooltip == false ) then
-		tooltip = SIL_CacheGUID[guid].tooltip;
-	end
-	
-	-- Can we still inspect them?
-	if ( target ) and ( CanInspect(target) ) then
-	
-		local totalItems = 0;
-		local totalScore = 0;
-		local items = {};
-		
-		-- Loop all items
-		for i = 1, 18 do
-			
-			-- Skip the Shirt
-			if ( i ~= 4 ) then
-				local itemLink = GetInventoryItemLink(target, i);
-				
-				-- We have a item link
-				if ( itemLink ) then
-					local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
-					
-					-- We have a valid itemLevel and its above white 1, and below artificat 6
-					if ( itemLevel ) then
-						
-						-- special processing for Heirlooms
-						if ( itemRarity == 7 ) then
-							itemLevel = self:Heirloom(UnitLevel(target), itemLink);
-						end
-						
-						items[i] = itemLink;
-						
-						totalItems = totalItems + 1;
-						totalScore = totalScore + itemLevel;
-					end
-				end
-			end
-		end
-		
-		-- We have some items to give a score for!
-		if ( totalItems > 0 ) then
-			
-			-- Set there score
-			self:SetScore(totalItems, totalScore, guid);
-			
-			-- Get the score back, this is dumb but it avoids dupe code
-			local score = self:GetScore(guid);
-			
-			if ( tooltip ) then
-				self:ShowTooltip();
-			end
-			
-			-- Run Callbacks
-			self:RunHooks('inspect', guid, items);
-			
-			return score, 0, totalItems, items;
-		else
-			return false;
-		end
-	else
-		return false;
-	end
-end
-
-function SIL:PrintTo(message, channel, to)
-	if ( channel == "print" ) or ( channel == "SYSTEM" ) then
-		SIL:Print(message);
-	elseif ( channel == "WHISPER" ) then
-		SendChatMessage(message, 'WHISPER', nil, to);
-	elseif ( channel == "CHANNEL" ) then
-		SendChatMessage(message, 'CHANNEL', nil, to);
-	elseif ( channel ) then
-		SendChatMessage(message, channel);
-	else
-		SIL:Print(message);
-	end
-end
-
-
-
-
-
-
----- Settings ----
-function SIL:ToggleAdvanced()
-	if ( self.db.global.advanced ) then
-		self.db.global.advanced = false;
-	else
-		self.db.global.advanced = true;
-	end
-end
-
-function SIL:ToggleLabel()
-	if ( self.db.global.showLabel ) then
-		self.db.global.showLabel = false;
-	else
-		self.db.global.showLabel = true;
-	end
-	
-	self:UpdateLDB();
-end
-
-function SIL:ToggleAutoscan()
-	if ( self.db.global.autoscan ) then
-		self.db.global.autoscan = false;
-	else
-		self.db.global.autoscan = true;
-	end
-	
-	self:Autoscan(self.db.global.autoscan);
-end
-
-function SIL:ToggleMinimap()
-	if ( self.db.global.minimap.hide ) then
-		self.db.global.minimap.hide = false;
-		LDBIcon:Show(L['Addon Name']);
-	else
-		self.db.global.minimap.hide = true;
-		LDBIcon:Hide(L['Addon Name']);
-	end
-end
-
-function SIL:SetAdvanced(v)
-	self.db.global.advanced = v;
-end
-
-function SIL:SetLabel(v)
-	self.db.global.showLabel = v;
-	self:UpdateLDB();
-end
-
-function SIL:SetAutoscan(v)
-	self.db.global.autoscan = v;
-	
-	self:Autoscan(self.db.global.autoscan);
-end
-
-function SIL:SetMinimap(v)
-	if ( v ) then
-		self.db.global.minimap.hide = false;
-	else 
-		self.db.global.minimap.hide = true;
-	end
-	
-	if ( self.db.global.minimap.hide ) then
+	if not v then
 		LDBIcon:Hide(L['Addon Name']);
 	else
 		LDBIcon:Show(L['Addon Name']);
 	end
-end
-
-function SIL:SetPurge(hours)
-	self.db.global.purge = hours;
-	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self.db.global.purge / 24);
-end
-
-function SIL:Autoscan(toggle)
-	if ( toggle ) then
-		self:RegisterEvent("UNIT_PORTRAIT_UPDATE");
-	else 
-		self:UnregisterEvent("UNIT_PORTRAIT_UPDATE");
-	end
-	
-	self.db.global.autoscan = toggle;
-end
-
-function SIL:GetAdvanced()
-	return self.db.global.advanced;
-end
-
-function SIL:GetAutoscan()
-	return self.db.global.autoscan;
-end
-
-function SIL:GetMinimap()
-	return not self.db.global.minimap.hide;
-end
-
-function SIL:GetPaperdoll()
-	return self.db.global.cinfo;
-end
-
-function SIL:GetAge()
-	return self.db.global.age;
-end
-
-function SIL:SetAge(sec)
-	self.db.global.age = sec;
-end
-
-function SIL:GetPurge()
-	return self.db.global.purge;
-end
-
-function SIL:GetLabel()
-	return self.db.global.showLabel;
-end
-
-function SIL:GetLDB()
-	return self.db.global.ldbText;
-end
-
-function SIL:GetLDBlabel()
-	return self.db.global.ldbLabel;
-end
-
-function SIL:GetLDBrefresh()
-	return self.db.global.ldbRefresh;
 end
 
 function SIL:SetPaperdoll(v)
 	self.db.global.cinfo = v;
 	
-	if ( v ) then
+	if v then
 		PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
 		PAPERDOLL_STATINFO['SimpleiLevel'] = nil;
-		-- Should put code to remove from PAPERDOLL_STATCATEGORIES here but it doesn't seam required, this will be fixed on next reload anyway
 	end
 end
 
 function SIL:SetLDB(v)
 	self.db.global.ldbText = v;
 	
-	if ( v ) then
-		self:RegisterEvent("PARTY_MEMBERS_CHANGED");
+	if v then
+		--self:RegisterEvent("PARTY_MEMBERS_CHANGED");
 		self.ldb.type = 'data source';
 	else
-		self:UnregisterEvent("PARTY_MEMBERS_CHANGED");
+		--self:UnregisterEvent("PARTY_MEMBERS_CHANGED");
 		self.ldb.type = 'launcher';
 		self.ldb.text = nil;
 	end
@@ -948,55 +886,22 @@ function SIL:SetLDB(v)
 	self:UpdateLDB(true);
 end
 
-function SIL:SetLDBlabel(v)
-	self.db.global.ldbLabel = v;
-	self:UpdateLDB(true);
-end
-
-function SIL:SetLDBrefresh(v)
-	self.db.global.ldbRefresh = v;
-end
-
-function SIL:ToggleLDBlabel()
-	if ( self.db.global.ldbLabel ) then
-		self.db.global.ldbLabel = false;
-	else
-		self.db.global.ldbLabel = true;
-	end
-	
-	self:UpdateLDB(true);
-end
-
-function SIL:TogglePaperdoll()
-	if ( self.db.global.cinfo ) then
-		self:SetPaperdoll(false);
-	else
-		self:SetPaperdoll(true);
-	end
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
+--[[
+    
+    GUI Functions
+    
+]]
 
 -- Open the options window
 function SIL:ShowOptions()
-	aceConfigDialog:Open(L['Addon Name']);
+	self.aceConfigDialog:Open(L['Addon Name']);
 end
+
 
 function SIL:OpenMenu(window)
 	
 	-- Don't do anything in combat
-	if ( InCombatLockdown() ) then return end
+	if InCombatLockdown() then return end
 	
 	if not self.silmenu then
 		self.silmenu = CreateFrame("Frame", "SILMenu")
@@ -1004,23 +909,28 @@ function SIL:OpenMenu(window)
 	local menu = self.silmenu
 	
 	
-	-- Get the score started for the menu
+	-- This will try and update but nothing will be shown until the menu is opened again
 	local score, age, items = self:GetScore('player', true);
 	
-	-- Party
-	local groupScore, groupCount = self:GroupScore(false);
-	groupScore = self:FormatScore(groupScore);
+	-- Start a group score
+    local groupScore, groupCount = false;
+    if SIL_Group then
+        groupScore, groupCount = SIL_Group:GroupScore(false);
+        groupScore = self:FormatScore(groupScore);
+    end
 	
+    -- Start the menu
 	menu.displayMode = "MENU";
 	local info = {};
 	menu.initialize = function(self,level)
 		if not level then return end
 		wipe(info);
+        
 		if level == 1 then
 			
 			-- Title
 			info.isTitle = 1;
-			info.text = L["Addon Name"]..' '..SIL_Version;
+			info.text = L["Addon Name"]..' '..SIL.version;
 			info.notCheckable = 1;
 			UIDropDownMenu_AddButton(info, level);
 			
@@ -1031,7 +941,7 @@ function SIL:OpenMenu(window)
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- Some sort of group
-			if ( GetNumPartyMembers() > 0 ) then
+			if GetNumPartyMembers() > 0 and SIL_Group then
 				wipe(info);
 				info.notCheckable = 1;
 				info.hasArrow = 1;
@@ -1095,7 +1005,7 @@ function SIL:OpenMenu(window)
 			UIDropDownMenu_AddButton(info, level);
 			
 		elseif level == 2 then
-			if type(UIDROPDOWNMENU_MENU_VALUE) == "table" then
+			if type(UIDROPDOWNMENU_MENU_VALUE) == "table" and SIL_Group then
 				local v = UIDROPDOWNMENU_MENU_VALUE;
 				
 				wipe(info)
@@ -1125,7 +1035,7 @@ function SIL:OpenMenu(window)
 				UIDropDownMenu_AddButton(info, level);
 				
 				-- Raid - CHAT_MSG_RAID 
-				if ( UnitInRaid("player") ) then
+				if UnitInRaid("player") then
 					wipe(info);
 					info.text = CHAT_MSG_RAID;
 					info.func = function() SIL:GroupOutput("RAID"); end;
@@ -1134,7 +1044,7 @@ function SIL:OpenMenu(window)
 				end
 				
 				-- BG - CHAT_MSG_RAID 
-				if ( UnitInBattleground("player") ) then
+				if UnitInBattleground("player") then
 					wipe(info);
 					info.text = CHAT_MSG_BATTLEGROUND;
 					info.func = function() SIL:GroupOutput("BG"); end;
@@ -1143,7 +1053,7 @@ function SIL:OpenMenu(window)
 				end
 				
 				-- Guild - CHAT_MSG_GUILD 
-				if ( IsInGuild() ) then
+				if IsInGuild() then
 					wipe(info);
 					info.text = CHAT_MSG_GUILD;
 					info.func = function() SIL:GroupOutput("GUILD"); end;
@@ -1151,7 +1061,7 @@ function SIL:OpenMenu(window)
 					UIDropDownMenu_AddButton(info, level);
 					
 					-- Officer - CHAT_MSG_OFFICER
-					if ( SIL:CanOfficerChat() ) then
+					if SIL:CanOfficerChat() then
 						wipe(info);
 						info.text = CHAT_MSG_OFFICER;
 						info.func = function() SIL:GroupOutput("OFFICER"); end;
@@ -1174,45 +1084,27 @@ function SIL:OpenMenu(window)
 	ToggleDropDownMenu(1, nil, menu, "UIParent", x / UIParent:GetEffectiveScale() , y / UIParent:GetEffectiveScale());
 end
 
-
 function SIL:UpdateLDB(force)
-	
-	if ( self.db.global.ldbText ) then
-		local label = '';
+    
+	if self:GetLDB() then
+		local label = UnitName('player');
 		
-		if ( UnitInBattleground("player") ) then
-			label = CHAT_MSG_BATTLEGROUND;
-		elseif ( UnitInRaid("player") ) then
-			label = CHAT_MSG_RAID;
-		elseif ( GetNumPartyMembers() > 0 ) then
-			label = CHAT_MSG_PARTY;
-		else
-			label = UnitName('player');
+        if SIL_Group then
+            _,label = SIL_Group:GroupType();
 		end
-		
-
+        
 		-- Do we really need to update LDB?
-		if ( force ) or ( label ~= self.ldbLable ) or ( (self.ldbUpdated + self.db.global.ldbRefresh) < time() ) then
-		
-			local score = SIL:GroupScore(false);
+		if force or label ~= self.ldbLable or (self.ldbUpdated + self:GetLDBrefresh()) < time() then
+            
+            local score = L["Unknown Score"];
+            
+            if SIL_Group then
+                score = SIL_Group:GroupScore(false);
+            elseif UnitGUID('player') then
+                score = self:GetScore(UnitGUID('player'));
+            end
 			
-			if ( tonumber(score) ) and ( tonumber(score) > 0 ) then
-				text = self:FormatScore(score);
-				
-				-- Log it
-				self.ldbUpdated = time();
-				self.ldbLable = label;
-				
-			---	print('LDB', label, score, text, type(score));
-				
-				if ( self.db.global.ldbLabel ) then
-					text = label..": "..text;
-				end
-				
-				self.ldb.text = text;
-			else
-			---	print("LDB error", score, tonumber(score), type(score));
-			end
+			self:UpdateLDBText(label, score)
 		end
 	else
 		self.ldb.type = 'launcher';
@@ -1223,264 +1115,22 @@ function SIL:UpdateLDB(force)
 	end
 end
 
--- 
-function SIL:GroupScore(force)
-	if InCombatLockdown() then return false; end
-	
-	local group = {};
-	local totalScore = 0;
-	local groupSize = 0;
-	local groupMin = 0;
-	local groupMax = 0;
-	
-	-- Add yourself for party
-	local score = 0;
-	local yourGUID = UnitGUID('player');
-	
-	if ( force ) then 
-		score = self:GetScore('player', true);
-	else
-		score = self:GetScore(yourGUID);
-	end
-	
-	table.insert(group, SIL_CacheGUID[yourGUID]);
-	
-	if ( score ) then
-		totalScore = totalScore + score;
-		groupSize = groupSize + 1;
-		groupMin = score;
-		groupMax = score;
-	end
-	
-	-- Raid
-	if ( UnitInRaid("player") ) then
-		for i = 1, 40 do
-			_, rank, subgroup, level, class, fileName, zone, online, isDead, role, isML = GetRaidRosterInfo(i);
-			local target = 'raid'..i;
-			local guid = UnitGUID(target);
-			local name, realm = UnitName(target);
-			local _,class = UnitClass(target);
-			
-			self:AddPlayer(guid, name, realm, class);
-			
-			-- Skip yourself
-			if not ( guid == yourGUID ) then
-				if ( force ) then 
-					score = self:GetScore(target, true);
-				else
-					score = self:GetScore(guid);
-				end
-				
-				table.insert(group, SIL_CacheGUID[guid]);
-				
-				if ( score ) then
-					totalScore = totalScore + score;
-					groupSize = groupSize + 1;
-					
-					if ( score < groupMin ) then groupMin = score; end
-					if ( score > groupMax ) then groupMax = score; end
-				end
-			end
-		end
-	
-	-- Party
-	elseif ( GetNumPartyMembers() > 0 ) then
-		for i = 1,4 do
-			if ( GetPartyMember(i) ) then
-				local target = 'party'..i;
-				local guid = UnitGUID(target);
-				local name, realm = UnitName(target);
-				local _,class = UnitClass(target);
-				self:AddPlayer(guid, name, realm, class);
-				
-				if ( force ) then 
-					score = self:GetScore(target, true);
-				else
-					score = self:GetScore(guid);
-				end
-				
-				table.insert(group, SIL_CacheGUID[guid]);
-				
-				if ( score ) then
-					totalScore = totalScore + score;
-					groupSize = groupSize + 1;
-					
-					if ( score < groupMin ) then groupMin = score; end
-					if ( score > groupMax ) then groupMax = score; end
-				end
-			end
-		end	
-	end
-	
-	-- Sort by score, not sure if this will be perserved but its worth a shot
-	sort(group, function(a,b) return a.score>b.score end );
-	
-	local groupAvg = totalScore / groupSize;
-	return groupAvg, groupSize, group, groupMin, groupMax;
-end
-
-function SIL:GroupOutput(dest, to)	
-	local groupAvg, groupSize, group, groupMin, groupMax = self:GroupScore(true);
-	
-	-- Can't do anything
-	if not ( type(group) == 'table') then return end
-	
-	local dest, to = self:GroupDest(dest, to);
-	
-	-- Output the header
-	if ( dest == "SYSTEM" ) then
-		groupAvgFmt = self:FormatScore(groupAvg, 16, true);
-	else
-		groupAvgFmt = self:FormatScore(groupAvg, 16, false);
-	end
-	
-	local str = L['Group Score'];
-	str = self:Replace(str, 'avg', groupAvgFmt);
-	self:PrintTo(str, dest, to);
-	
-	-- Sort by score
-	sort(group, function(a,b) return a.score>b.score end );
-	
-	-- Loop everyone
-	for i,info in pairs(group) do
-		local name = info.name;
-		local str = "%name (%score)";
-		local score = 0;
-		local items = 0;
-		
-		if ( info.score ) and ( info.score > 0 ) then
-			items = info.items;
-			score = info.score;
-		else 
-			str = L['Group Member Score False'];
-		end
-		
-		if ( dest == "SYSTEM" ) then
-			score = self:FormatScore(score, items, true);
-			name = '|cFF'..self:RGBtoHex(RAID_CLASS_COLORS[info.class].r, RAID_CLASS_COLORS[info.class].g, RAID_CLASS_COLORS[info.class].b)..name..'|r';
-		else
-			score = self:FormatScore(score, items, false);
-		end
-		
-		str = self:Replace(str, 'score', score);
-		str = self:Replace(str, 'name', name);
-		
-		self:PrintTo(str, dest, to);
-	end
-	
-	-- Update LDB
-	self:UpdateLDB(true);
-end
-
-function SIL:GroupDest(dest, to)
-	local valid = false;
-	
-	if not ( dest ) then dest = "SYSTEM"; valid = true; end
-	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
-	dest = string.upper(dest);
-	
-	-- Some short codes
-	if ( dest == 'P' ) then dest = 'PARTY'; valid = true; end
-	if ( dest == 'R' ) then dest = 'RAID'; valid = true; end
-	if ( dest == 'BG' ) then dest = 'BATTLEGROUND'; valid = true; end
-	if ( dest == 'G' ) then dest = 'GUILD'; valid = true; end
-	if ( dest == 'U' ) then dest = 'GROUP'; valid = true; end
-	if ( dest == 'O' ) then dest = 'OFFICER'; valid = true; end
-	if ( dest == 'S' ) then dest = 'SAY'; valid = true; end
-	if ( dest == 'T' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'W' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'TELL' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'C' ) then dest = 'CHANNEL'; valid = true; end
-	
-	-- Find out if its a valid dest
-	for fixed,loc in pairs(SIL_Channels) do
-		if ( dest == string.upper(loc) ) then
-			dest = fixed;
-			valid = true;
-		elseif ( dest == string.upper(fixed) ) then
-			dest = fixed;
-			valid = true;
-		end
-	end
-	
-	-- Default to system
-	if not ( valid ) then
-		dest = "SYSTEM";
-	end
-	
-	-- Figure out GROUP
-	if ( dest == 'GROUP' ) then
-		if ( UnitInRaid("player") ) then
-			dest = 'RAID';
-		elseif ( GetNumPartyMembers() > 0 ) then
-			dest = 'PARTY';
-		else
-			dest = 'SAY';
-		end
-	end
-	
-	return dest, to;
-end
-
-function SIL:CanOfficerChat()
-	GuildControlSetRank(select(3,GetGuildInfo("player")));
-	local flags = self:Flags2Table(GuildControlGetRankFlags());
-	return flags[4];
-end
-
-function SIL:Flags2Table(...)
-	local ret = {}
-	for i = 1, select("#", ...) do
-		if (select(i, ...)) then
-			ret[i] = true;
-		else
-			ret[i] = false;
-		end
-	end
-	return ret;
-end
-
-function SIL:UpdatePaperDollFrame(statFrame, unit)
-	local score, age, items = SIL:GetScore('player', true);
-	local formated = SIL:FormatScore(score, items, false);
-	
-	PaperDollFrame_SetLabelAndText(statFrame, L["Addon Name"], formated, false);
-	statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L["Addon Name"]..FONT_COLOR_CODE_CLOSE;
-	statFrame.tooltip2 = L["Score Desc"];
-	
-	statFrame:Show();
-end
-
-function SIL:Debug(...)
-	if ( SIL_Debug ) then
-		print('Debug: ', ...);
-	end
+function SIL:UpdateLDBText(label, text)
+    if not self:GetLDB() then return false; end
+    
+    -- A score was passed
+    if tonumber(text) then
+        text = self:FormatScore(text);
+    end
+    
+    -- Add the label
+    if self:GetLDBlabel() then
+        text = label..": "..text;
+    end
+    
+    self.ldb.text = text;
+    self.ldbUpdated = time();
+    self.ldbLable = label;
 end
 
 
-
-function SIL:AddHook(hookType, callback)
-	hookType = strlower(hookType);
-	
-	if ( hookType == 'inspect' ) then
-		table.insert(self.hookInspect, callback);
-	elseif ( hookType == 'tooltip' ) then
-		table.insert(self.hookTooltip, callback);
-	end
-end
-
-function SIL:RunHooks(hookType, guid, ...)
-	local tbl = nil;
-	
-	if ( hookType == 'inspect' ) then
-		tbl = self.hookInspect;
-	elseif ( hookType == 'tooltip' ) then
-		tbl = self.hookTooltip;
-	end
-	
-	if ( tbl ) and ( type(tbl) == 'table' ) then
-		for i,callback in pairs(tbl) do
-			callback(guid, ...);
-		end
-	end
-end
