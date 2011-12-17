@@ -37,7 +37,10 @@ externals:
 
 tools-used: 
     - libdatabroker-1-1
-	
+
+move-folders:
+    SimpleILevel/SimpleILevel_Group: SimpleILevel_Group
+    
 enable-nolib-creation: yes
 
 manual-changelog:
