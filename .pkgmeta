@@ -31,12 +31,15 @@ externals:
 	Libs/LibDBIcon-1.0:
         url: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
         tag: latest
+    Libs/LibInspect:
+        url: svn://svn.wowace.com/wow/libinspect/mainline/trunk
+        tag: latest
 
 tools-used: 
     - libdatabroker-1-1
 	
-enable-nolib-creation: no
+enable-nolib-creation: yes
 
-anual-changelog:
+manual-changelog:
     filename: changelog.txt
     markup-type: textile
