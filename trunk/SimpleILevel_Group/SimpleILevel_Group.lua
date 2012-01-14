@@ -1,3 +1,17 @@
+--[[
+
+PARTY_MEMBER_ENABLED - someone came within range
+
+PARTY_MEMBERRS_CHANGED - something in the party/raid updated (vary freequent)
+RAID_ROSTER_UPDATE same as PMC
+
+unitID = UNIT_INVENTORY_CHANGED - fired twice when in raid, partyX/player and raidX
+
+if in raid only do UNIT_INVENTORY_CHANGED raidXXX
+
+
+]]
+
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL_Group = LibStub("AceAddon-3.0"):NewAddon('SIL_Group', "AceEvent-3.0", "AceConsole-3.0");
 SIL_Group.group = {};  -- { guid, score }
@@ -38,8 +52,7 @@ function SIL_Group:OnInitialize()
     -- Add /silg or /silgroup for self:GroupOutput(dest, to);
     
     -- Keep our self.group sane
-    self:RegisterEvent("RAID_ROSTER_UPDATE", function() SIL_Group:UpdateGroup() end);
-    self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() SIL_Group:UpdateGroup() end);
+    self:RegisterEvent("PARTY_MEMBERRS_CHANGED", function() SIL_Group:UpdateGroup(false) end);
     self:RegisterEvent("SIL_HAVE_SCORE");
     
     self:UpdateGroup(false);
@@ -50,13 +63,18 @@ function SIL_Group:UpdateGroup(force)
     
     -- Reset the group table
     self.group = {};
+    -- /run for i=1,25 do if UnitName('raid'..i) then print(i,UnitName('raid'..i),SIL:GetScore(UnitGUID('raid'..i), true, 'raid'..i)); end end
+    -- /run for i=1,25 do t='raid'..i; if UnitName(t) then print(i,UnitName(t),SIL.inspect:RequestItems(t, true),SIL.inspect:GetAge(SIL.inspect.cache[UnitGUID('raid'..i)].time),CanInspect(t)); end end
     
+    -- /run for i=1,25 do t='raid'..i;g=UnitGUID(t);ins=SIL.inspect; if UnitName(t) then print(i, UnitName(t), ins:RequestItems(t, true), CanInspect(t), ins.cache[g].data == false, ins.cache[g].time == 0, (time() - ins.cache[g].time) > ins.maxAge); end end
+    
+    -- /run for i=1,4 do t='party'..i;g=UnitGUID(t);ins=SIL.inspect; if UnitName(t) then print(i, NotifyInspect(t)); end end
     -- Start it off with ourself
     local yourGUID = UnitGUID('player');
-    local yourScore = SIL:GetScore('player', force);
+    local yourScore = SIL:GetScoreTarget('player', force);
     local groupSize = 0;
     
-    if self:AddGroupMember(yourGUID) then
+    if self:AddGroupMember(yourGUID, 'player') then
         groupSize = groupSize + 1;
     end
     
@@ -68,10 +86,10 @@ function SIL_Group:UpdateGroup(force)
             local guid = SIL:AddPlayer(target);
             
             -- Skip ourself
-            if guid and guid ~= yourGUID then
-                local score = SIL:GetScore(target, force);
+            if not UnitIsUnit('player', target) then
+                local score = SIL:GetScoreTarget(target, force);
                 
-                if self:AddGroupMember(guid) then
+                if self:AddGroupMember(guid, target) then
                     groupSize = groupSize + 1;
                 end
             end
@@ -81,9 +99,9 @@ function SIL_Group:UpdateGroup(force)
 			if GetPartyMember(i) then
 				local target = 'party'..i;
                 local guid = SIL:AddPlayer(target);
-                local score = SIL:GetScore(target, force);
+                local score = SIL:GetScoreTarget(target, force);
                 
-                if self:AddGroupMember(guid) then
+                if self:AddGroupMember(guid, target) then
                     groupSize = groupSize + 1;
                 end
             end
@@ -91,12 +109,20 @@ function SIL_Group:UpdateGroup(force)
     end
 end
 
-function SIL_Group:AddGroupMember(guid)
+function SIL_Group:AddGroupMember(guid, target)
    -- print('SIL_Group:AddGroupMember', SIL:GUIDtoName(guid), guid, SIL_CacheGUID[guid]);
     if guid and SIL_CacheGUID[guid] then
         local player = {};
         player.guid = guid;
-        player.score = SIL_CacheGUID[guid].score;
+        
+        --print('SIL_Group:AddGroupMember', SIL_CacheGUID[guid].name, SIL_CacheGUID[guid].score);
+        
+        if SIL_CacheGUID[guid].score and SIL_CacheGUID[guid].items > 4 then
+            player.score = SIL_CacheGUID[guid].score;
+        else
+            local score, items = SIL:RoughScore(target);
+            player.score = score;
+        end
         
         table.insert(self.group, player);
         
@@ -155,6 +181,7 @@ function SIL_Group:GroupOutput(dest, to)
     self:UpdateGroup(true); -- Get the scores updated
     local groupAvg, groupSize, groupMin, groupMax = self:GroupScore(true);
     local dest, to = self:GroupDest(dest, to);
+    local rough = false;
     
     --print(dest, to, groupAvg, self.group);
     
@@ -193,10 +220,17 @@ function SIL_Group:GroupOutput(dest, to)
 		str = SIL:Replace(str, 'score', score);
 		str = SIL:Replace(str, 'name', name);
 		
+        if (not score or score == 0) and items < SIL.grayScore then
+            str = str..' *';
+            rough = true;
+        end
+        
 		SIL:PrintTo(str, dest, to);
 	end
     
-    
+    if rough then
+        SIL:PrintTo(L["Group Rough"], dest, to);
+    end
 end
 
 -- Figure out the type of group we are in
