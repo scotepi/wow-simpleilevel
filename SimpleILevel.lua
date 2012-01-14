@@ -9,6 +9,9 @@ SIL.versionMajor = 2.3;                    -- Used for setting versioning
 SIL.versionRev = 'r@project-revision@';    -- Used for information
 SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
 SIL.hookTooltip = {};
+SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
+SIL.lastScan = {};      -- target = time();
+SIL.grayScore = 6;      -- Number of items to consider gray/aprox
 
 -- Load Libs
 SIL.aceConfig = LibStub:GetLibrary("AceConfig-3.0");
@@ -152,7 +155,7 @@ function SIL:PLAYER_TARGET_CHANGED(e, target)
     if not target then target = 'target'; end
 
     if CanInspect(target) then
-        self:GetScore(target, true);
+        self:GetScoreTarget(target, false);
     end
 end
 
@@ -160,18 +163,20 @@ function SIL:UPDATE_MOUSEOVER_UNIT()
 	self:ShowTooltip();
 end
 
-function SIL:PLAYER_EQUIPMENT_CHANGED(e, slot, hasItem)
+function SIL:PLAYER_EQUIPMENT_CHANGED()
+    --print('PLAYER_EQUIPMENT_CHANGED'); 
     self:StartScore('player');
 end
 
 -- Used for autoscaning the group when people change gear
-function SIL:UNIT_PORTRAIT_UPDATE(e, unitID)
+function SIL:UNIT_INVENTORY_CHANGED(e, unitID)
+    --print('UNIT_INVENTORY_CHANGED'); 
 	if InCombatLockdown() then return end
 	
-	if unitID and CanInspect(unitID) then
-		self:StartScore(unitID);
+	if unitID and CanInspect(unitID) and not UnitIsUnit('player', unitID) and self.autoscan ~= time() then
+        self.autoscan = time();
         
-        self:UpdateLDB(false);
+		self:StartScore(unitID);
 	end
 end
 
@@ -193,9 +198,9 @@ end
 
 function SIL:Autoscan(toggle)
 	if toggle then
-		self:RegisterEvent("UNIT_PORTRAIT_UPDATE");
+		self:RegisterEvent("UNIT_INVENTORY_CHANGED");
 	else 
-		self:UnregisterEvent("UNIT_PORTRAIT_UPDATE");
+		self:UnregisterEvent("UNIT_INVENTORY_CHANGED");
 	end
 	
 	self.db.global.autoscan = toggle;
@@ -217,7 +222,7 @@ function SIL:SlashGet(name)
     
     -- Get score by name
     if name and not (name == '' or name == 'target') then
-        local score, age, items = self:GetScore(name);
+        local score, age, items = self:GetScoreName(name);
         
         if score then
             age = self:AgeToText(age);
@@ -342,13 +347,17 @@ end
 
 -- Get a GUID from just about anything
 function SIL:GetGUID(target)
-	if tonumber(target) then
-		return target;
-	elseif UnitGUID(target) then
-        return UnitGUID(target);
+    if target then
+        if tonumber(target) then
+            return target;
+        elseif UnitGUID(target) then
+            return UnitGUID(target);
+        else
+            return SIL:NameToGUID(target);
+        end
     else
-		return SIL:NameToGUID(target);
-	end
+        return false;
+    end
 end
 
 -- Clear score
@@ -450,15 +459,10 @@ end
     
 ]]
 -- Get someones score
-function SIL:GetScore(guid, attemptUpdate)
-    local target = false;
+function SIL:GetScore(guid, attemptUpdate, target)
+    if not tonumber(guid) then return false; end
     
-    if not tonumber(guid) then
-        target = guid;
-        guid = self:GetGUID(target);
-    end
-    
-	if tonumber(guid) and SIL_CacheGUID[guid] and SIL_CacheGUID[guid].score then
+	if SIL_CacheGUID[guid] and SIL_CacheGUID[guid].score then
 		local score = SIL_CacheGUID[guid].score;
 		local age = time() - SIL_CacheGUID[guid].time;
 		local items = SIL_CacheGUID[guid].items;
@@ -480,6 +484,21 @@ function SIL:GetScore(guid, attemptUpdate)
 	end
 end
 
+-- Wrapers for get score, more specialized code may come
+function SIL:GetScoreName(name)
+    local guid = self:NameToGUID(name);
+    return self:GetScore(guid);
+end
+
+function SIL:GetScoreTarget(target, force)
+    local guid = UnitGUID(target);
+    return self:GetScore(guid, force, target);
+end
+
+function SIL:GetScoreGUID(guid)
+    return self:GetScore(guid);
+end
+
 -- Request items to update a score
 function SIL:StartScore(target, callback)
     if InCombatLockdown() then return false; end
@@ -487,46 +506,34 @@ function SIL:StartScore(target, callback)
     
     local guid = self:AddPlayer(target);
     
-    if guid then
-        self.action[guid] = callback;
-        
-        local canInspect = self.inspect:RequestData('items', target, true);
-        
-        if not canInspect and callback then
+    if not self.lastScan[target] or self.lastScan[target] ~= time() then
+        if guid then
+            self.action[guid] = callback;
+            self.lastScan[target] = time();
+            
+            local canInspect = self.inspect:RequestItems(target, true);
+            
+            if not canInspect and callback then
+                callback(false);
+            else
+                return true;
+            end
+        elseif callback then
             callback(false);
         end
-    else
-        
-        if callback then
-            callback(false);
-        end
-        
-        return false;
+    elseif callback then
+        callback(false);
     end
+    
+    return false;
 end
 
 function SIL:ProcessInspect(guid, data, age)
     if guid and SIL_CacheGUID[guid] and type(data) == 'table' and type(data.items) == 'table' then
-        local totalItems = 0;
-        local totalScore = 0;
         
-        for i,itemLink in pairs(data.items) do
-            if i ~= INVSLOT_BODY and itemLink then
-                local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
-                
-                if itemLevel then
-                    
-                    if itemRarity == 7 then
-                        itemLevel = self:Heirloom(SIL_CacheGUID[guid].level, itemLink);
-                    end
-                    
-                    totalItems = totalItems + 1;
-                    totalScore = totalScore + itemLevel;
-                end
-            end
-        end
+        local totalScore, totalItems = self:GearSum(data.items, SIL_CacheGUID[guid].level);
         
-        if totalItems > 0 then
+        if totalItems and totalItems > 0 then
             
             -- Update the DB
             local score = totalScore / totalItems;
@@ -553,6 +560,63 @@ function SIL:ProcessInspect(guid, data, age)
             
             return true;
         end
+    end
+end
+
+function SIL:GearSum(items, level)
+    if items and level and type(items) == 'table' then
+        local totalItems = 0;
+        local totalScore = 0;
+        
+        for i,itemLink in pairs(items) do
+            if i ~= INVSLOT_BODY and itemLink then
+                local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
+                
+                if itemLevel then
+                    
+                    -- Fix for heirlooms
+                    if itemRarity == 7 then
+                        itemLevel = self:Heirloom(level, itemLink);
+                    end
+                    
+                    totalItems = totalItems + 1;
+                    totalScore = totalScore + itemLevel;
+                end
+            end
+        end
+        
+        return totalScore, totalItems;
+    else
+        return false;
+    end
+end
+
+-- /run for i=1,25 do t='raid'..i; if UnitExists(t) then print(i, UnitName(t), CanInspect(t), SIL:RoughScore(t)); end end
+function SIL:RoughScore(target)
+    if not target then return false; end
+    if not CanInspect(target) then return false; end
+    
+    -- Get stuff in order
+    local guid = self:AddPlayer(target)
+    self.inspect:AddCharacter(target);
+    NotifyInspect(target);
+    
+    -- Get items and sum
+    local items = self.inspect:GetItems(target);
+    local totalScore, totalItems = self:GearSum(items, UnitLevel(target));
+    
+    if totalItems and totalItems > 0 then
+        local score = totalScore / totalItems;
+        self:Debug('SIL:RoughScore', UnitName(target), score, totalItems);
+        
+        -- Set a score even tho its crap
+        if guid and SIL_CacheGUID[guid] and not SIL_CacheGUID[guid].score then
+            self:SetScore(UnitGUID(target), score, 1, self:GetAge() + 1);
+        end
+        
+        return score, totalItems, 0;
+    else
+        return false;
     end
 end
 
@@ -583,7 +647,7 @@ function SIL:AddPlayer(target)
             SIL_CacheGUID[guid].level = level;
             SIL_CacheGUID[guid].target = target;
             
-            if not SIL_CacheGUID[guid].score or SIL_CacheGUID[guid].score ==0 then
+            if not SIL_CacheGUID[guid].score or SIL_CacheGUID[guid].score == 0 then
                 SIL_CacheGUID[guid].score = false;
                 SIL_CacheGUID[guid].items = false;
                 SIL_CacheGUID[guid].time = false;
@@ -668,7 +732,7 @@ end
 function SIL:ColorScore(score, items)
 	
     -- There are some missing items so gray
-	if items and items < 6 then
+	if items and items < self.grayScore then
 		return self:RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
     end
     
@@ -729,7 +793,7 @@ function SIL:ShowTooltip(guid)
 		local textLeft = '|cFF216bff'..L['Tool Tip Left']..'|r ';
 		local textRight = self:Replace(L['Tool Tip Right'], 'score', self:FormatScore(score, items));
 		
-		local textAdvanced = self:Replace(L['Tool Tip Advanced'], 'localizedAge', self:AgeToText(age));
+		local textAdvanced = self:Replace(L['Tool Tip Advanced'], 'localizedAge', self:AgeToText(age, true));
 		
 		self:AddTooltipText(textLeft, textRight, textAdvanced);
 		
@@ -801,7 +865,7 @@ function SIL:AddTooltipText(textLeft, textRight, textAdvanced, textAdvancedRight
 end
 
 function SIL:UpdatePaperDollFrame(statFrame, unit)
-	local score, age, items = self:GetScore('player', true);
+	local score, age, items = self:GetScoreTarget('player', true);
 	local formated = self:FormatScore(score, items, false);
 	
 	PaperDollFrame_SetLabelAndText(statFrame, L["Addon Name"], formated, false);
@@ -910,7 +974,7 @@ function SIL:OpenMenu(window)
 	
 	
 	-- This will try and update but nothing will be shown until the menu is opened again
-	local score, age, items = self:GetScore('player', true);
+	local score, age, items = self:GetScoreTarget('player', true);
 	
 	-- Start a group score
     local groupScore, groupCount = false;
@@ -1017,7 +1081,7 @@ function SIL:OpenMenu(window)
 				-- Console - CHAT_MSG_SYSTEM 
 				wipe(info);
 				info.text = CHAT_MSG_SYSTEM;
-				info.func = function() SIL:GroupOutput("SYSTEM"); end;
+				info.func = function() SIL_Group:GroupOutput("SYSTEM"); end;
 				info.notCheckable = 1;
 				UIDropDownMenu_AddButton(info, level);
 				
@@ -1030,7 +1094,7 @@ function SIL:OpenMenu(window)
 				-- Party - CHAT_MSG_PARTY
 				wipe(info);
 				info.text = CHAT_MSG_PARTY;
-				info.func = function() SIL:GroupOutput("PARTY"); end;
+				info.func = function() SIL_Group:GroupOutput("PARTY"); end;
 				info.notCheckable = 1;
 				UIDropDownMenu_AddButton(info, level);
 				
@@ -1038,7 +1102,7 @@ function SIL:OpenMenu(window)
 				if UnitInRaid("player") then
 					wipe(info);
 					info.text = CHAT_MSG_RAID;
-					info.func = function() SIL:GroupOutput("RAID"); end;
+					info.func = function() SIL_Group:GroupOutput("RAID"); end;
 					info.notCheckable = 1;
 					UIDropDownMenu_AddButton(info, level);
 				end
@@ -1047,7 +1111,7 @@ function SIL:OpenMenu(window)
 				if UnitInBattleground("player") then
 					wipe(info);
 					info.text = CHAT_MSG_BATTLEGROUND;
-					info.func = function() SIL:GroupOutput("BG"); end;
+					info.func = function() SIL_Group:GroupOutput("BG"); end;
 					info.notCheckable = 1;
 					UIDropDownMenu_AddButton(info, level);
 				end
@@ -1056,7 +1120,7 @@ function SIL:OpenMenu(window)
 				if IsInGuild() then
 					wipe(info);
 					info.text = CHAT_MSG_GUILD;
-					info.func = function() SIL:GroupOutput("GUILD"); end;
+					info.func = function() SIL_Group:GroupOutput("GUILD"); end;
 					info.notCheckable = 1;
 					UIDropDownMenu_AddButton(info, level);
 					
@@ -1064,7 +1128,7 @@ function SIL:OpenMenu(window)
 					if SIL:CanOfficerChat() then
 						wipe(info);
 						info.text = CHAT_MSG_OFFICER;
-						info.func = function() SIL:GroupOutput("OFFICER"); end;
+						info.func = function() SIL_Group:GroupOutput("OFFICER"); end;
 						info.notCheckable = 1;
 						UIDropDownMenu_AddButton(info, level);
 					end
@@ -1073,7 +1137,7 @@ function SIL:OpenMenu(window)
 				-- Say - CHAT_MSG_SAY
 				wipe(info);
 				info.text = CHAT_MSG_SAY;
-				info.func = function() SIL:GroupOutput("SAY"); end;
+				info.func = function() SIL_Group:GroupOutput("SAY"); end;
 				info.notCheckable = 1;
 				UIDropDownMenu_AddButton(info, level);
 			end
@@ -1101,7 +1165,7 @@ function SIL:UpdateLDB(force)
             if SIL_Group then
                 score = SIL_Group:GroupScore(false);
             elseif UnitGUID('player') then
-                score = self:GetScore(UnitGUID('player'));
+                score = self:GetScoreTarget('player');
             end
 			
 			self:UpdateLDBText(label, score)
