@@ -1,0 +1,10 @@
+## Interface: 40300
+
+## Title: SimpleiLevel - Group
+## Notes: View the average group score and autoscan the group.
+
+## Author: Scotepi
+## Version: @project-version@
+## Dependencies: SimpleILevel
+
+SimpleILevel_Group.lua
