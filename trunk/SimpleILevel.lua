@@ -12,6 +12,7 @@ SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
 SIL.versionMajor = 2.4;                    -- Used for cache DB versioning
 SIL.versionRev = 'r@project-revision@';    -- Used for version information
 SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
+SIL.hookInspect = {};   -- List of functions to call when a inspect update is required
 SIL.hookTooltip = {};   -- List of functions to call when a tooltip update is required
 SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
@@ -23,6 +24,7 @@ SIL.aceConfigDialog = LibStub:GetLibrary("AceConfigDialog-3.0");
 SIL.inspect = LibStub:GetLibrary("LibInspect");
 SIL.ldb = LibStub:GetLibrary("LibDataBroker-1.1");
 SIL.ldbIcon = LibStub:GetLibrary("LibDBIcon-1.0");
+SIL.callback = LibStub("CallbackHandler-1.0"):New(SIL);
 
 -- OnLoad
 function SIL:OnInitialize()
@@ -157,6 +159,8 @@ function SIL:AddHook(hookType, callback)
 	
 	if hookType == 'tooltip' then
 		table.insert(self.hookTooltip, callback);
+    elseif hookType == 'inspect' then
+		table.insert(self.hookInspect, callback);
 	end
 end
 
@@ -565,8 +569,12 @@ function SIL:ProcessInspect(guid, data, age)
                 self:UpdateLDB(true);
             end
             
-            -- Trigger an event, and pass guid, score, totalItems, age, items
-            self:SendMessage('SIL_HAVE_SCORE', guid, score, items, age, data.items);
+            -- Run Hooks
+            if self.hookInspect and type(self.hookInspect) == 'table' then
+                for i,callback in pairs(self.hookInspect) do
+                    callback(guid, score, totalItems, age, data.items);
+                end
+            end
             
             -- Run any callbacks for this event
             if self.action[guid] then
