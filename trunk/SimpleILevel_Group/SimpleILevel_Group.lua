@@ -36,7 +36,7 @@ SIL_Options.args.raid.set = function(i,v) SIL_Group:GroupOutput(v); end;
 
 
 function SIL_Group:OnInitialize()
-    print("SIL Group Loaded");
+    SIL:Print("Group Module Loaded", GetAddOnMetadata("SimpleILevel_Group", "Version"));
     
     -- Version Info
     self.version = GetAddOnMetadata("SimpleILevel_Group", "Version");
