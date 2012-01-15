@@ -561,9 +561,6 @@ function SIL:ProcessInspect(guid, data, age)
             
             self:Debug('SIL:ProcessInspect time', SIL_CacheGUID[guid].time, time(), age);
             
-            -- Update the Tooltip
-            self:ShowTooltip();
-            
             -- Update LDB
             if self:GetLDB() and guid == UnitGUID('player') then
                 self:UpdateLDB(true);
@@ -581,6 +578,9 @@ function SIL:ProcessInspect(guid, data, age)
                 self.action[guid](guid, score, items, age);
                 self.action[guid] = false;
             end
+            
+            -- Update the Tooltip
+            self:ShowTooltip();
             
             return true;
         end
@@ -842,7 +842,7 @@ function SIL:AddTooltipText(textLeft, textRight, textAdvanced, textAdvancedRight
 	local ttUpdated = false;
 	
 	for i = 1,ttLines do
-				
+        
 		-- If the static text matches
 		if _G["GameTooltipTextLeft"..i]:GetText() == textLeft then
 			
