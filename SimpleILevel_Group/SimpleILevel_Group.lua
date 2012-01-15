@@ -183,13 +183,7 @@ function SIL_Group:GroupOutput(dest, to)
     local dest, to, color = self:GroupDest(dest, to);
     local rough = false;
     
-    --print(dest, to, groupAvg, self.group);
-    
-    if dest == "SYSTEM" then
-		groupAvgFmt = SIL:FormatScore(groupAvg, 16, true);
-	else
-		groupAvgFmt = SIL:FormatScore(groupAvg, 16, false);
-	end
+	groupAvgFmt = SIL:FormatScore(groupAvg, 16, color);
     
     local str = L['Group Score'];
 	str = SIL:Replace(str, 'avg', groupAvgFmt);
