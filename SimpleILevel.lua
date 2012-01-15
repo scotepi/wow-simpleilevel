@@ -1,14 +1,18 @@
+--[[
+ToDo:
+    - Play with UnitName() and GetRealmName() in instances
+
+]]
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
 -- Start SIL
 SIL = LibStub("AceAddon-3.0"):NewAddon(L['Addon Name'], "AceEvent-3.0", "AceConsole-3.0");
-SIL.L = L;
 SIL.category = GetAddOnMetadata("SimpleILevel", "X-Category");
 SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
-SIL.versionMajor = 2.3;                    -- Used for setting versioning
-SIL.versionRev = 'r@project-revision@';    -- Used for information
+SIL.versionMajor = 2.4;                    -- Used for cache DB versioning
+SIL.versionRev = 'r@project-revision@';    -- Used for version information
 SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
-SIL.hookTooltip = {};
+SIL.hookTooltip = {};   -- List of functions to call when a tooltip update is required
 SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
 SIL.grayScore = 6;      -- Number of items to consider gray/aprox
@@ -60,7 +64,6 @@ function SIL:OnInitialize()
 	self.ldb = self.ldb:NewDataObject(L['Addon Name'], ldbObj);
 	self.ldbUpdated = 0;
 	self.ldbLable = '';
-	
     
     -- Start the minimap icon
 	self.ldbIcon = self.ldbIcon:Register(L['Addon Name'], self.ldb, self.db.global.minimap);
@@ -81,9 +84,9 @@ function SIL:OnInitialize()
     -- Add to Paperdoll - not relevent as of 4.3, well see
     table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L['Addon Name']);
 	if self:GetPaperdoll() then
-		PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+		PAPERDOLL_STATINFO[L['Addon Name']] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
-		PAPERDOLL_STATINFO['SimpleiLevel'] = nil;
+		PAPERDOLL_STATINFO[L['Addon Name']] = nil;
 	end
     
     -- Clear the cache
@@ -97,9 +100,20 @@ end
 -- Make sure the database is the latest version
 function SIL:UpdateSettings()
     
+    if self.db.global.version == self.versionMajor then
+        -- Save version
+    elseif self.db.global.version < 2.4 then
+        for guid,info in pairs(SIL_CacheGUID) do
+            SIL_CacheGUID[guid].total = nil;
+            SIL_CacheGUID[guid].tooltip = nil;
+            
+            SIL_CacheGUID[guid].level = 85;
+            SIL_CacheGUID[guid].guid = guid;
+        end
+    end
+    
     -- Update version information
     self.db.global.version = self.versionMajor;
-    self.db.global.versionMinor = self.versionMinor;
 end
 
 function SIL:AutoPurge(silent)
@@ -191,7 +205,7 @@ function SIL:TooltipHook()
 		guid = SIL:NameToGUID(name);
 	end
 	
-	if tonumber(guid) > 0 then
+	if tonumber(guid) and tonumber(guid) > 0 then
 		self:ShowTooltip(guid);
     end
 end
@@ -216,6 +230,8 @@ function SIL:SlashReset()
 	self:Print(L["Slash Clear"]);
 	self.db.global:ResetProfile();
 	SIL:SetMinimap(true);
+    SIL_CacheGUID = {};
+    self:GetScoreStart('player', true);
 end
 
 function SIL:SlashGet(name)
@@ -929,9 +945,9 @@ function SIL:SetPaperdoll(v)
 	self.db.global.cinfo = v;
 	
 	if v then
-		PAPERDOLL_STATINFO['SimpleiLevel'] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+		PAPERDOLL_STATINFO[L['Addon Name']] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
-		PAPERDOLL_STATINFO['SimpleiLevel'] = nil;
+		PAPERDOLL_STATINFO[L['Addon Name']] = nil;
 	end
 end
 
@@ -958,7 +974,7 @@ end
 
 -- Open the options window
 function SIL:ShowOptions()
-	self.aceConfigDialog:Open(L['Addon Name']);
+    InterfaceOptionsFrame_OpenToCategory(L['Addon Name']);
 end
 
 
