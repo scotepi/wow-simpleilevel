@@ -180,7 +180,7 @@ function SIL_Group:GroupOutput(dest, to)
     
     self:UpdateGroup(true); -- Get the scores updated
     local groupAvg, groupSize, groupMin, groupMax = self:GroupScore(true);
-    local dest, to = self:GroupDest(dest, to);
+    local dest, to, color = self:GroupDest(dest, to);
     local rough = false;
     
     --print(dest, to, groupAvg, self.group);
@@ -205,26 +205,25 @@ function SIL_Group:GroupOutput(dest, to)
 		local score = player.score;
 		local items = SIL_CacheGUID[guid].items;
         local class = SIL_CacheGUID[guid].class;
-		
+        
+		if color then
+            name = '|cFF'..SIL:RGBtoHex(RAID_CLASS_COLORS[class].r, RAID_CLASS_COLORS[class].g, RAID_CLASS_COLORS[class].b)..name..'|r';
+        end
+            
 		if not score or score == 0 then
 			str = L['Group Member Score False'];
-		end
-		
-		if dest == "SYSTEM" then
-			score = SIL:FormatScore(score, items, true);
-			name = '|cFF'..SIL:RGBtoHex(RAID_CLASS_COLORS[class].r, RAID_CLASS_COLORS[class].g, RAID_CLASS_COLORS[class].b)..name..'|r';
+            
 		else
-			score = SIL:FormatScore(score, items, false);
-		end
-		
-		str = SIL:Replace(str, 'score', score);
-		str = SIL:Replace(str, 'name', name);
-		
-        if (not score or score == 0) and items < SIL.grayScore then
-            str = str..' *';
-            rough = true;
+            score = SIL:FormatScore(score, items, color);
+            str = SIL:Replace(str, 'score', score);
+            
+            if items < SIL.grayScore then
+                str = str..' *';
+                rough = true;
+            end
         end
         
+        str = SIL:Replace(str, 'name', name);
 		SIL:PrintTo(str, dest, to);
 	end
     
@@ -249,7 +248,8 @@ end
 
 function SIL_Group:GroupDest(dest, to)
 	local valid = false;
-	
+	local color = false;
+    
 	if not ( dest ) then dest = "SYSTEM"; valid = true; end
 	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
 	dest = string.upper(dest);
@@ -294,7 +294,11 @@ function SIL_Group:GroupDest(dest, to)
 		end
 	end
 	
-	return dest, to;
+    if dest == "SYSTEM" then
+        color = true;
+    end
+    
+	return dest, to, color;
 end
 
 function SIL_Group:SortScore(a, b)
