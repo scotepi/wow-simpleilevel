@@ -1,7 +1,6 @@
 --[[
 ToDo:
-    - Play with UnitName() and GetRealmName() in instances
-
+    - 
 ]]
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
@@ -511,8 +510,8 @@ function SIL:GetScore(guid, attemptUpdate, target)
 end
 
 -- Wrapers for get score, more specialized code may come
-function SIL:GetScoreName(name)
-    local guid = self:NameToGUID(name);
+function SIL:GetScoreName(name, realm)
+    local guid = self:NameToGUID(name, realm);
     return self:GetScore(guid);
 end
 
