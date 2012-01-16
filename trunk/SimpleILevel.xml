@@ -1,8 +1,9 @@
 <Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
-    <!-- ptBR -->
-	<Script file="Locals\enUS.lua" />
+    <Script file="Locals\enUS.lua" />
+    
+    <Script file="Locals\ptBR.lua" />
 	<Script file="Locals\frFR.lua" />
-	<!-- deDE -->
+	<Script file="Locals\deDE.lua" />
 	<Script file="Locals\koKR.lua" />
 	<!-- esMX -->
 	<Script file="Locals\ruRU.lua" />

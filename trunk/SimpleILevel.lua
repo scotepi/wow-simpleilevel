@@ -68,7 +68,7 @@ function SIL:OnInitialize()
 	self.ldbLable = '';
     
     -- Start the minimap icon
-	self.ldbIcon = self.ldbIcon:Register(L['Addon Name'], self.ldb, self.db.global.minimap);
+	self.ldbIcon:Register(L['Addon Name'], self.ldb, self.db.global.minimap);
     
     -- Register Options
 	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self:GetPurge() / 24);
@@ -232,10 +232,16 @@ end
 -- Reset the settings
 function SIL:SlashReset()
 	self:Print(L["Slash Clear"]);
-	self.db.global:ResetProfile();
-	SIL:SetMinimap(true);
+	self.db:RegisterDefaults(SIL_Defaults);
+	self.db:ResetDB('Default');
+	self:SetMinimap(true);
+    
+    -- Clear the cache
     SIL_CacheGUID = {};
-    self:GetScoreStart('player', true);
+    self:GetScoreTarget('player', true);
+    
+    -- Update version information
+    self.db.global.version = self.versionMajor;
 end
 
 function SIL:SlashGet(name)
@@ -889,14 +895,14 @@ function SIL:AddTooltipText(textLeft, textRight, textAdvanced, textAdvancedRight
 end
 
 function SIL:UpdatePaperDollFrame(statFrame, unit)
-	local score, age, items = self:GetScoreTarget('player', true);
-	local formated = self:FormatScore(score, items, false);
-	
-	PaperDollFrame_SetLabelAndText(statFrame, L["Addon Name"], formated, false);
-	statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L["Addon Name"]..FONT_COLOR_CODE_CLOSE;
-	statFrame.tooltip2 = L["Score Desc"];
-	
-	statFrame:Show();
+    local score, age, items = self:GetScoreTarget(unit, true);
+    local formated = self:FormatScore(score, items, false);
+    
+    PaperDollFrame_SetLabelAndText(statFrame, L["Addon Name"], formated, false);
+    statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L["Addon Name"]..FONT_COLOR_CODE_CLOSE;
+    statFrame.tooltip2 = L["Score Desc"];
+    
+    statFrame:Show();
 end
 
 --[[
@@ -943,9 +949,9 @@ function SIL:SetMinimap(v)
     self.db.global.minimap.hide = not v;
 	
 	if not v then
-		LDBIcon:Hide(L['Addon Name']);
+		self.ldbIcon:Hide(L['Addon Name']);
 	else
-		LDBIcon:Show(L['Addon Name']);
+		self.ldbIcon:Show(L['Addon Name']);
 	end
 end
 

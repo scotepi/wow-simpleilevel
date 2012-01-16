@@ -38,6 +38,13 @@ function SIL_Resil:OnInitialize()
     
     SIL:AddHook('tooltip', function(...) SIL_Resil:Tooltip(...); end);
     SIL:AddHook('inspect', function(...) SIL_Resil:Inspect(...); end);
+    
+    table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, 'SIL_Resil');
+	if SIL:GetPaperdoll() then
+		PAPERDOLL_STATINFO['SIL_Resil'] = { updateFunc = function(...) SIL_Resil:UpdatePaperDollFrame(...); end };
+	else
+		PAPERDOLL_STATINFO['SIL_Resil'] = nil;
+	end
 end
 
 function SIL_Resil:Inspect(guid, score, itemCount, age, itemTable)
@@ -65,27 +72,47 @@ function SIL_Resil:Inspect(guid, score, itemCount, age, itemTable)
 end
 
 function SIL_Resil:Tooltip(guid)
-    local rItems = self:GetItemCount(guid);
-	
-	if rItems and 0 < rItems and SIL_CacheGUID[guid] and SIL_CacheGUID[guid].items then
-        local per = SIL:Round((rItems / SIL_CacheGUID[guid].items) * 100, 1);
-        local text = rItems..'/'..SIL_CacheGUID[guid].items..' '..per..'%';
-		SIL:AddTooltipText(GUILD_PVP_STATUS..':', '|cFFFFFFFF'..text..'|r');
-	end
-end
-
-function SIL_Resil:GetItemCount(guid)
-    if SIL_Resilience[guid] and SIL_Resilience[guid] ~= 0 then
-        return SIL_Resilience[guid];
+    if guid and tonumber(guid) then
+        local rItems, items = self:GetItemCount(guid);
+        
+        if rItems and 0 < rItems and SIL_CacheGUID[guid] and SIL_CacheGUID[guid].items then
+            local percent = self:GetPercent(guid);
+            local text = rItems..'/'..SIL_CacheGUID[guid].items..' '..percent..'%';
+            SIL:AddTooltipText(GUILD_PVP_STATUS..':', '|cFFFFFFFF'..text..'|r');
+        else
+            return false;
+        end
     else
         return false;
     end
 end
 
-function SIL_Resil:GetItemCountName(name)
-    local guid = SIL:NameToGUID(name);
-    return self:GetItemCount(guid);
+function SIL_Resil:GetItemCount(guid)
+    if guid and tonumber(guid) and SIL_Resilience[guid] and SIL_Resilience[guid] ~= 0 then
+        local rItems = SIL_Resilience[guid];
+        local items = SIL_CacheGUID[guid].items;
+        return rItems, items;
+    else
+        return false;
+    end
 end
+
+function SIL_Resil:GetItemCountName(name) return self:GetItemCount(SIL:NameToGUID(name)); end
+function SIL_Resil:GetItemCountTarget(target) return self:GetItemCount(UnitGUID(target)); end
+
+function SIL_Resil:GetPercent(guid)
+    local count, items = self:GetItemCount(guid);
+    
+    if count then
+        local percent = SIL:Round((count / items) * 100, 1);
+        return percent;
+    else
+        return 0;
+    end
+end
+
+function SIL_Resil:GetPercentName(name) return self:GetPercent(SIL:NameToGUID(name)); end
+function SIL_Resil:GetPercentTarget(target) return self:GetPercent(UnitGUID(target)); end
 
 function SIL_Resil:GroupOutput(dest, to)
     if not SIL_Group then return false; end
@@ -98,3 +125,30 @@ function SIL_Resil:GroupOutput(dest, to)
         local guid = player.guid;
     end
 end
+
+function SIL_Resil:UpdatePaperDollFrame(statFrame, unit)
+    local percent = self:GetPercentTarget(unit);
+    local rItems, items = self:GetItemCountTarget(unit);
+    local rating = GetCombatRating(COMBAT_RATING_RESILIENCE_PLAYER_DAMAGE_TAKEN);
+    
+    PaperDollFrame_SetLabelAndText(statFrame, GUILD_PVP_STATUS, percent..'%', false);
+    statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..GUILD_PVP_STATUS..FONT_COLOR_CODE_CLOSE;
+    
+    if rItems then
+        statFrame.tooltip2 = format(L['Resil Paperdoll Tooltip True'], rItems, items, rating);
+    else
+        statFrame.tooltip2 = L['Resil Paperdoll Tooltip False'];
+    end
+    
+    statFrame:Show();
+end
+
+function SIL_Resil:SetPaperdoll(s,v)
+    if SIL:GetPaperdoll() then
+		PAPERDOLL_STATINFO['SIL_Resil'] = { updateFunc = function(...) SIL_Resil:UpdatePaperDollFrame(...); end };
+	else
+		PAPERDOLL_STATINFO['SIL_Resil'] = nil;
+	end
+end
+
+hooksecurefunc(SIL, 'SetPaperdoll', function(...) SIL_Resil:SetPaperdoll(...) end);
