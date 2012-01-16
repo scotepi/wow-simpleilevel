@@ -1,15 +1,6 @@
 --[[
-
-PARTY_MEMBER_ENABLED - someone came within range
-
-PARTY_MEMBERRS_CHANGED - something in the party/raid updated (vary freequent)
-RAID_ROSTER_UPDATE same as PMC
-
-unitID = UNIT_INVENTORY_CHANGED - fired twice when in raid, partyX/player and raidX
-
-if in raid only do UNIT_INVENTORY_CHANGED raidXXX
-
-
+ToDo:
+    - Priority scanning of gray and then lowest people
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);

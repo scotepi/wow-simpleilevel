@@ -1,0 +1,11 @@
+## Interface: 40300
+
+## Title: SimpleiLevel - Social
+## Notes: Adds SIL Scores to chat.
+
+## Author: Scotepi
+## Version: @project-version@
+## Dependencies: SimpleILevel
+## SavedVariables: SIL_Social
+
+SimpleILevel_Social.lua

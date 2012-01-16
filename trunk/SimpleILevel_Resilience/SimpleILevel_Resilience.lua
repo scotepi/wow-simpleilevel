@@ -1,15 +1,7 @@
 --[[
-
-PARTY_MEMBER_ENABLED - someone came within range
-
-PARTY_MEMBERRS_CHANGED - something in the party/raid updated (vary freequent)
-RAID_ROSTER_UPDATE same as PMC
-
-unitID = UNIT_INVENTORY_CHANGED - fired twice when in raid, partyX/player and raidX
-
-if in raid only do UNIT_INVENTORY_CHANGED raidXXX
-
-
+ToDo:
+    - /sil pvp
+    - Options: to disable tooltip, show 0% tooltip, independant paperdoll controls
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
@@ -97,7 +89,7 @@ function SIL_Resil:GetItemCount(guid)
     end
 end
 
-function SIL_Resil:GetItemCountName(name) return self:GetItemCount(SIL:NameToGUID(name)); end
+function SIL_Resil:GetItemCountName(name, realm) return self:GetItemCount(SIL:NameToGUID(name, realm)); end
 function SIL_Resil:GetItemCountTarget(target) return self:GetItemCount(UnitGUID(target)); end
 
 function SIL_Resil:GetPercent(guid)
@@ -111,7 +103,7 @@ function SIL_Resil:GetPercent(guid)
     end
 end
 
-function SIL_Resil:GetPercentName(name) return self:GetPercent(SIL:NameToGUID(name)); end
+function SIL_Resil:GetPercentName(name, realm) return self:GetPercent(SIL:NameToGUID(name, realm)); end
 function SIL_Resil:GetPercentTarget(target) return self:GetPercent(UnitGUID(target)); end
 
 function SIL_Resil:GroupOutput(dest, to)
