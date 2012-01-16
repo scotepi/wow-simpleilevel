@@ -992,8 +992,6 @@ end
 
 
 function SIL:OpenMenu(window)
-	
-	-- Don't do anything in combat
 	if InCombatLockdown() then return end
 	
 	if not self.silmenu then
@@ -1001,8 +999,6 @@ function SIL:OpenMenu(window)
 	end
 	local menu = self.silmenu
 	
-	
-	-- This will try and update but nothing will be shown until the menu is opened again
 	local score, age, items = self:GetScoreTarget('player', true);
 	
 	-- Start a group score
