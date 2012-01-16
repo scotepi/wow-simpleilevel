@@ -3,9 +3,9 @@
 ## Title: SimpleiLevel
 ## Notes: Adds the Average iLevel (AiL) to the tool tip of other players
 
-## Title-zhTW: 簡易物品等級
-## Title-zhCN: 简易物品等级
 ## Title-ptBR: iLevelSimples
+## Title-zhCN: 简易物品等级
+## Title-zhTW: 簡易物品等級
 
 ## Notes-ptBR: Incluir iLevel Medio (AiL) na informacção flutuante dos players
 ## Notes-frFR: Ajout le iLevel moyen (AiL) à l'infobulle des autres joueurs
