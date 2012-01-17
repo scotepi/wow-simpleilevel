@@ -10,7 +10,7 @@ SIL_Resil = LibStub("AceAddon-3.0"):NewAddon('SIL_Resil', "AceEvent-3.0");
 if SIL_Group and false then
     SIL_Options.args.pvp = {
                 name = GUILD_PVP_STATUS,
-                desc = "Displayed the PvP gear of everyone in your group.",
+                desc = L.resil.options.pvpDesc,
                 type = "input",
                 hidden = true,
                 guiHidden = true,
@@ -21,18 +21,19 @@ if SIL_Group and false then
 end
 
 function SIL_Resil:OnInitialize()
-    SIL:Print(RESILIENCE.." Module Loaded", GetAddOnMetadata("SimpleILevel_Resilience", "Version"));
+    SIL:Print(L.resil.load, GetAddOnMetadata("SimpleILevel_Resilience", "Version"));
     
     if not SIL_Resilience or type(SIL_Resilience) ~= 'table' then SIL_Resilience = {}; end
     
     self.db = LibStub("AceDB-3.0"):New("SIL_ResilSettings", SILResil_Defaults, true);
-    SIL.aceConfig:RegisterOptionsTable("SimpleILevel_Resilience", SILResil_Options, {"sir", "silr", "sip", "silp", "simpleilevelresilience", "simpleilevelpvp"});
-    SIL.aceConfigDialog:AddToBlizOptions("SimpleILevel_Resilience", RESILIENCE, L['Addon Name']);
+    SIL.aceConfig:RegisterOptionsTable(L.resil.name, SILResil_Options, {"sir", "silr", "sip", "silp", "simpleilevelresilience", "simpleilevelpvp"});
+    SIL.aceConfigDialog:AddToBlizOptions(L.resil.name, RESILIENCE, L.core.name);
     
     -- Hooks
     SIL:AddHook('tooltip', function(...) SIL_Resil:Tooltip(...); end);
     SIL:AddHook('inspect', function(...) SIL_Resil:Inspect(...); end);
     SIL:AddHook('purge', function(...) SIL_Resil:Purge(...); end);
+    SIL:AddHook('clear', function(...) SIL_Resilience = {}; end);
     
     -- Paperdoll
     table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, 'SIL_Resil');
@@ -138,12 +139,12 @@ function SIL_Resil:UpdatePaperDollFrame(statFrame, unit)
     local rating = GetCombatRating(COMBAT_RATING_RESILIENCE_PLAYER_DAMAGE_TAKEN);
     
     PaperDollFrame_SetLabelAndText(statFrame, GUILD_PVP_STATUS, percent..'%', false);
-    statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..GUILD_PVP_STATUS..FONT_COLOR_CODE_CLOSE;
+    statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L.resil.name..FONT_COLOR_CODE_CLOSE;
     
     if rItems then
-        statFrame.tooltip2 = format(L['Resil Paperdoll Tooltip True'], rItems, items, rating);
+        statFrame.tooltip2 = format(L.resil.ttPaperdoll, rItems, items, rating);
     else
-        statFrame.tooltip2 = L['Resil Paperdoll Tooltip False'];
+        statFrame.tooltip2 = L.resil.PaperdollFalse;
     end
     
     statFrame:Show();
@@ -174,13 +175,12 @@ function SIL_Resil:SetPaperdoll(v)
 end
 
 SILResil_Options = {
-	name = 'SIL Social Options',
-	desc = 'Options for SIL Social',
+	name = L.resil.options.name,
 	type = "group",
 	args = {
         cinfo = {
-            name = 'Show on Character Info',
-            desc = 'Shows your SIL '..RESILIENCE..' score on the stats pane.',
+            name = L.resil.options.cinfo,
+            desc = L.resil.options.cinfoDesc,
             type = "toggle",
             set = function(i,v) SIL_Resil:SetPaperdoll(v); end,
             get = function(i) return SIL_Resil:GetPaperdoll(); end,
@@ -188,8 +188,7 @@ SILResil_Options = {
         },
         
         tooltip = {
-            name = 'Tooltip Type',
-            desc = nil,
+            name = L.resil.options.ttType,
             type = "select",
             values = {
                 [0] = 'Off',
@@ -202,8 +201,8 @@ SILResil_Options = {
             order = 10,
         },
         tooltipZero = {
-            name = 'Zero Tooltip',
-            desc = 'Show the tooltip is they have no PvP gear.',
+            name = L.resil.options.ttZero,
+            desc = L.resil.options.ttZeroDesc,
             type = "toggle",
             set = function(i,v) SIL_Resil:SetTooltipZero(v); end,
             get = function(i) return SIL_Resil:GetTooltipZero(); end,

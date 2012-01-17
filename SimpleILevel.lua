@@ -5,7 +5,7 @@ ToDo:
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
 -- Start SIL
-SIL = LibStub("AceAddon-3.0"):NewAddon(L['Addon Name'], "AceEvent-3.0", "AceConsole-3.0");
+SIL = LibStub("AceAddon-3.0"):NewAddon(L.core.name, "AceEvent-3.0", "AceConsole-3.0");
 SIL.category = GetAddOnMetadata("SimpleILevel", "X-Category");
 SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
 SIL.versionMajor = 2.4;                    -- Used for cache DB versioning
@@ -32,7 +32,7 @@ function SIL:OnInitialize()
     if not type(SIL_CacheGUID) == 'table' then SIL_CacheGUID = {}; end
     
     -- Tell the player we are being loaded
-	self:Print(self:Replace(L['Loading Addon'], 'version', self.version));
+	self:Print(format(L.core.load, self.version));
     
     -- Load settings
     self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
@@ -42,14 +42,14 @@ function SIL:OnInitialize()
     local ldbObj = {
         type = "data source",
         icon = "Interface\\Icons\\inv_misc_armorkit_24",
-        label = L['Addon Name'],
-        text = L["Unknown Score"],
+        label = L.core.name,
+        text = 'n/a',
         category = self.category,
         version = self.version,
         OnClick = function(...) SIL:OpenMenu(...); end,
         OnTooltipShow = function(tt)
-                            tt:AddLine(L['Minimap Click']);
-                            tt:AddLine(L['Minimap Click Drag']);
+                            tt:AddLine(L.core.minimapClick);
+                            tt:AddLine(L.core.minimapClickDrag);
             end,
     };
     
@@ -62,20 +62,20 @@ function SIL:OnInitialize()
 	end
     
     -- Start LDB
-	self.ldb = self.ldb:NewDataObject(L['Addon Name'], ldbObj);
+	self.ldb = self.ldb:NewDataObject(L.core.name, ldbObj);
 	self.ldbUpdated = 0;
 	self.ldbLable = '';
     
     -- Start the minimap icon
-	self.ldbIcon:Register(L['Addon Name'], self.ldb, self.db.global.minimap);
+	self.ldbIcon:Register(L.core.name, self.ldb, self.db.global.minimap);
     
     -- Register Options
-	SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self:GetPurge() / 24);
-	self.aceConfig:RegisterOptionsTable(L['Addon Name'], SIL_Options, {"sil", "silev", "simpleilevel"});
-	self.aceConfigDialog:AddToBlizOptions(L['Addon Name']);
+	SIL_Options.args.purge.desc = format(L.core.options.purgeDesc, self:GetPurge() / 24);
+	self.aceConfig:RegisterOptionsTable(L.core.name, SIL_Options, {"sil", "silev", "simpleilevel"});
+	self.aceConfigDialog:AddToBlizOptions(L.core.name);
     
     -- Add Hooks
-    self.inspect:AddHook('SimpleILevel', 'items', function(...) SIL:ProcessInspect(...); end);
+    self.inspect:AddHook(L.core.name, 'items', function(...) SIL:ProcessInspect(...); end);
     GameTooltip:HookScript("OnTooltipSetUnit", function(...) SIL:TooltipHook(...); end);
     self:Autoscan(self:GetAutoscan());
     self:RegisterEvent("PLAYER_TARGET_CHANGED");
@@ -83,11 +83,11 @@ function SIL:OnInitialize()
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
     
     -- Add to Paperdoll - not relevent as of 4.3, well see
-    table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L['Addon Name']);
+    table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L.core.name);
 	if self:GetPaperdoll() then
-		PAPERDOLL_STATINFO[L['Addon Name']] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
-		PAPERDOLL_STATINFO[L['Addon Name']] = nil;
+		PAPERDOLL_STATINFO[L.core.name] = nil;
 	end
     
     -- Clear the cache
@@ -122,13 +122,13 @@ function SIL:AutoPurge(silent)
 		local count = self:PurgeCache(self:GetPurge());
 		
 		if not silent then
-			self:Print(self:Replace(L['Purge Notification'], 'num', count));
+			self:Print(format(L.core.purgeNotification, count));
 		end
 		
 		return count;
 	else
 		if not silent then
-			self:Print(L['Purge Notification False']);
+			self:Print(L.core.purgeNotificationFalse);
 		end
 		
 		return false;
@@ -254,7 +254,7 @@ end
 ]]
 -- Reset the settings
 function SIL:SlashReset()
-	self:Print(L["Slash Clear"]);
+	self:Print(L.core.slashClear);
 	self.db:RegisterDefaults(SIL_Defaults);
 	self.db:ResetDB('Default');
 	self:SetMinimap(true);
@@ -265,6 +265,8 @@ function SIL:SlashReset()
     
     -- Update version information
     self.db.global.version = self.versionMajor;
+    
+    self:RunHooks('clear');
 end
 
 function SIL:SlashGet(name)
@@ -275,20 +277,12 @@ function SIL:SlashGet(name)
         
         if score then
             age = self:AgeToText(age);
-            
-            local str = L['Slash Get Score True'];
-			str = self:Replace(str, 'target', SIL_CacheGUID[SIL:NameToGUID(name)]['name']);
-			str = self:Replace(str, 'score', self:FormatScore(score, items));
-			str = self:Replace(str, 'ageLocal', age);
 			
-			self:Print(str);
+			self:Print(format(L.core.slashGetScore, SIL_CacheGUID[SIL:NameToGUID(name)].name), self:FormatScore(score, items), self:AgeToText(age));
             
         -- Nothing :(
         else
-            local str = L['Slash Get Score False'];
-            str = self:Replace(str, 'target', name);
-            
-            self:Print(str);
+            self:Print(format(L.core.slashGetScoreFalse, name));
         end
     
     -- no name but we can inspect the current target
@@ -297,7 +291,7 @@ function SIL:SlashGet(name)
     
     -- why do you ask so much of me but make no sence
     else
-        self:Print(L["Slash Target Score False"]);
+        self:Print(L.core.slashTargetScoreFalse);
     end
 end
 
@@ -307,12 +301,11 @@ end
 
 function SIL:SlashTargetPrint(guid, score, items, age)
     if guid and score then
-        local str = SIL:Replace(L['Slash Target Score True'], 'target', self:GUIDtoName(guid));
-        str = self:Replace(str, 'score', self:FormatScore(score, items));
+        local name = self:GUIDtoName(guid);
         
-        self:Print(str);
+        self:Print(format(L.core.slashTargetScore, name, self:FormatScore(score, items)));
     else
-        self:Print(L['Slash Target Score False']);
+        self:Print(L.core.slashTargetScoreFalse);
     end
 end
 
@@ -329,14 +322,6 @@ function SIL:Strpad(str, length, pad)
 		while string.len(str) < length do
 			str = str..pad;
 		end
-	end
-	
-	return str;
-end
-
-function SIL:Replace(str, var, value)
-	if str and var and value then
-		str = string.gsub(str, '%%'..var, value);
 	end
 	
 	return str;
@@ -432,26 +417,26 @@ function SIL:AgeToText(age, color)
 	if type(age) == 'number' then
 		if age > 86400 then
 			age = self:Round(age / 86400, 2);
-			str = L['Age Days'];
+			str = L.core.ageDays;
 			hex = "ff0000";
 		elseif age > 3600 then
 			age = self:Round(age / 3600, 1);
-			str = L['Age Hours'];
+			str = L.core.ageHours;
 			hex = "33ccff";
 		elseif age > 60 then
 			age = self:Round(age / 60, 1);
-			str = L['Age Minutes'];
+			str = L.core.ageMinutes;
 			hex = "00ff00";
 		else
 			age = age;
-			str = L['Age Seconds'];
+			str = L.core.ageSeconds;
 			hex = "00ff00";
 		end
 		
 		if color then
-			return self:Replace(str, 'age', '|cFF'..hex..age..'|r');
+			return format(str, '|cFF'..hex..age..'|r');
 		else
-			return self:Replace(str, 'age', age);
+			return format(str, age);
 		end
 	else
 		return 'n/a';
@@ -775,7 +760,7 @@ function SIL:FormatScore(score, items, color)
 			return score;
 		end
 	else
-		return L["Unknown Score"];
+		return 'n/a';
 	end
 end
 
@@ -841,10 +826,10 @@ function SIL:ShowTooltip(guid)
 		local score, age, items = self:GetScore(guid);
 		
 		-- Build the tooltip text
-		local textLeft = '|cFF216bff'..L['Tool Tip Left']..'|r ';
-		local textRight = self:Replace(L['Tool Tip Right'], 'score', self:FormatScore(score, items));
+		local textLeft = '|cFF216bff'..L.core.ttLeft..'|r ';
+		local textRight = self:FormatScore(score, items);
 		
-		local textAdvanced = self:Replace(L['Tool Tip Advanced'], 'localizedAge', self:AgeToText(age, true));
+		local textAdvanced = format(L.core.ttAdvanced, self:AgeToText(age, true));
 		
 		self:AddTooltipText(textLeft, textRight, textAdvanced);
 		
@@ -915,9 +900,9 @@ function SIL:UpdatePaperDollFrame(statFrame, unit)
     local score, age, items = self:GetScoreTarget(unit, true);
     local formated = self:FormatScore(score, items, false);
     
-    PaperDollFrame_SetLabelAndText(statFrame, L["Addon Name"], formated, false);
-    statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L["Addon Name"]..FONT_COLOR_CODE_CLOSE;
-    statFrame.tooltip2 = L["Score Desc"];
+    PaperDollFrame_SetLabelAndText(statFrame, L.core.name, formated, false);
+    statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L.core.name..FONT_COLOR_CODE_CLOSE;
+    statFrame.tooltip2 = L.core.scoreDesc;
     
     statFrame:Show();
 end
@@ -959,16 +944,16 @@ function SIL:ToggleLDBlabel() self:SetLDBlabel(not self:GetLDBlabel()); end
 -- Advanced sets
 function SIL:SetPurge(hours) 
     self.db.global.purge = hours; 
-    SIL_Options.args.purge.desc = SIL:Replace(L['Help Purge Desc'], 'num', self.db.global.purge / 24); 
+    SIL_Options.args.purge.desc = format(L.core.options.purgeDesc, self.db.global.purge / 24); 
 end
 
 function SIL:SetMinimap(v) 
     self.db.global.minimap.hide = not v;
 	
 	if not v then
-		self.ldbIcon:Hide(L['Addon Name']);
+		self.ldbIcon:Hide(L.core.name);
 	else
-		self.ldbIcon:Show(L['Addon Name']);
+		self.ldbIcon:Show(L.core.name);
 	end
 end
 
@@ -976,9 +961,9 @@ function SIL:SetPaperdoll(v)
 	self.db.global.cinfo = v;
 	
 	if v then
-		PAPERDOLL_STATINFO[L['Addon Name']] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
-		PAPERDOLL_STATINFO[L['Addon Name']] = nil;
+		PAPERDOLL_STATINFO[L.core.name] = nil;
 	end
 end
 
@@ -1005,7 +990,32 @@ end
 
 -- Open the options window
 function SIL:ShowOptions()
-    InterfaceOptionsFrame_OpenToCategory(L['Addon Name']);
+    -- Not using this until a paramiter is added to open expanded
+    -- InterfaceOptionsFrame_OpenToCategory(L.core.name);
+    
+    for i,element in pairs(INTERFACEOPTIONS_ADDONCATEGORIES) do 
+        if element.name == L.core.name then
+            if not InterfaceOptionsFrame:IsShown() then
+                InterfaceOptionsFrame_Show();
+                InterfaceOptionsFrameTab2:Click();
+            end
+
+            for i,button in pairs(InterfaceOptionsFrameAddOns.buttons) do
+                if button.element == element then
+                    InterfaceOptionsListButton_OnClick(button);
+                    
+                    -- Expand
+                    if element.hasChildren and element.collapsed then
+                        OptionsListButtonToggle_OnClick(button.toggle);
+                    end
+                    
+                    break;
+                end
+            end
+            
+            break;
+        end
+    end
 end
 
 
@@ -1037,7 +1047,7 @@ function SIL:OpenMenu(window)
 			
 			-- Title
 			info.isTitle = 1;
-			info.text = L["Addon Name"]..' '..SIL.version;
+			info.text = L.core.name..' '..SIL.version;
 			info.notCheckable = 1;
 			UIDropDownMenu_AddButton(info, level);
 			
@@ -1052,7 +1062,7 @@ function SIL:OpenMenu(window)
 				wipe(info);
 				info.notCheckable = 1;
 				info.hasArrow = 1;
-				info.text = L["Help Group"]..' '..groupScore;
+				info.text = L.group.options.group..' '..groupScore;
 				info.value = {};
 				UIDropDownMenu_AddButton(info, level);
 				
@@ -1065,28 +1075,28 @@ function SIL:OpenMenu(window)
 			
 			-- Advanced Tool tip
 			wipe(info);
-			info.text = L["Help Advanced"];
+			info.text = L.core.options.ttAdvanced;
 			info.func = function() SIL:ToggleAdvanced(); end;
 			info.checked = SIL:GetAdvanced();
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- Autoscan
 			wipe(info);
-			info.text = L["Help Autoscan"];
+			info.text = L.core.options.autoscan;
 			info.func = function() SIL:ToggleAutoscan(); end;
 			info.checked = SIL:GetAutoscan();
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- Minimap
 			wipe(info);
-			info.text = L["Help Minimap"];
+			info.text = L.core.options.minimap;
 			info.func = function() SIL:ToggleMinimap(); end;
 			info.checked = SIL:GetMinimap();
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- Label Text
 			wipe(info);
-			info.text = L['Help LDB Source'];
+			info.text = L.core.options.ldbSource;
 			info.func = function() SIL:ToggleLDBlabel(); end;
 			info.checked = SIL:GetLDBlabel();
 			UIDropDownMenu_AddButton(info, level);
@@ -1099,14 +1109,14 @@ function SIL:OpenMenu(window)
 			
 			-- Options
 			wipe(info);
-			info.text = L['Help Options'];
+			info.text = L.core.options.open;
 			info.func = function() SIL:ShowOptions(); end;
 			info.notCheckable = 1;
 			UIDropDownMenu_AddButton(info, level);
 			
 			-- My Score
 			wipe(info);
-			info.text = SIL:Replace(L['Your Score'], 'score', SIL:FormatScore(score, items));
+			info.text = format(L.core.scoreYour, SIL:FormatScore(score, items));
 			info.notClickable = 1;
 			info.notCheckable = 1;
 			UIDropDownMenu_AddButton(info, level);
@@ -1118,7 +1128,7 @@ function SIL:OpenMenu(window)
 				wipe(info)
 		        info.isTitle = 1;
 				info.notCheckable = 1;
-		        info.text = L["Help Group"];
+		        info.text = L.group.options.group;
 		        UIDropDownMenu_AddButton(info, level);
 				
 				-- Console - CHAT_MSG_SYSTEM 
@@ -1203,7 +1213,7 @@ function SIL:UpdateLDB(force)
 		-- Do we really need to update LDB?
 		if force or label ~= self.ldbLable or (self.ldbUpdated + self:GetLDBrefresh()) < time() then
             
-            local text = L["Unknown Score"];
+            local text = 'n/a';
             
             if SIL_Group then
                 text = SIL_Group:GroupScore(false);

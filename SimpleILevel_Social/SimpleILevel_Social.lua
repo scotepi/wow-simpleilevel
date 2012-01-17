@@ -3,15 +3,15 @@ ToDo:
     - 
 ]]
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
-SIL_Soc = LibStub("AceAddon-3.0"):NewAddon('SIL_Soc', "AceEvent-3.0");
+SIL_Soc = LibStub("AceAddon-3.0"):NewAddon('SIL_Soc');
 SIL_Soc.eventNames = {}; -- [event] = name;
 
 function SIL_Soc:OnInitialize()
-    SIL:Print("Social Module Loaded", GetAddOnMetadata("SimpleILevel_Social", "Version"));
+    SIL:Print(L.social.load, GetAddOnMetadata("SimpleILevel_Social", "Version"));
     
     self.db = LibStub("AceDB-3.0"):New("SIL_Social", SILSoc_Defaults, true);
-    SIL.aceConfig:RegisterOptionsTable("SimpleILevel_Social", SILSoc_Options, {"sis", "silsoc", "simpleilevelsocial"});
-    SIL.aceConfigDialog:AddToBlizOptions("SimpleILevel_Social", "Social", L['Addon Name']);
+    SIL.aceConfig:RegisterOptionsTable(L.social.nameShort, SILSoc_Options, {"sis", "silsoc", "simpleilevelsocial"});
+    SIL.aceConfigDialog:AddToBlizOptions(L.social.nameShort, "Social", L.core.name);
     
     -- Build the event name table
     for event,enabled in pairs(self.db.global.chatEvents) do 
@@ -95,21 +95,20 @@ function SIL_Soc:SetEnabled(v)
 end
 
 SILSoc_Options = {
-	name = 'SIL Social Options',
-	desc = 'Options for SIL Social',
+	name = L.social.options.name,
 	type = "group",
 	args = {
         enabled = {
-            name = 'Enabled',
-            desc = 'Toggle all features of SIL Social.',
+            name = L.social.options.enabled,
+            desc = L.social.options.enabledDesc,
             type = "toggle",
             set = function(i,v) SIL_Soc:SetEnabled(v); end,
             get = function(i) return SIL_Soc:GetEnabled(); end,
             order = 1,
         },
         color = {
-            name = 'Color Score',
-            desc = 'Color the score in the chat messages.',
+            name = L.social.options.color,
+            desc = L.social.options.colorDesc,
             type = "toggle",
             set = function(i,v) SIL_Soc:SetColorScore(v); end,
             get = function(i) return SIL_Soc:GetColorScore(); end,
@@ -118,8 +117,7 @@ SILSoc_Options = {
         },
         
         chatEvents = {
-            name = 'Show Score On',
-            desc = nil,
+            name = L.social.options.chatEvents,
             type = 'multiselect',
             values = function() return SIL_Soc.eventNames; end;
             get = function(s,e) return SIL_Soc:GetChatEvent(e) end;

@@ -28,6 +28,9 @@ externals:
 	Libs/AceDB-3.0:
         url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceDB-3.0
         tag: latest
+    Libs/AceTimer-3.0:
+        url: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceTimer-3.0
+        tag: latest
 	Libs/LibDBIcon-1.0:
         url: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
         tag: latest
