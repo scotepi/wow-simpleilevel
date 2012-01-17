@@ -90,6 +90,19 @@ function SIL:OnInitialize()
 		PAPERDOLL_STATINFO[L.core.name] = nil;
 	end
     
+    -- GuildMemberInfo
+    if GMI then
+        GMI:Register("SimpleILevel", {
+            lines = {
+                    SimpleILevel = {
+                        label = L.core.name,
+                        default = 'n/a',
+                        callback = function(name) return SIL:GMICallback(name); end,
+                    },
+                },
+            }); 
+    end
+    
     -- Clear the cache
 	self:AutoPurge(true);
     
@@ -1257,4 +1270,12 @@ function SIL:UpdateLDBText(label, text)
     self.ldbLable = label;
 end
 
-
+function SIL:GMICallback(name)
+    local score, age, items = self:GetScoreName(name);
+	
+	if score and tonumber(score) and 0 < score then
+		return SIL:FormatScore(score, items, false);
+	else
+        return 'n/a';
+    end
+end
