@@ -1,4 +1,7 @@
--- Option Tables
+--[[
+ToDo:
+    - Hide unnecicary options from the command line
+]]
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
 -- Coloring
@@ -20,65 +23,75 @@ SIL_Colors = {
 };
 
 -- Suported channel localization table
-SIL_Channels = {};
-SIL_Channels['SYSTEM'] = string.lower(CHAT_MSG_SYSTEM);
-SIL_Channels['GROUP'] = string.lower(GROUP);
-SIL_Channels['PARTY'] = string.lower(CHAT_MSG_PARTY);
-SIL_Channels['RAID'] = string.lower(CHAT_MSG_RAID);
-SIL_Channels['GUILD'] = string.lower(CHAT_MSG_GUILD);
-SIL_Channels['SAY'] = string.lower(CHAT_MSG_SAY);
-SIL_Channels['BATTLEGROUND'] = string.lower(CHAT_MSG_BATTLEGROUND);
-SIL_Channels['OFFICER'] = string.lower(CHAT_MSG_OFFICER);
-SIL_ChannelsString = 'system,group,party,raid,guild,say,battleground,officer';
-L['Help Group Desc'] = string.gsub(L['Help Group Desc'], '%%local', SIL_ChannelsString);
+SIL_Channels = {
+    SYSTEM = string.lower(CHAT_MSG_SYSTEM),
+    GROUP = string.lower(GROUP),
+    PARTY = string.lower(CHAT_MSG_PARTY),
+    RAID = string.lower(CHAT_MSG_RAID),
+    GUILD = string.lower(CHAT_MSG_GUILD),
+    SAY = string.lower(CHAT_MSG_SAY),
+    BATTLEGROUND = string.lower(CHAT_MSG_BATTLEGROUND),
+    OFFICER = string.lower(CHAT_MSG_OFFICER),
+}
+SIL_ChannelsString = '';
+local i = 0;
+for _,s in pairs(SIL_Channels) do
+    if i == 0 then
+        SIL_ChannelsString = s;
+    else
+        SIL_ChannelsString = SIL_ChannelsString..','..s;
+    end
+    i = i + 1;
+end
+L.group.options.groupDesc = format(L.group.options.groupDesc, SIL_ChannelsString);
 
 -- Options for AceOptions
 SIL_Options = {
-	name = L['Help Options'],
-	desc = L['Addon Description'],
+	name = L.core.options.name,
+	desc = L.core.desc,
 	type = "group",
 	args = {
 		general = {
-			name = L['Help General'],
+			name = L.core.options.options,
 			type = "group",
 			inline = true,
 			order = 1,
 			args = {
 				advanced = {
-					name = L['Help Advanced'],
-					desc = L['Help Advanced Desc'],
+					name = L.core.options.ttAdvanced,
+					desc = L.core.options.ttAdvancedDesc,
 					type = "toggle",
 					set = function(i,v) SIL:SetAdvanced(v); end,
 					get = function(i) return SIL:GetAdvanced(); end,
 					order = 1,
 				},
 				autoscan = {
-					name = L['Help Autoscan'],
-					desc = L['Help Autoscan Desc'],
+					name = L.core.options.autoscan,
+					desc = L.core.options.autoscanDesc,
 					type = "toggle",
 					set = function(i,v) SIL:SetAutoscan(v); end,
 					get = function(i) return SIL:GetAutoscan(); end,
 					order = 2,
 				},
 				minimap = {
-					name = L['Help Minimap'],
-					desc = L['Help Minimap Desc'],
+					name = L.core.options.minimap,
+					desc = L.core.options.minimapDesc,
 					type = "toggle",
 					set = function(i,v) SIL:SetMinimap(v); end,
 					get = function(i) return SIL:GetMinimap(); end,
 					order = 3,
 				},
 				cinfo = {
-					name = L['Help Paperdoll'],
-					desc = L['Help Paperdoll Desc'],
+					name = L.core.options.paperdoll,
+					desc = L.core.options.paperdollDesc,
 					type = "toggle",
 					set = function(i,v) SIL:SetPaperdoll(v); end,
 					get = function(i) return SIL:GetPaperdoll(); end,
 					order = 3,
 				},
 				age = {
-					name = L['Help Age'],
-					desc = L['Help Age Desc'],
+					name = L.core.options.maxAge,
+					desc = L.core.options.maxAgeDesc,
 					type = "range",
 					min = 1,
 					softMax = 240,
@@ -90,8 +103,8 @@ SIL_Options = {
 				},
 				
 				autoPurge = {
-					name = L['Help Purge Auto'],
-					desc = L['Help Purge Auto Desc'],
+					name = L.core.options.purgeAuto,
+					desc = L.core.options.purgeAutoDesc,
 					type = "range",
 					min = 0,
 					softMax = 30,
@@ -106,30 +119,30 @@ SIL_Options = {
 		
 		
 		ldbOpt = {
-			name = L['Help LDB'],
+			name = L.core.options.ldb,
 			type = "group",
 			inline = true,
 			order = 2,
 			args = {
 				ldbText = {
-					name = L['Help LDB Text'],
-					desc = L['Help LDB Text Desc'],
+					name = L.core.options.ldbText,
+					desc = L.core.options.ldbTextDesc,
 					type = "toggle",
 					get = function(i) return SIL:GetLDB(); end,
 					set = function(i,v) SIL:SetLDB(v); end,
 					order = 1,
 				},
 				ldbLabel = {
-					name = L['Help LDB Source'],
-					desc = L['Help LDB Source Desc'],
+					name = L.core.options.ldbSource,
+					desc = L.core.options.ldbSourceDesc,
 					type = "toggle",
 					get = function(i) return SIL:GetLDBlabel(); end,
 					set = function(i,v) SIL:SetLDBlabel(v); end,
 					order = 2,
 				},
 				ldbRefresh = {
-					name = L['Help LDB Refresh'],
-					desc = L['Help LDB Refresh Desc'],
+					name = L.core.options.ldbRefresh,
+					desc = L.core.options.ldbRefreshDesc,
 					type = "range",
 					min = 1,
 					softMax = 300,
@@ -147,16 +160,16 @@ SIL_Options = {
 		
 		
 		purge = {
-			name = L['Help Purge'],
-			desc = L['Help Purge Desc'],
+			name = L.core.options.purge,
+			desc = L.core.options.purgeDesc,
 			type = "execute",
 			func = function(i) SIL:AutoPurge(false); end,
 			confirm = true,
 			order = 49,
 		},
 		clear = {
-			name = L['Help Clear'],
-			desc = L['Help Clear Desc'],
+			name = L.core.options.clear,
+			desc = L.core.options.clearDesc,
 			type = "execute",
 			func = function(i) SIL:SlashReset(); end,
 			confirm = true,
@@ -165,8 +178,8 @@ SIL_Options = {
 		
 		-- Console Only
 		get = {
-			name = L['Help Get'],
-			desc = L['Help Get Desc'],
+			name = L.core.options.get,
+			desc = L.core.options.getDesc,
 			type = "input",
 			set = function(i,v) SIL:SlashGet(v); end,
 			hidden = true,
@@ -174,8 +187,8 @@ SIL_Options = {
 			cmdHidden = false,
 		},
 		target = {
-			name = L['Help Target'],
-			desc = L['Help Target Desc'],
+			name = L.core.options.target,
+			desc = L.core.options.targetDesc,
 			type = "input",
 			set = function(i) SIL:SlashTarget(); end,
 			hidden = true,
@@ -183,8 +196,8 @@ SIL_Options = {
 			cmdHidden = false,
 		},
 		options = {
-			name = L['Help Options'],
-			desc = L['Help Options Desc'],
+			name = L.core.options.options,
+			desc = L.core.options.open,
 			type = "input",
 			set = function(i) SIL:ShowOptions(); end,
 			hidden = true,
@@ -219,6 +232,7 @@ SIL_Defaults = {
 		ldbText = true,			-- LDB Text
 		ldbLabel = true,		-- LDB Label
 		ldbRefresh = 30,		-- LDB Refresh Rate
+        ttCombat = true;        -- Tooltip in combat
 	},
 };
 

@@ -4,47 +4,31 @@ ToDo:
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
-SIL_Group = LibStub("AceAddon-3.0"):NewAddon('SIL_Group', "AceEvent-3.0", "AceConsole-3.0");
+SIL_Group = LibStub("AceAddon-3.0"):NewAddon('SIL_Group', "AceEvent-3.0", "AceTimer-3.0");
 SIL_Group.group = {};  -- { guid, score }
+SIL_Group.autoscan = false;
 
 -- Update SIL_Options table
 SIL_Options.args.group = {
-            name = L['Help Group'],
-            desc = L['Help Group Desc'],
+            name = L.group.options.group,
+            desc = L.group.options.groupDesc,
             type = "input",
             hidden = true,
-            guiHidden = true,
-            cmdHidden = false,
             set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Group:GroupOutput(dest, to); end,
             get = function() return ''; end,
         };
 SIL_Options.args.party = SIL_Options.args.group;
-SIL_Options.args.party.cmdHidden = true;
 SIL_Options.args.party.set = function(i,v) SIL_Group:GroupOutput(v); end;
 SIL_Options.args.raid = SIL_Options.args.group;
-SIL_Options.args.raid.cmdHidden = true;
 SIL_Options.args.raid.set = function(i,v) SIL_Group:GroupOutput(v); end;
+SIL_Options.args.group.cmdHidden = false;
 
 
 function SIL_Group:OnInitialize()
-    SIL:Print("Group Module Loaded", GetAddOnMetadata("SimpleILevel_Group", "Version"));
-    
-    -- Version Info
-    self.version = GetAddOnMetadata("SimpleILevel_Group", "Version");
-	self.versionMajor = 0.1;                    -- Used for setting versioning
-	self.versionRev = 'r@project-revision@';    -- Used for information
-    
-    -- Add a new settings tab
-    --SIL.aceConfig:RegisterOptionsTable('SIL_Group', SIL_Group_Options, {'silg', 'silgroup'});
-    
-    -- Nothing to register yet but saving this for the record
-    --SIL.aceConfigDialog:AddToBlizOptions('SIL_Group', nil, SIL.L['Addon Name']);
-    
-    -- Add /silg or /silgroup for self:GroupOutput(dest, to);
+    SIL:Print(L.group.load, GetAddOnMetadata("SimpleILevel_Group", "Version"));
     
     -- Keep our self.group sane
     self:RegisterEvent("PARTY_MEMBERRS_CHANGED", function() SIL_Group:UpdateGroup(false) end);
-    self:RegisterEvent("SIL_HAVE_SCORE");
     
     self:UpdateGroup(false);
 end
@@ -54,13 +38,7 @@ function SIL_Group:UpdateGroup(force)
     
     -- Reset the group table
     self.group = {};
-    -- /run for i=1,25 do if UnitName('raid'..i) then print(i,UnitName('raid'..i),SIL:GetScore(UnitGUID('raid'..i), true, 'raid'..i)); end end
-    -- /run for i=1,25 do t='raid'..i; if UnitName(t) then print(i,UnitName(t),SIL.inspect:RequestItems(t, true),SIL.inspect:GetAge(SIL.inspect.cache[UnitGUID('raid'..i)].time),CanInspect(t)); end end
-    
-    -- /run for i=1,25 do t='raid'..i;g=UnitGUID(t);ins=SIL.inspect; if UnitName(t) then print(i, UnitName(t), ins:RequestItems(t, true), CanInspect(t), ins.cache[g].data == false, ins.cache[g].time == 0, (time() - ins.cache[g].time) > ins.maxAge); end end
-    
-    -- /run for i=1,4 do t='party'..i;g=UnitGUID(t);ins=SIL.inspect; if UnitName(t) then print(i, NotifyInspect(t)); end end
-    -- Start it off with ourself
+
     local yourGUID = UnitGUID('player');
     local yourScore = SIL:GetScoreTarget('player', force);
     local groupSize = 0;
@@ -101,17 +79,14 @@ function SIL_Group:UpdateGroup(force)
 end
 
 function SIL_Group:AddGroupMember(guid, target)
-   -- print('SIL_Group:AddGroupMember', SIL:GUIDtoName(guid), guid, SIL_CacheGUID[guid]);
     if guid and SIL_CacheGUID[guid] then
         local player = {};
         player.guid = guid;
         
-        --print('SIL_Group:AddGroupMember', SIL_CacheGUID[guid].name, SIL_CacheGUID[guid].score);
-        
-        if SIL_CacheGUID[guid].score and SIL_CacheGUID[guid].items > 4 then
+        if SIL_CacheGUID[guid].score and SIL.grayScore < SIL_CacheGUID[guid].items then
             player.score = SIL_CacheGUID[guid].score;
         else
-            local score, items = SIL:RoughScore(target);
+            local score, items, age = SIL:RoughScore(target);
             player.score = score;
         end
         
@@ -176,9 +151,7 @@ function SIL_Group:GroupOutput(dest, to)
     
 	groupAvgFmt = SIL:FormatScore(groupAvg, 16, color);
     
-    local str = L['Group Score'];
-	str = SIL:Replace(str, 'avg', groupAvgFmt);
-	SIL:PrintTo(str, dest, to);
+	SIL:PrintTo(format(L.group.outputHeader, groupAvgFmt), dest, to);
     
     -- Sort by score
     table.sort(self.group, function(...) return SIL_Group:SortScore(...); end);
@@ -186,7 +159,7 @@ function SIL_Group:GroupOutput(dest, to)
     for i,player in ipairs(self.group) do
         local guid = player.guid;
 		local name = SIL_CacheGUID[guid].name;
-		local str = "%name (%score)";
+        local str = '';
 		local score = player.score;
 		local items = SIL_CacheGUID[guid].items;
         local class = SIL_CacheGUID[guid].class;
@@ -195,25 +168,22 @@ function SIL_Group:GroupOutput(dest, to)
             name = '|cFF'..SIL:RGBtoHex(RAID_CLASS_COLORS[class].r, RAID_CLASS_COLORS[class].g, RAID_CLASS_COLORS[class].b)..name..'|r';
         end
             
-		if not score or score == 0 then
-			str = L['Group Member Score False'];
+		if score and tonumber(score) and 0 < score then
+            str = format('%s (%s)', name, SIL:FormatScore(score, items, color));
             
-		else
-            score = SIL:FormatScore(score, items, color);
-            str = SIL:Replace(str, 'score', score);
-            
-            if items < SIL.grayScore then
+            if items <= SIL.grayScore then
                 str = str..' *';
                 rough = true;
             end
+		else
+            str = format(L.group.outputNoScore, name);
         end
         
-        str = SIL:Replace(str, 'name', name);
 		SIL:PrintTo(str, dest, to);
 	end
     
     if rough then
-        SIL:PrintTo(L["Group Rough"], dest, to);
+        SIL:PrintTo(L.group.outputRough, dest, to);
     end
 end
 
@@ -299,4 +269,16 @@ function SIL_Group:SortScore(a, b)
     end
     
     return scoreA > scoreB;
+end
+
+function SIL_Group:AutoScanStart()
+    if not self.autoscan and SIL:GetAutoscan() then 
+        self.autoscan = self:ScheduleRepeatingTimer(function() if not InCombatLockdown() then SIL:Debug('Autoscaning'); SIL_Group:UpdateGroup(true, true); end end, 5);
+    end
+end
+
+function SIL_Group:AutoScanStop()
+    if self.autoscan then
+        self:CancelTimer(self.autoscan, true);
+    end
 end
