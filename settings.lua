@@ -192,6 +192,15 @@ SIL_Options = {
 			cmdHidden = false,
 		},
 		
+        debug = {
+			name = 'Debug Mode',
+			type = "toggle",
+			set = function(i,v) SIL.debug = v; SIL:Print('Setting Dubug', v); end,
+            get = function() return SIL.debug; end,
+			hidden = true,
+			guiHidden = true,
+			cmdHidden = true,
+		},
 	},
 };
 

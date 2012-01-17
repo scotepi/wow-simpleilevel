@@ -14,7 +14,8 @@ SIL.action = {};        -- DB of unitGUID->function to run when a update comes t
 SIL.hooks = {};   -- List of hooks in [type][] = function;
 SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
-SIL.grayScore = 6;      -- Number of items to consider gray/aprox
+SIL.grayScore = 8;      -- Number of items to consider gray/aprox
+SIL.debug = false;      -- Debug for SIL:Debug() output
 
 -- Load Libs
 SIL.aceConfig = LibStub:GetLibrary("AceConfig-3.0");
@@ -498,7 +499,7 @@ function SIL:Flags2Table(...)
 end
 
 function SIL:Debug(...)
-	if SIL_Debug then
+	if SIL_Debug or SIL.debug then
 		print('SIL Debug: ', ...);
 	end
 end
@@ -589,7 +590,7 @@ function SIL:ProcessInspect(guid, data, age)
             local score = totalScore / totalItems;
             self:SetScore(guid, score, totalItems, age)
             
-            self:Debug('SIL:ProcessInspect time', SIL_CacheGUID[guid].time, time(), age);
+            -- self:Debug('SIL:ProcessInspect time', SIL_CacheGUID[guid].time, time(), age);
             
             -- Update LDB
             if self:GetLDB() and guid == UnitGUID('player') then
@@ -657,14 +658,14 @@ function SIL:RoughScore(target)
     
     if totalItems and totalItems > 0 then
         local score = totalScore / totalItems;
-        self:Debug('SIL:RoughScore', UnitName(target), score, totalItems);
+        -- self:Debug('SIL:RoughScore', UnitName(target), score, totalItems);
         
         -- Set a score even tho its crap
         if guid and SIL_CacheGUID[guid] and not SIL_CacheGUID[guid].score then
             self:SetScore(UnitGUID(target), score, 1, self:GetAge() + 1);
         end
         
-        return score, totalItems, 0;
+        return score, 1, self:GetAge() + 1;
     else
         return false;
     end
@@ -782,7 +783,7 @@ end
 function SIL:ColorScore(score, items)
 	
     -- There are some missing items so gray
-	if items and items < self.grayScore then
+	if items and items <= self.grayScore then
 		return self:RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
     end
     

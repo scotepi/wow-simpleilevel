@@ -23,16 +23,18 @@ end
 function SIL_Resil:OnInitialize()
     SIL:Print(RESILIENCE.." Module Loaded", GetAddOnMetadata("SimpleILevel_Resilience", "Version"));
     
-    if not type(SIL_Resilience) == 'table' then SIL_Resilience = {}; end
+    if not SIL_Resilience or type(SIL_Resilience) ~= 'table' then SIL_Resilience = {}; end
     
     self.db = LibStub("AceDB-3.0"):New("SIL_ResilSettings", SILResil_Defaults, true);
     SIL.aceConfig:RegisterOptionsTable("SimpleILevel_Resilience", SILResil_Options, {"sir", "silr", "sip", "silp", "simpleilevelresilience", "simpleilevelpvp"});
     SIL.aceConfigDialog:AddToBlizOptions("SimpleILevel_Resilience", RESILIENCE, L['Addon Name']);
     
+    -- Hooks
     SIL:AddHook('tooltip', function(...) SIL_Resil:Tooltip(...); end);
     SIL:AddHook('inspect', function(...) SIL_Resil:Inspect(...); end);
     SIL:AddHook('purge', function(...) SIL_Resil:Purge(...); end);
     
+    -- Paperdoll
     table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, 'SIL_Resil');
 	if self:GetPaperdoll() then
 		PAPERDOLL_STATINFO['SIL_Resil'] = { updateFunc = function(...) SIL_Resil:UpdatePaperDollFrame(...); end };
