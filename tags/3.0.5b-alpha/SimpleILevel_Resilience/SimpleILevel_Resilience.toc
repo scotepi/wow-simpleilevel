@@ -1,0 +1,12 @@
+## Interface: 40300
+
+## Title: SimpleiLevel - Resilience
+## Notes: Shows the amount of PvP gear people have equiped.
+
+## Author: Scotepi
+## Version: @project-version@
+## Dependencies: SimpleILevel
+## OptionalDeps: SimpleILevel_Group
+## SavedVariables: SIL_ResilSettings, SIL_Resilience
+
+SimpleILevel_Resilience.lua
