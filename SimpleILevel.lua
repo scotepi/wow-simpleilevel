@@ -1,6 +1,6 @@
 --[[
 ToDo:
-    - 
+    - Make the dropdown menu plugable
 ]]
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
@@ -11,8 +11,7 @@ SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
 SIL.versionMajor = 2.4;                    -- Used for cache DB versioning
 SIL.versionRev = 'r@project-revision@';    -- Used for version information
 SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
-SIL.hookInspect = {};   -- List of functions to call when a inspect update is required
-SIL.hookTooltip = {};   -- List of functions to call when a tooltip update is required
+SIL.hooks = {};   -- List of hooks in [type][] = function;
 SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
 SIL.grayScore = 6;      -- Number of items to consider gray/aprox
@@ -144,6 +143,8 @@ function SIL:PurgeCache(hours)
 			if type(info.time) == "number" and info.time < maxAge then
 				SIL_CacheGUID[guid] = nil;
 				count = 1 + count;
+                
+                self:RunHooks('purge', guid);
 			end
 		end
 		
@@ -154,13 +155,35 @@ function SIL:PurgeCache(hours)
 end
 
 function SIL:AddHook(hookType, callback)
-	hookType = strlower(hookType);
+	local hookType = strlower(hookType);
 	
-	if hookType == 'tooltip' then
-		table.insert(self.hookTooltip, callback);
-    elseif hookType == 'inspect' then
-		table.insert(self.hookInspect, callback);
-	end
+    if not self.hooks[hookType] then
+        self.hooks[hookType] = {};
+    end
+    
+	table.insert(self.hooks[hookType], callback);
+end
+
+function SIL:RunHooks(hookType, ...)
+    local r = {};
+    
+    if self.hooks[hookType] then
+        for _,callback in pairs(self.hooks[hookType]) do
+            local ret = callback(...);
+            
+            if ret then
+                table.insert(r, callback(...));
+            end
+        end
+        
+        if #r > 0 then
+            return r;
+        else
+            return true;
+        end
+    else
+        return false;
+    end
 end
 
 --[[
@@ -394,6 +417,8 @@ function SIL:ClearScore(target)
 		SIL_CacheGUID[guid].items = false;
 		SIL_CacheGUID[guid].time = false;
 		
+        self:RunHooks('purge', guid);
+        
 		return true;
 	else
 		return false;
@@ -572,11 +597,7 @@ function SIL:ProcessInspect(guid, data, age)
             end
             
             -- Run Hooks
-            if self.hookInspect and type(self.hookInspect) == 'table' then
-                for i,callback in pairs(self.hookInspect) do
-                    callback(guid, score, totalItems, age, data.items);
-                end
-            end
+            self:RunHooks('inspect', guid, score, totalItems, age, data.items);
             
             -- Run any callbacks for this event
             if self.action[guid] then
@@ -827,11 +848,7 @@ function SIL:ShowTooltip(guid)
 		self:AddTooltipText(textLeft, textRight, textAdvanced);
 		
 		-- Run Hooks
-        if self.hookTooltip and type(self.hookTooltip) == 'table' then
-            for i,callback in pairs(self.hookTooltip) do
-                callback(guid);
-            end
-        end
+        self:RunHooks('tooltip', guid);
 		
 		return true;
 	else
@@ -1185,22 +1202,29 @@ function SIL:UpdateLDB(force)
 		-- Do we really need to update LDB?
 		if force or label ~= self.ldbLable or (self.ldbUpdated + self:GetLDBrefresh()) < time() then
             
-            local score = L["Unknown Score"];
+            local text = L["Unknown Score"];
             
             if SIL_Group then
-                score = SIL_Group:GroupScore(false);
+                text = SIL_Group:GroupScore(false);
             elseif UnitGUID('player') then
-                score = self:GetScoreTarget('player');
+                text = self:GetScoreTarget('player');
             end
 			
-			self:UpdateLDBText(label, score)
+            local hooks = self:RunHooks('updateldb');
+            
+            if hooks and type(hooks) == 'table' then
+                for _,t in pairs(hooks) do
+                    if t and type(t) == 'string' then
+                        text = text..' '..t;
+                    end
+                end
+            end
+            
+			self:UpdateLDBText(label, text)
 		end
 	else
 		self.ldb.type = 'launcher';
 		self.ldb.text = nil;
-		
-		-- Make sure we arn't still somehow registered
-		self:UnregisterEvent("PARTY_MEMBERS_CHANGED");
 	end
 end
 
