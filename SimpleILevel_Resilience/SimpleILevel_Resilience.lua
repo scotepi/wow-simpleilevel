@@ -5,7 +5,6 @@ ToDo:
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL_Resil = LibStub("AceAddon-3.0"):NewAddon('SIL_Resil', "AceEvent-3.0");
-SIL_Resil.cache = SIL_Resilience;
 
 -- Add /sil pvp
 if SIL_Group and false then
@@ -24,8 +23,6 @@ end
 function SIL_Resil:OnInitialize()
     SIL:Print(L.resil.load, GetAddOnMetadata("SimpleILevel_Resilience", "Version"));
     
-    if not self.cache or type(self.cache) ~= 'table' then self.cache = {}; end
-    
     self.db = LibStub("AceDB-3.0"):New("SIL_ResilSettings", SILResil_Defaults, true);
     SIL.aceConfig:RegisterOptionsTable(L.resil.name, SILResil_Options, {"sir", "silr", "sip", "silp", "simpleilevelresilience", "simpleilevelpvp"});
     SIL.aceConfigDialog:AddToBlizOptions(L.resil.name, RESILIENCE, L.core.name);
@@ -33,8 +30,6 @@ function SIL_Resil:OnInitialize()
     -- Hooks
     SIL:AddHook('tooltip', function(...) SIL_Resil:Tooltip(...); end);
     SIL:AddHook('inspect', function(...) SIL_Resil:Inspect(...); end);
-    SIL:AddHook('purge', function(...) SIL_Resil:Purge(...); end);
-    SIL:AddHook('clear', function(...) self.cache = {}; end);
     
     -- Paperdoll
     table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, 'SIL_Resil');
@@ -79,7 +74,7 @@ function SIL_Resil:Inspect(guid, score, itemCount, age, itemTable)
 		end
 	end
 	
-	self.cache[guid] = rItems;
+	SIL.cache[guid].resil = rItems;
 end
 
 function SIL_Resil:Tooltip(guid)
@@ -104,13 +99,9 @@ function SIL_Resil:Tooltip(guid)
     end
 end
 
-function SIL_Resil:Purge(guid)
-    self.cache[guid] = nil;
-end
-
 function SIL_Resil:GetItemCount(guid)
-    if guid and tonumber(guid) and self.cache[guid] and SIL:Cache(guid) then
-        local rItems = self.cache[guid];
+    if guid and tonumber(guid) and SIL:Cache(guid) and SIL:Cache(guid, 'resil') then
+        local rItems = SIL:Cache(guid, 'resil')];
         local items = SIL:Cache(guid, 'items');
         return rItems, items;
     else
