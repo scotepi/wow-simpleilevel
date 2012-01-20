@@ -8,7 +8,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL = LibStub("AceAddon-3.0"):NewAddon(L.core.name, "AceEvent-3.0", "AceConsole-3.0");
 SIL.category = GetAddOnMetadata("SimpleILevel", "X-Category");
 SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
-SIL.versionMajor = 2.4;                    -- Used for cache DB versioning
+SIL.versionMajor = 2.5;                    -- Used for cache DB versioning
 SIL.versionRev = 'r@project-revision@';    -- Used for version information
 SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
 SIL.hooks = {};   -- List of hooks in [type][] = function;
@@ -16,6 +16,12 @@ SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
 SIL.grayScore = 8;      -- Number of items to consider gray/aprox
 SIL.debug = false;      -- Debug for SIL:Debug() output
+SIL.menuItems = {
+    top = {},
+    middle = {},
+    bottom = {},
+};
+SIL.cache = {};
 
 -- Load Libs
 SIL.aceConfig = LibStub:GetLibrary("AceConfig-3.0");
@@ -27,9 +33,10 @@ SIL.callback = LibStub("CallbackHandler-1.0"):New(SIL);
 
 -- OnLoad
 function SIL:OnInitialize()
-    
-    -- Make sure everything is ok with the settings
-    if not type(SIL_CacheGUID) == 'table' then SIL_CacheGUID = {}; end
+
+    -- Make sure everything is ok with the db
+    self.cache = SIL_CacheGUID;
+    if not self.cache or type(self.cache) ~= 'table' then self.cache = {}; end
     
     -- Tell the player we are being loaded
 	self:Print(format(L.core.load, self.version));
@@ -106,6 +113,9 @@ function SIL:OnInitialize()
     -- Clear the cache
 	self:AutoPurge(true);
     
+    -- Build the menu
+    self:AddDefaultMenuItems();
+    
     -- Get working on a score for the player
     self:StartScore('player');
     self:UpdateLDB(); -- This may cause excesive loading time...
@@ -115,14 +125,18 @@ end
 function SIL:UpdateSettings()
     
     if self.db.global.version == self.versionMajor then
-        -- Save version
+        -- Same version
+    elseif self.db.global.version > 2.4 and self.db.global.version < 2.5 then
+        for guid,info in pairs(self.cache) do
+            self.cache[guid].guid = nil;
+        end
     elseif self.db.global.version < 2.4 then
-        for guid,info in pairs(SIL_CacheGUID) do
-            SIL_CacheGUID[guid].total = nil;
-            SIL_CacheGUID[guid].tooltip = nil;
+        for guid,info in pairs(self.cache) do
+            self.cache[guid].total = nil;
+            self.cache[guid].tooltip = nil;
             
-            SIL_CacheGUID[guid].level = 85;
-            SIL_CacheGUID[guid].guid = guid;
+            self.cache[guid].level = 85; --ASSuME
+            --self.cache[guid].guid = guid;
         end
     end
     
@@ -153,9 +167,9 @@ function SIL:PurgeCache(hours)
 		local maxAge = time() - (tonumber(hours) * 3600);
 		local count = 0;
 		
-		for guid,info in pairs(SIL_CacheGUID) do
+		for guid,info in pairs(self.cache) do
 			if type(info.time) == "number" and info.time < maxAge then
-				SIL_CacheGUID[guid] = nil;
+				self.cache[guid] = nil;
 				count = 1 + count;
                 
                 self:RunHooks('purge', guid);
@@ -273,7 +287,7 @@ function SIL:SlashReset()
 	self:SetMinimap(true);
     
     -- Clear the cache
-    SIL_CacheGUID = {};
+    self.cache = {};
     self:GetScoreTarget('player', true);
     
     -- Update version information
@@ -289,9 +303,9 @@ function SIL:SlashGet(name)
         local score, age, items = self:GetScoreName(name);
         
         if score then
-            age = self:AgeToText(age);
-			
-			self:Print(format(L.core.slashGetScore, SIL_CacheGUID[SIL:NameToGUID(name)].name), self:FormatScore(score, items), self:AgeToText(age));
+			local name = SIL:Cache(self:NameToGUID(name), 'name')
+            
+			self:Print(format(L.core.slashGetScore, name, self:FormatScore(score, items), self:AgeToText(age)));
             
         -- Nothing :(
         else
@@ -359,8 +373,8 @@ end
 
 ]]
 function SIL:GUIDtoName(guid)
-	if SIL_CacheGUID[guid] then
-		return SIL_CacheGUID[guid].name, SIL_CacheGUID[guid].realm;
+	if guid and tonumber(guid) and SIL:Cache(guid) then
+		return SIL:Cache(guid, 'name'), SIL:Cache(guid, 'realm');
 	else
 		return false;
 	end
@@ -381,12 +395,19 @@ function SIL:NameToGUID(name, realm)
 	
 	if name then
 		name = strlower(name);
-		
-		for guid,info in pairs(SIL_CacheGUID) do
-			if strlower(info['name']) == name and info['realm'] == realm then
+		local likely = false;
+        
+		for guid,info in pairs(self.cache) do
+			if strlower(info.name) == name and info.realm == realm then
 				return guid;
-			end
+            elseif strlower(info.name) == name then
+                likely = guid;
+            end
 		end
+        
+        if likely then
+            return likely;
+        end
 	end
 	
 	return false;
@@ -411,10 +432,10 @@ end
 function SIL:ClearScore(target)
 	local guid = self:GetGUID(target);
 	
-	if SIL_CacheGUID[guid] then
-		SIL_CacheGUID[guid].score = false;
-		SIL_CacheGUID[guid].items = false;
-		SIL_CacheGUID[guid].time = false;
+	if self.cache[guid] then
+		self.cache[guid].score = false;
+		self.cache[guid].items = false;
+		self.cache[guid].time = false;
 		
         self:RunHooks('purge', guid);
         
@@ -508,20 +529,21 @@ end
     
 ]]
 -- Get someones score
-function SIL:GetScore(guid, attemptUpdate, target)
+function SIL:GetScore(guid, attemptUpdate, target, callback)
     if not tonumber(guid) then return false; end
     
-	if SIL_CacheGUID[guid] and SIL_CacheGUID[guid].score then
-		local score = SIL_CacheGUID[guid].score;
-		local age = time() - SIL_CacheGUID[guid].time;
-		local items = SIL_CacheGUID[guid].items;
-		
+	if SIL:Cache(guid) and SIL:Cache(guid, 'score') then
+		local score = SIL:Cache(guid, 'score');
+		local age = SIL:Cache(guid, 'age');
+		local items = SIL:Cache(guid, 'items');
+		local startScore = nil;
+        
         -- If a target was passed and we are over age
         if target and (attemptUpdate or self:GetAge() < age) then
-            self:StartScore(target);
+            startScore = self:StartScore(target, callback);
         end
         
-		return score, age, items;
+		return score, age, items, startScore;
 	else
         
         -- If a target was passed
@@ -539,9 +561,9 @@ function SIL:GetScoreName(name, realm)
     return self:GetScore(guid);
 end
 
-function SIL:GetScoreTarget(target, force)
+function SIL:GetScoreTarget(target, force, callback)
     local guid = UnitGUID(target);
-    return self:GetScore(guid, force, target);
+    return self:GetScore(guid, force, target, callback);
 end
 
 function SIL:GetScoreGUID(guid)
@@ -550,8 +572,10 @@ end
 
 -- Request items to update a score
 function SIL:StartScore(target, callback)
-    if InCombatLockdown() then return false; end
-    if not CanInspect(target) then return false; end
+    if InCombatLockdown() or not CanInspect(target) then 
+        if callback then callback(false, target); end
+        return false;
+    end
     
     local guid = self:AddPlayer(target);
     
@@ -563,32 +587,27 @@ function SIL:StartScore(target, callback)
             local canInspect = self.inspect:RequestItems(target, true);
             
             if not canInspect and callback then
-                callback(false);
+                callback(false, target);
             else
                 return true;
             end
-        elseif callback then
-            callback(false);
         end
-    elseif callback then
-        callback(false);
     end
     
+    if callback then callback(false, target); end
     return false;
 end
 
 function SIL:ProcessInspect(guid, data, age)
-    if guid and SIL_CacheGUID[guid] and type(data) == 'table' and type(data.items) == 'table' then
+    if guid and SIL:Cache(guid) and type(data) == 'table' and type(data.items) == 'table' then
         
-        local totalScore, totalItems = self:GearSum(data.items, SIL_CacheGUID[guid].level);
+        local totalScore, totalItems = self:GearSum(data.items, SIL:Cache(guid, 'level'));
         
-        if totalItems and totalItems > 0 then
+        if totalItems and 0 < totalItems then
             
             -- Update the DB
             local score = totalScore / totalItems;
             self:SetScore(guid, score, totalItems, age)
-            
-            -- self:Debug('SIL:ProcessInspect time', SIL_CacheGUID[guid].time, time(), age);
             
             -- Update LDB
             if self:GetLDB() and guid == UnitGUID('player') then
@@ -601,7 +620,7 @@ function SIL:ProcessInspect(guid, data, age)
             -- Run any callbacks for this event
             if self.action[guid] then
                 self.action[guid](guid, score, items, age);
-                self.action[guid] = false;
+                self.action[guid] = nil;
             end
             
             -- Update the Tooltip
@@ -659,8 +678,8 @@ function SIL:RoughScore(target)
         -- self:Debug('SIL:RoughScore', UnitName(target), score, totalItems);
         
         -- Set a score even tho its crap
-        if guid and SIL_CacheGUID[guid] and not SIL_CacheGUID[guid].score then
-            self:SetScore(UnitGUID(target), score, 1, self:GetAge() + 1);
+        if guid and SIL:Cache(guid) and (not SIL:Cache(guid, 'score') or SIL:Cache(guid, 'items') < totalItems) then
+            self:SetScore(guid, score, 1, self:GetAge() + 1);
         end
         
         return score, 1, self:GetAge() + 1;
@@ -685,21 +704,20 @@ function SIL:AddPlayer(target)
         if name and realm and class and level then
             
             -- Start a table for them
-            if not SIL_CacheGUID[guid] then
-                SIL_CacheGUID[guid] = {};
+            if not self.cache[guid] then
+                self.cache[guid] = {};
             end
             
-            SIL_CacheGUID[guid].name = name;
-            SIL_CacheGUID[guid].realm = realm;
-            SIL_CacheGUID[guid].guid = guid;
-            SIL_CacheGUID[guid].class = class;
-            SIL_CacheGUID[guid].level = level;
-            SIL_CacheGUID[guid].target = target;
+            self.cache[guid].name = name;
+            self.cache[guid].realm = realm;
+            self.cache[guid].class = class;
+            self.cache[guid].level = level;
+            self.cache[guid].target = target;
             
-            if not SIL_CacheGUID[guid].score or SIL_CacheGUID[guid].score == 0 then
-                SIL_CacheGUID[guid].score = false;
-                SIL_CacheGUID[guid].items = false;
-                SIL_CacheGUID[guid].time = false;
+            if not self.cache[guid].score or self.cache[guid].score == 0 then
+                self.cache[guid].score = false;
+                self.cache[guid].items = false;
+                self.cache[guid].time = false;
             end
             
             return guid;
@@ -718,9 +736,9 @@ function SIL:SetScore(guid, score, items, age)
         t = time() - age; 
     end
     
-    SIL_CacheGUID[guid].score = score;
-    SIL_CacheGUID[guid].items = items;
-    SIL_CacheGUID[guid].time = t;
+    self.cache[guid].score = score;
+    self.cache[guid].items = items;
+    self.cache[guid].time = t;
 end
 
 -- Get a relative iLevel on Heirlooms
@@ -833,11 +851,11 @@ function SIL:ShowTooltip(guid)
 	if not guid then
 		guid = UnitGUID("mouseover");
 	end
-	
-	if SIL_CacheGUID[guid] and SIL_CacheGUID[guid].score then
-		
-		local score, age, items = self:GetScore(guid);
-		
+    
+	local score, age, items = self:GetScoreGUID(guid);
+    
+	if score then
+        
 		-- Build the tooltip text
 		local textLeft = '|cFF216bff'..L.core.ttLeft..'|r ';
 		local textRight = self:FormatScore(score, items);
@@ -885,7 +903,7 @@ function SIL:AddTooltipText(textLeft, textRight, textAdvanced, textAdvancedRight
 				GameTooltip:Show();
 			end
 			
-			-- Rember that we have updated the tool tip so we wont again
+			-- Remember that we have updated the tool tip so we won't again
 			ttUpdated = true;
 			break;
 		end
@@ -1278,4 +1296,98 @@ function SIL:GMICallback(name)
 	else
         return 'n/a';
     end
+end
+
+function SIL:Cache(guid, what)
+    if not guid and not tonumber(guid) then return false end
+    
+    if self.cache[guid] and what then
+        if what == 'age' then
+            return time() - self.cache[guid].time;
+        else
+            return self.cache[guid][what];
+        end
+    elseif self.cache[guid] then
+        return true;
+    else
+        return false;
+    end
+end
+
+function SIL:AddDefaultMenuItems()
+    -- Title, this may move to just default freeing up top
+    self:AddMenuItems('top', {
+        text = L.core.name..' '..self.version,
+        isTitle = 1,
+        notCheckable = 1,
+    }, 1);
+    
+    
+    
+    --[[   Middle  ]]
+    
+    -- Advanced
+    self:AddMenuItems('middle', {
+        text = L.core.options.ttAdvanced,
+        func = function() SIL:ToggleAdvanced(); end,
+        checked = SIL:GetAdvanced(),
+    }, 1);
+    
+    -- Autoscan
+    self:AddMenuItems('middle', {
+        text = L.core.options.autoscan,
+        func = function() SIL:ToggleAutoscan(); end,
+        checked = SIL:GetAutoscan(),
+    }, 1);
+    
+    -- Minimap
+    self:AddMenuItems('middle', {
+        text = L.core.options.minimap,
+        func = function() SIL:ToggleMinimap(); end,
+        checked = SIL:GetMinimap(),
+    }, 1);
+    
+    -- LDB Text
+    self:AddMenuItems('middle', {
+        text = L.core.options.minimap,
+        func = function() SIL:ToggleLDBlabel(); end,
+        checked = SIL:GetLDBlabel(),
+    }, 1);
+    
+    
+    
+    --[[   Bottom  ]]
+    
+    -- Open Options
+    self:AddMenuItems('bottom', {
+        text = L.core.options.open,
+        func = function() SIL:ShowOptions(); end,
+        notCheckable = 1,
+    }, 1);
+    
+    -- Score
+    self:AddMenuItems('bottom', {
+        text = function() 
+            local score, age, items = self:GetScoreTarget('player');
+            return format(L.core.scoreYour, SIL:FormatScore(score, items)) 
+        end,
+        notClickable = 1,
+        notCheckable = 1,
+    }, 1);
+    
+end
+
+--[[ 
+    For what see List of button attributes
+    - http://wowprogramming.com/utils/xmlbrowser/live/FrameXML/UIDropDownMenu.lua
+]]
+function SIL:AddMenuItems(where, what, level, parent)
+    if not where and not what and not self.menuItems[where] and type(what) ~= table then return end;
+    level = level or 1;
+    
+    if not self.menuItems[where][level] then
+        self.menuItems[where][level] = {};
+    end
+    
+    table.insert(self.menuItems[where][level], what);
 end
