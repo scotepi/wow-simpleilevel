@@ -1,7 +1,12 @@
 ## Interface: 40300
 
-## Title: SimpleiLevel - Resilience
-## Notes: Shows the amount of PvP gear people have equiped.
+## Title: Simple iLevel - Resilience
+## Notes: Shows the amount of PvP gear other players have equipped in the tooltip
+
+## Title-deDE: Simple iLevel - Abhärtung
+## Title-koKR: Simple iLevel - 탄력도
+## Title-ruRU: Simple iLevel - Устойчивость
+## Title-zhTW: 簡易物品等級 - 韌性
 
 ## Author: Scotepi
 ## Version: @project-version@
