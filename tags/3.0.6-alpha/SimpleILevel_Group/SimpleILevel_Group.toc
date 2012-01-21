@@ -1,0 +1,15 @@
+## Interface: 40300
+
+## Title: Simple iLevel - Group
+## Notes: View the AiL of everyone in your group
+
+## Title-deDE: Simple iLevel - Gruppe
+## Title-koKR: Simple iLevel - 그룹
+## Title-ruRU: Simple iLevel - Группа
+## Title-zhTW: 簡易物品等級 - 團體
+
+## Author: Scotepi
+## Version: @project-version@
+## Dependencies: SimpleILevel
+
+SimpleILevel_Group.lua

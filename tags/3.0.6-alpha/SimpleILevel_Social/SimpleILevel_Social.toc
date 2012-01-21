@@ -1,0 +1,16 @@
+## Interface: 40300
+
+## Title: Simple iLevel - Social
+## Notes: Added the AiL to chat windows for various channels
+
+## Title-deDE: Simple iLevel - Sozial
+## Title-koKR: Simple iLevel - 소셜
+## Title-ruRU: Simple iLevel - Общение
+## Title-zhTW: 簡易物品等級 - 社交
+
+## Author: Scotepi
+## Version: @project-version@
+## Dependencies: SimpleILevel
+## SavedVariables: SIL_Social
+
+SimpleILevel_Social.lua
