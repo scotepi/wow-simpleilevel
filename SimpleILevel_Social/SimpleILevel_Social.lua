@@ -2,6 +2,7 @@
 ToDo:
     - 
 ]]
+
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL_Soc = LibStub("AceAddon-3.0"):NewAddon('SIL_Soc');
 SIL_Soc.eventNames = {}; -- [event] = name;

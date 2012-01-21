@@ -2,6 +2,7 @@
 ToDo:
     - Hide unnecicary options from the command line
 ]]
+
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
 -- Coloring

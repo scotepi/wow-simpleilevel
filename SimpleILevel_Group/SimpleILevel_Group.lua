@@ -1,6 +1,6 @@
 --[[
 ToDo:
-    - Priority scanning of gray and then lowest people
+    - 
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
