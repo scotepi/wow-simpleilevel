@@ -36,7 +36,7 @@ function SIL_Group:OnInitialize()
 end
 
 -- Popupdate SIL_Group.group
-function SIL_Group:UpdateGroup(force)
+function SIL_Group:UpdateGroup()
     
     -- Reset the group table
     self.group = {};
@@ -57,7 +57,7 @@ function SIL_Group:UpdateGroup(force)
             local guid = SIL:AddPlayer(target);
             
             -- Skip ourself
-            if not UnitIsUnit('player', target) then
+            if guid and not UnitIsUnit('player', target) then
                 local score = SIL:GetScoreTarget(target);
                 
                 if self:AddGroupMember(guid, target) then
@@ -72,7 +72,7 @@ function SIL_Group:UpdateGroup(force)
                 local guid = SIL:AddPlayer(target);
                 local score = SIL:GetScoreTarget(target);
                 
-                if self:AddGroupMember(guid, target) then
+                if guid and self:AddGroupMember(guid, target) then
                     groupSize = groupSize + 1;
                 end
             end
@@ -81,17 +81,18 @@ function SIL_Group:UpdateGroup(force)
     
     -- Make sure we are in a group
     if 1 < #self.group and SIL:GetAutoscan() then
-        self:Autoscan();
         
         -- Start autoscan
         if not self.autoscan then
             self:AutoscanStart();
+        else
+            self:Autoscan();
         end
     end
 end
 
 function SIL_Group:AddGroupMember(guid, target)
-    if guid and SIL:Cache(guid) then
+    if guid and SIL:Cache(guid) and not self:InTable(self.group, guid) then
         
         -- Set the autoscan log
         if not self.autoscanLog[guid] then
@@ -265,14 +266,12 @@ function SIL_Group:Autoscan(autoscan)
     if InCombatLockdown() then return end
     
     -- Check that we have a good group values
-    if not type(self.group) == 'table' or #self.group == 0 then
+    if type(self.group) ~= 'table' or #self.group == 0 then
         self:UpdateGroup();
     end
     
     -- Stop if we are all alone :(
-    if autoscan and 1 == #self.group then
-        self:AutoscanStop();
-    end
+    if autoscan and 1 == #self.group then self:AutoscanStop(); end
     
     -- Get the worst score in the group
     local target, reason, value = self:AutoscanNext(autoscan);
@@ -295,26 +294,27 @@ function SIL_Group:Autoscan(autoscan)
         if autoscan then
             self.autoscanFailed = self.autoscanFailed + 1;
             
-            if self.autoscanFailed >= 3 then
-                self:AutoscanStop();
+            if self.autoscanFailed >= 2 then
                 SIL:Debug('Autscan Failed', self.autoscanFailed);
+                self:AutoscanStop();
             end
         end
     end
 end
 
--- Not sure what to do with this yet
-function SIL_Group:AutoscanCallback(...)
-    SIL:Debug('AutoscanCallback', ...);
-    if not scanning then
-        
+-- Not sure what to do with this yet other then debug
+function SIL_Group:AutoscanCallback(guid, score, items, age)
+    if guid then
+        SIL:Debug('AutoscanCallback', SIL:Cache(guid, 'name'), guid, score, items, age);
+    else
+        SIL:Debug('AutoscanCallback');
     end
 end
 
 function SIL_Group:AutoscanNext()
     
     -- Macro to clear the score of everyone in your group and reset SIL_Group
-    -- /run for _,g in pairs(SIL_Group.group) do SIL.cache[g]=nil; end SIL_Group.group={}; SIL_Group.autoscanLog={}; SIL.debug=true; SIL_Group:UpdateGroup(true);
+    -- /run for _,g in pairs(SIL_Group.group) do SIL.cache[g]=nil; end SIL_Group.group={}; SIL_Group.autoscanLog={}; SIL.debug=true; SIL_Group:UpdateGroup();
     
     local yourScore = SIL:GetScoreTarget('player', false);
     
@@ -331,11 +331,13 @@ function SIL_Group:AutoscanNext()
     for _,guid in pairs(self.group) do
         local target = SIL:Cache(guid, 'target');
         
-        if CanInspect(target) and self.autoscanLog[guid] <= 3 and UnitIsUnit('player', target) then
+        if CanInspect(target) and self.autoscanLog[guid] <= 3 and not UnitIsUnit('player', target) then
             
             local items = SIL:Cache(guid, 'items') or 0;
             local score = SIL:Cache(guid, 'score') or 0;
             local time = SIL:Cache(guid, 'time') or 0;
+            
+            -- SIL:Debug(SIL:Cache(guid, 'name'), SIL:Cache(guid, 'items'), items, SIL:Cache(guid, 'score'), score, SIL:Cache(guid, 'time'), time);
             
             -- Items
             if items < lowItems then
@@ -345,7 +347,6 @@ function SIL_Group:AutoscanNext()
             
             -- Score
             if score < lowScore then
-                SIL:Debug('Score Low', UnitName(target), score, lowScore, SIL:Cache(guid, 'score'));
                 lowScore = score;
                 lowScoreT = target;
             end
@@ -374,10 +375,10 @@ function SIL_Group:AutoscanStart()
     if not self.autoscan and SIL:GetAutoscan() then 
         self.autoscan = self:ScheduleRepeatingTimer(function() 
             if not InCombatLockdown() then 
-                SIL:Debug('Autoscaning'); 
+                SIL:Debug('Autoscaning...'); 
                 SIL_Group:Autoscan(true); 
             end 
-        end, 4);
+        end, 5);
     end
 end
 
@@ -387,4 +388,26 @@ function SIL_Group:AutoscanStop()
         self.autoscan = false;
         self.autoscanFailed = 0;
     end
+end
+
+function SIL_Group:InTable(tabl, value, continue)
+    local found = false;
+    local keys = {};
+    
+    for i,v in pairs(tabl) do
+        if v == s then
+            
+            if continue then
+                found = true;
+                keys = i;
+                
+                return true, i;
+            else
+                found = true;
+                table.insert(keys, i);
+            end
+        end
+    end
+    
+    return found, keys;
 end

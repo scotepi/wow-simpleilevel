@@ -539,7 +539,7 @@ function SIL:GetScore(guid, attemptUpdate, target, callback)
 		local startScore = nil;
         
         -- If a target was passed and we are over age
-        if target and (attemptUpdate or self:GetAge() < age) then
+        if target and (attemptUpdate or self:GetAge() < age) and self.autoscan ~= time() then
             startScore = self:StartScore(target, callback);
         end
         
@@ -577,6 +577,7 @@ function SIL:StartScore(target, callback)
         return false;
     end
     
+    self.autoscan = time();
     local guid = self:AddPlayer(target);
     
     if not self.lastScan[target] or self.lastScan[target] ~= time() then
@@ -612,6 +613,8 @@ function SIL:ProcessInspect(guid, data, age)
             -- Update LDB
             if self:GetLDB() and guid == UnitGUID('player') then
                 self:UpdateLDB(true);
+            else
+                self:UpdateLDB(false);
             end
             
             -- Run Hooks
@@ -619,8 +622,8 @@ function SIL:ProcessInspect(guid, data, age)
             
             -- Run any callbacks for this event
             if self.action[guid] then
-                self.action[guid](guid, score, items, age);
-                self.action[guid] = nil;
+                self.action[guid](guid, score, totalItems, age, data.items);
+                self.action[guid] = false;
             end
             
             -- Update the Tooltip

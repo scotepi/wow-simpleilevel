@@ -101,7 +101,7 @@ end
 
 function SIL_Resil:GetItemCount(guid)
     if guid and tonumber(guid) and SIL:Cache(guid) and SIL:Cache(guid, 'resil') then
-        local rItems = SIL:Cache(guid, 'resil')];
+        local rItems = SIL:Cache(guid, 'resil');
         local items = SIL:Cache(guid, 'items');
         return rItems, items;
     else
