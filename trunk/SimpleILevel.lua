@@ -815,14 +815,14 @@ function SIL:ColorScore(score, items)
 	for i,maxScore in pairs(SIL_ColorIndex) do
 		if score < maxScore and not found then
 			local colors = SIL_Colors[maxScore];
-			local baseColors = SIL_Colors[colors['p']];
+			local baseColors = SIL_Colors[colors.p];
 			
-			local steps = maxScore - colors['p'];
-			local scoreDiff = score - colors['p'];
+			local steps = maxScore - colors.p;
+			local scoreDiff = score - colors.p;
 			
-			local diffR = (baseColors['r'] - colors['r']) / 255;
-			local diffG = (baseColors['g'] - colors['g']) / 255;
-			local diffB = (baseColors['b'] - colors['b']) / 255;
+			local diffR = (baseColors.r - colors.r) / 255;
+			local diffG = (baseColors.g - colors.g) / 255;
+			local diffB = (baseColors.b - colors.b) / 255;
 			
 			local diffStepR = diffR / steps;
 			local diffStepG = diffG / steps;
@@ -832,9 +832,9 @@ function SIL:ColorScore(score, items)
 			local scoreDiffG = scoreDiff * diffStepG;
 			local scoreDiffB = scoreDiff * diffStepB;
 			
-			r = (baseColors['r'] / 255) - scoreDiffR;
-			g = (baseColors['g'] / 255) - scoreDiffG;
-			b = (baseColors['b'] / 255) - scoreDiffB;
+			r = (baseColors.r / 255) - scoreDiffR;
+			g = (baseColors.g / 255) - scoreDiffG;
+			b = (baseColors.b / 255) - scoreDiffB;
 			
 			found = true;
 		end
@@ -842,9 +842,9 @@ function SIL:ColorScore(score, items)
 	
 	-- Nothing was found so max
 	if not found then
-		r = SIL_Colors[1000]['r'];
-		g = SIL_Colors[1000]['g'];
-		b = SIL_Colors[1000]['b'];
+		r = SIL_Colors[1000].r;
+		g = SIL_Colors[1000].g;
+		b = SIL_Colors[1000].b;
 	end
 	
     local hex = self:RGBtoHex(r,g,b);
@@ -852,6 +852,8 @@ function SIL:ColorScore(score, items)
 end
 
 function SIL:ShowTooltip(guid)
+    if InCombatLockdown() and not self:GetTTCombat() then return end
+    
 	if not guid then
 		guid = UnitGUID("mouseover");
 	end
@@ -955,6 +957,7 @@ function SIL:SetAutoscan(v) self.db.global.autoscan = v; self:Autoscan(v); end
 function SIL:SetAge(seconds) self.db.global.age = seconds; end
 function SIL:SetLDBlabel(v) self.db.global.ldbLabel = v; self:UpdateLDB(true); end
 function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; end
+function SIL:SetTTCombat(v) self.db.global.ttCombat = v; end
 
 -- Get
 function SIL:GetAdvanced() return self.db.global.advanced; end
@@ -967,6 +970,7 @@ function SIL:GetLabel() return self.db.global.showLabel; end
 function SIL:GetLDB() return self.db.global.ldbText; end
 function SIL:GetLDBlabel() return self.db.global.ldbLabel; end
 function SIL:GetLDBrefresh() return self.db.global.ldbRefresh; end
+function SIL:GetTTCombat() return self.db.global.ttCombat; end
 
 -- Toggle
 function SIL:ToggleAdvanced() self:SetAdvanced(not self:GetAdvanced()); end
@@ -975,6 +979,7 @@ function SIL:ToggleAutoscan() self:SetAutoscan(not self:GetAutoscan()); end
 function SIL:TogglePaperdoll() self:SetPaperdoll(not self:GetPaperdoll()); end
 function SIL:ToggleLabel() self:SetLabel(not self:GetLabel()); end
 function SIL:ToggleLDBlabel() self:SetLDBlabel(not self:GetLDBlabel()); end
+function SIL:ToggleTTCombat() self:SetTTCombat(not self:GetTTCombat()); end
 
 -- Advanced sets
 function SIL:SetPurge(hours) 

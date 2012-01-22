@@ -59,10 +59,11 @@ L.core = {
 	},
 }
 L.group = {
+	desc = "View the AiL of everyone in your group",
 	load = "Group Module Loaded",
 	name = "SiL Group",
 	nameShort = "Group",
-	outputHeader = "Simple iLevel: Group average %s",
+	outputHeader = "Simple iLevel: Group Average %s",
 	outputNoScore = "%s is not available",
 	outputRough = "* denotes an approximate score",
 	options = {
@@ -71,6 +72,7 @@ L.group = {
 	},
 }
 L.resil = {
+	desc = "Shows the amount of PvP gear other players have equipped in the tooltip",
 	load = "Resilience Module Loaded",
 	name = "SiL Resilience",
 	nameShort = "Resilience",
@@ -87,6 +89,7 @@ L.resil = {
 	},
 }
 L.social = {
+	desc = "Added the AiL to chat windows for various channels",
 	load = "Social Module Loaded",
 	name = "SiL Social",
 	nameShort = "Social",

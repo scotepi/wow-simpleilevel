@@ -15,15 +15,19 @@ SIL_Options.args.group = {
             name = L.group.options.group,
             desc = L.group.options.groupDesc,
             type = "input",
+            guiHidden = true,
+            set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Group:GroupOutput(dest, to); end,
+            get = function() return ''; end,
+        };
+SIL_Options.args.party = {
+            name = L.group.options.group,
+            desc = L.group.options.groupDesc,
+            type = "input",
             hidden = true,
             set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Group:GroupOutput(dest, to); end,
             get = function() return ''; end,
         };
-SIL_Options.args.party = SIL_Options.args.group;
-SIL_Options.args.party.set = function(i,v) SIL_Group:GroupOutput(v); end;
-SIL_Options.args.raid = SIL_Options.args.group;
-SIL_Options.args.raid.set = function(i,v) SIL_Group:GroupOutput(v); end;
-SIL_Options.args.group.cmdHidden = false;
+SIL_Options.args.raid = SIL_Options.args.party;
 
 
 function SIL_Group:OnInitialize()
