@@ -1,6 +1,6 @@
 --[[
 ToDo:
-    - Hide unnecicary options from the command line
+    - 
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
@@ -24,7 +24,7 @@ SIL_Colors = {
 };
 
 -- Suported channel localization table
-SIL_Channels = {
+local channels = {
     SYSTEM = string.lower(CHAT_MSG_SYSTEM),
     GROUP = string.lower(GROUP),
     PARTY = string.lower(CHAT_MSG_PARTY),
@@ -34,17 +34,17 @@ SIL_Channels = {
     BATTLEGROUND = string.lower(CHAT_MSG_BATTLEGROUND),
     OFFICER = string.lower(CHAT_MSG_OFFICER),
 }
-SIL_ChannelsString = '';
+SIL_GroupChannelString = '';
 local i = 0;
-for _,s in pairs(SIL_Channels) do
+for _,s in pairs(channels) do
     if i == 0 then
-        SIL_ChannelsString = s;
+        SIL_GroupChannelString = s;
     else
-        SIL_ChannelsString = SIL_ChannelsString..','..s;
+        SIL_GroupChannelString = SIL_GroupChannelString..'/'..s;
     end
     i = i + 1;
 end
-L.group.options.groupDesc = format(L.group.options.groupDesc, SIL_ChannelsString);
+L.group.options.groupDesc = format(L.group.options.groupDesc, SIL_GroupChannelString);
 
 -- Options for AceOptions
 SIL_Options = {
@@ -66,13 +66,23 @@ SIL_Options = {
 					get = function(i) return SIL:GetAdvanced(); end,
 					order = 1,
 				},
+                ttCombat = {
+					name = L.core.options.ttCombat,
+					desc = L.core.options.ttCombatDesc,
+					type = "toggle",
+					get = function(i) return SIL:GetTTCombat(); end,
+					set = function(i,v) SIL:SetTTCombat(v);  end,
+					order = 2,
+                    cmdHidden = true,
+				},
+                
 				autoscan = {
 					name = L.core.options.autoscan,
 					desc = L.core.options.autoscanDesc,
 					type = "toggle",
 					set = function(i,v) SIL:SetAutoscan(v); end,
 					get = function(i) return SIL:GetAutoscan(); end,
-					order = 2,
+					order = 5,
 				},
 				minimap = {
 					name = L.core.options.minimap,
@@ -80,7 +90,7 @@ SIL_Options = {
 					type = "toggle",
 					set = function(i,v) SIL:SetMinimap(v); end,
 					get = function(i) return SIL:GetMinimap(); end,
-					order = 3,
+					order = 6,
 				},
 				cinfo = {
 					name = L.core.options.paperdoll,
@@ -88,8 +98,10 @@ SIL_Options = {
 					type = "toggle",
 					set = function(i,v) SIL:SetPaperdoll(v); end,
 					get = function(i) return SIL:GetPaperdoll(); end,
-					order = 3,
+					order = 7,
 				},
+                
+                
 				age = {
 					name = L.core.options.maxAge,
 					desc = L.core.options.maxAgeDesc,
@@ -114,16 +126,17 @@ SIL_Options = {
 					set = function(i,v) SIL:SetPurge(v * 24);  end,
 					order = 21,
 					width = "full",
+                    cmdHidden = true,
 				},
 			},
 		},
-		
 		
 		ldbOpt = {
 			name = L.core.options.ldb,
 			type = "group",
 			inline = true,
 			order = 2,
+            cmdHidden = true,
 			args = {
 				ldbText = {
 					name = L.core.options.ldbText,
@@ -155,10 +168,6 @@ SIL_Options = {
 				},
 			},
 		},
-		
-		
-		
-		
 		
 		purge = {
 			name = L.core.options.purge,
