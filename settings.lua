@@ -24,7 +24,7 @@ SIL_Colors = {
 };
 
 -- Suported channel localization table
-local channels = {
+SIL_Channels = {
     SYSTEM = string.lower(CHAT_MSG_SYSTEM),
     GROUP = string.lower(GROUP),
     PARTY = string.lower(CHAT_MSG_PARTY),
@@ -36,7 +36,7 @@ local channels = {
 }
 SIL_GroupChannelString = '';
 local i = 0;
-for _,s in pairs(channels) do
+for _,s in pairs(SIL_Channels) do
     if i == 0 then
         SIL_GroupChannelString = s;
     else
