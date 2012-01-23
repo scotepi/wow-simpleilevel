@@ -7,14 +7,12 @@ local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL_Resil = LibStub("AceAddon-3.0"):NewAddon('SIL_Resil', "AceEvent-3.0");
 
 -- Add /sil pvp
-if SIL_Group and false then
+if SIL_Group then
     SIL_Options.args.pvp = {
-                name = GUILD_PVP_STATUS,
-                desc = L.resil.options.pvpDesc,
+                name = L.group.options.group,
+                desc = L.group.options.groupDesc,
                 type = "input",
-                hidden = true,
                 guiHidden = true,
-                cmdHidden = false,
                 set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Resil:GroupOutput(dest, to); end,
                 get = function() return ''; end,
             };
@@ -54,7 +52,6 @@ function SIL_Resil:OnInitialize()
 end
 
 function SIL_Resil:Inspect(guid, score, itemCount, age, itemTable)
-    -- print(guid, score, itemCount, age, itemTable);
 	local resilience = 0;
 	local rItems = 0;
 	local total = 0;
@@ -79,22 +76,13 @@ end
 
 function SIL_Resil:Tooltip(guid)
     if guid and tonumber(guid) and self:GetTooltip() ~= 0 then
-        local rItems, items = self:GetItemCount(guid);
+        local rItems = SIL:Cache(guid, 'resil') or 0;
+        local items = SIL:Cache(guid, 'items');
         
         if (rItems and 0 < rItems and items) or (self:GetTooltipZero() and items) then
-            local percent = self:GetPercent(guid)..'%';
-            local slash = rItems..'/'..items;
-            local text = '';
+            local preferance = self:FormatScore(rItems, items, true)
             
-            if self:GetTooltip() == 2 then
-                text = slash;
-            elseif self:GetTooltip() == 3 then
-                text = percent;
-            else
-                text = slash..' '..percent;
-            end
-            
-            SIL:AddTooltipText(GUILD_PVP_STATUS..':', '|cFFFFFFFF'..text..'|r');
+            SIL:AddTooltipText(GUILD_PVP_STATUS..':', '|cFFFFFFFF'..preferance..'|r');
         end
     end
 end
@@ -109,41 +97,131 @@ function SIL_Resil:GetItemCount(guid)
     end
 end
 
-function SIL_Resil:GetItemCountName(name, realm) return self:GetItemCount(SIL:NameToGUID(name, realm)); end
-function SIL_Resil:GetItemCountTarget(target) return self:GetItemCount(UnitGUID(target)); end
-
-function SIL_Resil:GetPercent(guid)
-    local count, items = self:GetItemCount(guid);
+function SIL_Resil:FormatScore(rItems, items, color)
+    if not rItems or not tonumber(rItems) then rItems = 0 end
+    if not items or not tonumber(items) then items = 1 end
     
-    if count then
-        local percent = SIL:Round((count / items) * 100, 1);
-        return percent;
-    else
-        return 0;
+    local hexColor = self:ColorScore(rItems / items, items)
+    local percent = SIL:Round((rItems / items) * 100, 1);
+    local slash = rItems..'/'..items;
+    
+    if color then
+        percent = '|cFF'..hexColor..percent..'|r';
+        slash = '|cFF'..hexColor..slash..'|r';
     end
+    
+    percent = percent..'%';
+    
+    -- User preferance
+    local preferance = slash..' '..percent;
+    if self:GetTooltip() == 2 then
+        preferance = slash;
+    elseif self:GetTooltip() == 3 then
+        preferance = percent;
+    end
+    
+    return preferance, percent, slash;
 end
 
-function SIL_Resil:GetPercentName(name, realm) return self:GetPercent(SIL:NameToGUID(name, realm)); end
-function SIL_Resil:GetPercentTarget(target) return self:GetPercent(UnitGUID(target)); end
+function SIL_Resil:ColorScore(percent, items)
+	-- /run for i=1,17 do print(i,SIL_Resil:FormatScore(i,17,true)); end
+    
+    -- There are some missing items so gray
+	if items and items <= SIL.grayScore then
+		return SIL:RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
+    end
+    
+    return SIL:RGBtoHex(1 - percent, 1, 1 - percent);
+end
 
 function SIL_Resil:GroupOutput(dest, to)
     if not SIL_Group then return false; end
     
+    local dest, to, color = SIL_Group:GroupDest(dest, to);
     SIL_Group:UpdateGroup(true);
     
-    local group = {};
+    local totalResil = 0;
+    local totalItems = 0;
     
-    for i,player in ipairs(SIL_Group.group) do
-        local guid = player.guid;
+    for _,guid in ipairs(SIL_Group.group) do
+        local resil = SIL:Cache(guid, 'resil') or 0;
+        local items = SIL:Cache(guid, 'items') or 1;
+        
+        if resil and resil > 0 then
+            totalResil = resil + totalResil;
+        end
+        
+        totalItems = items + totalItems;
+    end
+    
+    local _, groupPercent =  self:FormatScore(totalResil, totalItems, color);
+    SIL:PrintTo(format(L.group.outputHeader, groupPercent), dest, to);
+    
+    table.sort(SIL_Group.group, function(...) return SIL_Resil:SortScore(...); end);
+    
+    local rough = false;
+    for _,guid in ipairs(SIL_Group.group) do
+		local name = SIL:Cache(guid, 'name');
+		local items = SIL:Cache(guid, 'items');
+		local rItems = SIL:Cache(guid, 'resil') or 0;
+		local score = SIL:Cache(guid, 'score');
+        local class = SIL:Cache(guid, 'class');
+        local str = '';
+        
+		if color then
+            name = '|cFF'..SIL:RGBtoHex(RAID_CLASS_COLORS[class].r, RAID_CLASS_COLORS[class].g, RAID_CLASS_COLORS[class].b)..name..'|r';
+        end
+            
+		if score and tonumber(score) and 0 < score then
+            -- print(name, SIL:FormatScore(score, items, color), self:FormatScore(rItems, items, color));
+            local preferance, percent, slash =  self:FormatScore(rItems, items, color);
+            str = format('%s (%s) %s %s', name, SIL:FormatScore(score, items, color), percent, slash);
+            
+            if items <= SIL.grayScore then
+                str = str..' *';
+                rough = true;
+            end
+		else
+            str = format(L.group.outputNoScore, name);
+        end
+        
+		SIL:PrintTo(str, dest, to);
+	end
+    
+    if rough then
+        SIL:PrintTo(L.group.outputRough, dest, to);
+    end
+end
+
+function SIL_Resil:SortScore(a,b)
+    -- Get everything we need
+    local scoreA = SIL:Cache(a, 'score') or 0;
+    local scoreB = SIL:Cache(b, 'score') or 0;
+    local resilA = SIL:Cache(a, 'resil') or 0;
+    local resilB = SIL:Cache(b, 'resil') or 0;
+    local itemsA = SIL:Cache(a, 'items') or 1;
+    local itemsB = SIL:Cache(b, 'items') or 1;
+    
+    -- Do a little math
+    local percentA = resilA / itemsA;
+    local percentB = resilB / itemsB;
+    
+    -- If percents match then do score
+    if percentA == percentB then
+        return scoreA > scoreB;
+    else
+        return percentA > percentB;
     end
 end
 
 function SIL_Resil:UpdatePaperDollFrame(statFrame, unit)
-    local percent = self:GetPercentTarget(unit);
-    local rItems, items = self:GetItemCountTarget(unit);
+    local guid = UnitGUID(unit);
+    local rItems = SIL:Cache(guid, 'resil') or 0;
+    local items = SIL:Cache(guid, 'items') or 0;
+    local preferance, percent, slash = self:FormatScore(rItems, items, false);
     local rating = GetCombatRating(COMBAT_RATING_RESILIENCE_PLAYER_DAMAGE_TAKEN);
     
-    PaperDollFrame_SetLabelAndText(statFrame, GUILD_PVP_STATUS, percent..'%', false);
+    PaperDollFrame_SetLabelAndText(statFrame, GUILD_PVP_STATUS, percent, false);
     statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L.resil.name..FONT_COLOR_CODE_CLOSE;
     
     if rItems then
