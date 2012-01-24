@@ -9,8 +9,8 @@ SIL_Resil = LibStub("AceAddon-3.0"):NewAddon('SIL_Resil', "AceEvent-3.0");
 -- Add /sil pvp
 if SIL_Group then
     SIL_Options.args.pvp = {
-                name = L.group.options.group,
-                desc = L.group.options.groupDesc,
+                name = L.resil.options.group,
+                desc = L.resil.options.groupDesc,
                 type = "input",
                 guiHidden = true,
                 set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Resil:GroupOutput(dest, to); end,
@@ -76,8 +76,7 @@ end
 
 function SIL_Resil:Tooltip(guid)
     if guid and tonumber(guid) and self:GetTooltip() ~= 0 then
-        local rItems = SIL:Cache(guid, 'resil') or 0;
-        local items = SIL:Cache(guid, 'items');
+        local rItems, items = self:GetItemCount(guid);
         
         if (rItems and 0 < rItems and items) or (self:GetTooltipZero() and items) then
             local preferance = self:FormatScore(rItems, items, true)
@@ -89,15 +88,45 @@ end
 
 function SIL_Resil:GetItemCount(guid)
     if guid and tonumber(guid) and SIL:Cache(guid) and SIL:Cache(guid, 'resil') then
-        local rItems = SIL:Cache(guid, 'resil');
-        local items = SIL:Cache(guid, 'items');
-        return rItems, items;
+        local rItems = SIL:Cache(guid, 'resil') or 0;
+        local items = SIL:Cache(guid, 'items') or 1;
+        return rItems, items, rItems / items;
     else
         return false, false;
     end
 end
 
+function SIL_Resil:FormatPercent(percent, color)
+    if not tonumber(percent) then return false; end
+    
+    if 1 < percent then
+        percent = percent / 100;
+    end
+    
+    local percentText = SIL:Round(percent * 100, 1);
+    
+    if color then
+        local hexColor = self:ColorScore(percent);
+        return '|cFF'..hexColor..percentText..'|r%';
+    else
+        return percentText..'%';
+    end
+end
+
 function SIL_Resil:FormatScore(rItems, items, color)
+    if tonumber(rItems) and 0 < rItems and rItems < 1 then
+        local percent = rItems;
+        local percentText = SIL:Round(percent * 100, 1);
+        
+        if items then
+            local hexColor = self:ColorScore(percent, SIL.grayScore + 1);
+            percentText = '|cFF'..hexColor..percentText..'|r%';
+            return percentText;
+        else
+            return percentText..'%';
+        end
+    end
+    
     if not rItems or not tonumber(rItems) then rItems = 0 end
     if not items or not tonumber(items) then items = 1 end
     
@@ -123,21 +152,23 @@ function SIL_Resil:FormatScore(rItems, items, color)
     return preferance, percent, slash;
 end
 
+    -- /run for i=1,17 do print(i,SIL_Resil:FormatScore(i,17,true)); end
 function SIL_Resil:ColorScore(percent, items)
-	-- /run for i=1,17 do print(i,SIL_Resil:FormatScore(i,17,true)); end
+    if type(items) == 'nil' then items = 17; end
     
     -- There are some missing items so gray
 	if items and items <= SIL.grayScore then
 		return SIL:RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
     end
     
-    return SIL:RGBtoHex(1 - percent, 1, 1 - percent);
+    if not SIL:GetColorScore() then
+        return SIL:RGBtoHex(1,1,1), 1,1,1;
+    end
+    
+    return SIL:RGBtoHex(1 - percent, 1, 1 - percent), 1 - percent, 1, 1 - percent;
 end
 
-function SIL_Resil:GroupOutput(dest, to)
-    if not SIL_Group then return false; end
-    
-    local dest, to, color = SIL_Group:GroupDest(dest, to);
+function SIL_Resil:GroupSum()
     SIL_Group:UpdateGroup(true);
     
     local totalResil = 0;
@@ -154,16 +185,26 @@ function SIL_Resil:GroupOutput(dest, to)
         totalItems = items + totalItems;
     end
     
-    local _, groupPercent =  self:FormatScore(totalResil, totalItems, color);
-    SIL:PrintTo(format(L.group.outputHeader, groupPercent), dest, to);
+    local groupPercent = totalResil / totalItems;
+    return groupPercent, totalResil, totalItems;
+end
+
+function SIL_Resil:GroupOutput(dest, to)
+    if not SIL_Group then return false; end
+    
+    local dest, to, color = SIL_Group:GroupDest(dest, to);
+    
+    local groupPercent = self:GroupSum();
+    groupPercent = self:FormatPercent(groupPercent, true);
+    
+    SIL:PrintTo(format(L.resil.outputHeader, groupPercent), dest, to);
     
     table.sort(SIL_Group.group, function(...) return SIL_Resil:SortScore(...); end);
     
     local rough = false;
     for _,guid in ipairs(SIL_Group.group) do
 		local name = SIL:Cache(guid, 'name');
-		local items = SIL:Cache(guid, 'items');
-		local rItems = SIL:Cache(guid, 'resil') or 0;
+		local rItems, items = self:GetItemCount(guid);
 		local score = SIL:Cache(guid, 'score');
         local class = SIL:Cache(guid, 'class');
         local str = '';
@@ -175,21 +216,21 @@ function SIL_Resil:GroupOutput(dest, to)
 		if score and tonumber(score) and 0 < score then
             -- print(name, SIL:FormatScore(score, items, color), self:FormatScore(rItems, items, color));
             local preferance, percent, slash =  self:FormatScore(rItems, items, color);
-            str = format('%s (%s) %s %s', name, SIL:FormatScore(score, items, color), percent, slash);
+            str = format('%s (%s) %s', name, SIL:FormatScore(score, items, color), slash);
             
             if items <= SIL.grayScore then
                 str = str..' *';
                 rough = true;
             end
 		else
-            str = format(L.group.outputNoScore, name);
+            str = format(L.resil.outputNoScore, name);
         end
         
 		SIL:PrintTo(str, dest, to);
 	end
     
     if rough then
-        SIL:PrintTo(L.group.outputRough, dest, to);
+        SIL:PrintTo(L.resil.outputRough, dest, to);
     end
 end
 
@@ -240,19 +281,10 @@ function SIL_Resil:GMICallback(name)
         local rItems, items = self:GetItemCount(guid);
         
         if rItems and items then
-            local percent = self:GetPercent(guid)..'%';
-            local slash = rItems..'/'..items;
-            local text = '';
+            local rItems, items = self:GetItemCount(guid);
+            local preferance, percent, slash = self:FormatScore(rItems, items, false);
             
-            if self:GetTooltip() == 2 then
-                text = slash;
-            elseif self:GetTooltip() == 3 then
-                text = percent;
-            else
-                text = slash..' '..percent;
-            end
-            
-            return text;
+            return preferance;
         end
     end
     

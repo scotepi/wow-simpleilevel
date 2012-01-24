@@ -189,8 +189,11 @@ end
 
 -- Figure out the type of group we are in
 function SIL_Group:GroupType()
+    local _, itype = GetInstanceInfo();
     
-    if UnitInBattleground("player") then
+    if itype == 'arena' then
+        return 'arena', ARENA;
+    elseif UnitInBattleground("player") then
         return 'battleground', CHAT_MSG_BATTLEGROUND;
     elseif UnitInRaid("player") then
         return 'raid', CHAT_MSG_RAID;
