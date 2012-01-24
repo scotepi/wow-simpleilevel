@@ -447,8 +447,6 @@ function SIL:ClearScore(target)
 end;
 
 function SIL:AgeToText(age, color)
-	if type(color) == "nul" then color = false; end
-	
 	if type(age) == 'number' then
 		if age > 86400 then
 			age = self:Round(age / 86400, 2);
@@ -468,7 +466,7 @@ function SIL:AgeToText(age, color)
 			hex = "00ff00";
 		end
 		
-		if color then
+		if color and self:GetColorScore() then
 			return format(str, '|cFF'..hex..age..'|r');
 		else
 			return format(str, age);
@@ -623,7 +621,7 @@ function SIL:ProcessInspect(guid, data, age)
             
             -- Run any callbacks for this event
             if self.action[guid] then
-                self.action[guid](guid, score, totalItems, age, data.items);
+                self.action[guid](guid, score, totalItems, age, data.items, self:Cache(guid, 'target'));
                 self.action[guid] = false;
             end
             
@@ -782,17 +780,20 @@ end
 
 -- Format the score for color and round it to xxx.x
 function SIL:FormatScore(score, items, color)
-	if type(color) == "nil" then color = true; end
-	
-	if tonumber(score) then
-		local score = tonumber(score);
-		local hexColor = self:ColorScore(score, items);
-		local score = self:Round(score, 1);
-		
+    if not items then items = self.grayScore + 1; end
+    if type(color) == 'nil' then color = true; end
+    
+    if tonumber(score) and tonumber(items) then
+		local scoreR = self:Round(tonumber(score), 1);
+        
 		if color then
-			return '|cFF'..hexColor..score..'|r';
+            local hexColor = self:ColorScore(score, items);
+            
+            
+            
+			return '|cFF'..hexColor..scoreR..'|r';
 		else
-			return score;
+			return scoreR;
 		end
 	else
 		return 'n/a';
@@ -805,6 +806,10 @@ function SIL:ColorScore(score, items)
     -- There are some missing items so gray
 	if items and items <= self.grayScore then
 		return self:RGBtoHex(0.5,0.5,0.5), 0.5,0.5,0.5;
+    end
+    
+    if not self:GetColorScore() then
+        return self:RGBtoHex(1,1,1), 1,1,1;
     end
     
     -- Default to white
@@ -864,7 +869,7 @@ function SIL:ShowTooltip(guid)
         
 		-- Build the tooltip text
 		local textLeft = '|cFF216bff'..L.core.ttLeft..'|r ';
-		local textRight = self:FormatScore(score, items);
+		local textRight = self:FormatScore(score, items, true);
 		
 		local textAdvanced = format(L.core.ttAdvanced, self:AgeToText(age, true));
 		
@@ -958,6 +963,7 @@ function SIL:SetAge(seconds) self.db.global.age = seconds; end
 function SIL:SetLDBlabel(v) self.db.global.ldbLabel = v; self:UpdateLDB(true); end
 function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; end
 function SIL:SetTTCombat(v) self.db.global.ttCombat = v; end
+function SIL:SetColorScore(v) self.db.global.color = v; end
 
 -- Get
 function SIL:GetAdvanced() return self.db.global.advanced; end
@@ -971,6 +977,7 @@ function SIL:GetLDB() return self.db.global.ldbText; end
 function SIL:GetLDBlabel() return self.db.global.ldbLabel; end
 function SIL:GetLDBrefresh() return self.db.global.ldbRefresh; end
 function SIL:GetTTCombat() return self.db.global.ttCombat; end
+function SIL:GetColorScore() return self.db.global.color; end
 
 -- Toggle
 function SIL:ToggleAdvanced() self:SetAdvanced(not self:GetAdvanced()); end
@@ -980,6 +987,7 @@ function SIL:TogglePaperdoll() self:SetPaperdoll(not self:GetPaperdoll()); end
 function SIL:ToggleLabel() self:SetLabel(not self:GetLabel()); end
 function SIL:ToggleLDBlabel() self:SetLDBlabel(not self:GetLDBlabel()); end
 function SIL:ToggleTTCombat() self:SetTTCombat(not self:GetTTCombat()); end
+function SIL:ToggleColorScore() self:SetColorScore(not self:GetColorScore()); end
 
 -- Advanced sets
 function SIL:SetPurge(hours) 
@@ -1254,21 +1262,22 @@ function SIL:UpdateLDB(force)
 		if force or label ~= self.ldbLable or (self.ldbUpdated + self:GetLDBrefresh()) < time() then
             
             local text = 'n/a';
+            local _, itype = GetInstanceInfo();
             
-            if SIL_Group then
-                text = SIL_Group:GroupScore(false);
+            if (itype == 'pvp' or itype == 'arena') and SIL_Resil then
+                local groupPercent = SIL_Resil:GroupSum();
+                groupPercent = SIL_Resil:FormatPercent(groupPercent, true);
+                
+                local groupScore = SIL_Group:GroupScore();
+                groupScore = self:FormatScore(groupScore, self.grayScore + 1, true);
+                
+                text = groupScore..' '..groupPercent;
+            elseif SIL_Group then
+                local groupScore = SIL_Group:GroupScore()
+                text = self:FormatScore(groupScore, 15, true);
             elseif UnitGUID('player') then
-                text = self:GetScoreTarget('player');
-            end
-			
-            local hooks = self:RunHooks('updateldb');
-            
-            if hooks and type(hooks) == 'table' then
-                for _,t in pairs(hooks) do
-                    if t and type(t) == 'string' then
-                        text = text..' '..t;
-                    end
-                end
+                local score, age, items = self:GetScoreTarget('player');
+                text = self:FormatScore(score, items, true);
             end
             
 			self:UpdateLDBText(label, text)
@@ -1281,11 +1290,6 @@ end
 
 function SIL:UpdateLDBText(label, text)
     if not self:GetLDB() then return false; end
-    
-    -- A score was passed
-    if tonumber(text) then
-        text = self:FormatScore(text);
-    end
     
     -- Add the label
     if self:GetLDBlabel() then

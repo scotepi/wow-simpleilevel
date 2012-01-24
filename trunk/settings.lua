@@ -58,7 +58,7 @@ SIL_Options = {
 			inline = true,
 			order = 1,
 			args = {
-				advanced = {
+				advanced = { -- Advanced Tooltip
 					name = L.core.options.ttAdvanced,
 					desc = L.core.options.ttAdvancedDesc,
 					type = "toggle",
@@ -66,7 +66,7 @@ SIL_Options = {
 					get = function(i) return SIL:GetAdvanced(); end,
 					order = 1,
 				},
-                ttCombat = {
+                ttCombat = { -- Tooltip in Combat
 					name = L.core.options.ttCombat,
 					desc = L.core.options.ttCombatDesc,
 					type = "toggle",
@@ -75,8 +75,16 @@ SIL_Options = {
 					order = 2,
                     cmdHidden = true,
 				},
+                color = { -- Color Score
+					name = L.core.options.color,
+					desc = L.core.options.colorDesc,
+					type = "toggle",
+					get = function(i) return SIL:GetColorScore(); end,
+					set = function(i,v) SIL:SetColorScore(v);  end,
+					order = 3,
+				},
                 
-				autoscan = {
+				autoscan = { -- Autoscan Group Members
 					name = L.core.options.autoscan,
 					desc = L.core.options.autoscanDesc,
 					type = "toggle",
@@ -84,7 +92,7 @@ SIL_Options = {
 					get = function(i) return SIL:GetAutoscan(); end,
 					order = 5,
 				},
-				minimap = {
+				minimap = { -- Minimap Button
 					name = L.core.options.minimap,
 					desc = L.core.options.minimapDesc,
 					type = "toggle",
@@ -92,7 +100,7 @@ SIL_Options = {
 					get = function(i) return SIL:GetMinimap(); end,
 					order = 6,
 				},
-				cinfo = {
+				cinfo = { -- Paperdoll Information
 					name = L.core.options.paperdoll,
 					desc = L.core.options.paperdollDesc,
 					type = "toggle",
@@ -154,7 +162,7 @@ SIL_Options = {
 					set = function(i,v) SIL:SetLDBlabel(v); end,
 					order = 2,
 				},
-				ldbRefresh = {
+				ldbRefresh = { -- Refreshrate of LDB
 					name = L.core.options.ldbRefresh,
 					desc = L.core.options.ldbRefreshDesc,
 					type = "range",
@@ -230,7 +238,7 @@ SIL_Options = {
 SIL_Defaults = {
 	global = {
 		age = 1800,				-- How long till information is refreshed
-		purge = 360,				-- How often to automaticly purge
+		purge = 360,			-- How often to automaticly purge
 		advanced = false,		-- Display extra information in the tooltips
 		autoscan = true,		-- Automaticly scan for changes
 		cinfo = true,			-- Character Info/Paperdoll info
@@ -243,6 +251,7 @@ SIL_Defaults = {
 		ldbLabel = true,		-- LDB Label
 		ldbRefresh = 30,		-- LDB Refresh Rate
         ttCombat = true;        -- Tooltip in combat
+        color = true;           -- Color the score
 	},
 };
 
