@@ -6,7 +6,7 @@ ToDo:
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
 -- Start SIL
-SIL = LibStub("AceAddon-3.0"):NewAddon(L.core.name, "AceEvent-3.0", "AceConsole-3.0");
+SIL = LibStub("AceAddon-3.0"):NewAddon(L.core.name, "AceEvent-3.0", "AceConsole-3.0", "AceTimer-3.0");
 SIL.category = GetAddOnMetadata("SimpleILevel", "X-Category");
 SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
 SIL.versionMajor = 2.5;                    -- Used for cache DB versioning
@@ -17,6 +17,7 @@ SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
 SIL.grayScore = 8;      -- Number of items to consider gray/aprox
 SIL.debug = false;      -- Debug for SIL:Debug() output
+SIL.ldbAuto = false;    -- AceTimer for LDB
 SIL.menuItems = {
     top = {},
     middle = {},
@@ -89,6 +90,7 @@ function SIL:OnInitialize()
     self:RegisterEvent("PLAYER_TARGET_CHANGED");
     self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", function() SIL:UpdateLDB(); end);
     
     -- Add to Paperdoll - not relevent as of 4.3, well see
     table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L.core.name);
@@ -119,6 +121,7 @@ function SIL:OnInitialize()
     
     -- Get working on a score for the player
     self:StartScore('player');
+    self:LDBSetAuto();
     self:UpdateLDB(); -- This may cause excesive loading time...
 end
 
@@ -961,7 +964,7 @@ function SIL:SetLabel(v) self.db.global.showLabel = v; self:UpdateLDB(); end
 function SIL:SetAutoscan(v) self.db.global.autoscan = v; self:Autoscan(v); end
 function SIL:SetAge(seconds) self.db.global.age = seconds; end
 function SIL:SetLDBlabel(v) self.db.global.ldbLabel = v; self:UpdateLDB(true); end
-function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; end
+function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; self:LDBSetAuto() end
 function SIL:SetTTCombat(v) self.db.global.ttCombat = v; end
 function SIL:SetColorScore(v) self.db.global.color = v; end
 
@@ -1249,7 +1252,7 @@ function SIL:OpenMenu(window)
 	ToggleDropDownMenu(1, nil, menu, "UIParent", x / UIParent:GetEffectiveScale() , y / UIParent:GetEffectiveScale());
 end
 
-function SIL:UpdateLDB(force)
+function SIL:UpdateLDB(force, auto)
     
 	if self:GetLDB() then
 		local label = UnitName('player');
@@ -1267,14 +1270,16 @@ function SIL:UpdateLDB(force)
             if (itype == 'pvp' or itype == 'arena') and SIL_Resil then
                 local groupPercent = SIL_Resil:GroupSum();
                 groupPercent = SIL_Resil:FormatPercent(groupPercent, true);
+                text = groupPercent;
                 
-                local groupScore = SIL_Group:GroupScore();
-                groupScore = self:FormatScore(groupScore, self.grayScore + 1, true);
-                
-                text = groupScore..' '..groupPercent;
+                if SIL_Group then
+                    local groupScore = SIL_Group:GroupScore();
+                    groupScore = self:FormatScore(groupScore, self.grayScore + 1, true);
+                    text = groupScore..' '..text;
+                end
             elseif SIL_Group then
                 local groupScore = SIL_Group:GroupScore()
-                text = self:FormatScore(groupScore, 15, true);
+                text = self:FormatScore(groupScore, 16, true);
             elseif UnitGUID('player') then
                 local score, age, items = self:GetScoreTarget('player');
                 text = self:FormatScore(score, items, true);
@@ -1299,6 +1304,19 @@ function SIL:UpdateLDBText(label, text)
     self.ldb.text = text;
     self.ldbUpdated = time();
     self.ldbLable = label;
+end
+
+function SIL:LDBSetAuto()
+    if self.ldbAuto then
+        self:CancelTimer(self.ldbAuto, true);
+    end
+    
+    self.ldbAuto = self:ScheduleRepeatingTimer(function() 
+        if not InCombatLockdown() then 
+            SIL:Debug('Auto LDB...'); 
+            SIL:UpdateLDB(false, true); 
+        end 
+    end, self:GetLDBrefresh());
 end
 
 function SIL:GMICallback(name)
