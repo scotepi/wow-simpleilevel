@@ -90,7 +90,9 @@ function SIL_Resil:GetItemCount(guid)
     if guid and tonumber(guid) and SIL:Cache(guid) and SIL:Cache(guid, 'resil') then
         local rItems = SIL:Cache(guid, 'resil') or 0;
         local items = SIL:Cache(guid, 'items') or 1;
-        return rItems, items, rItems / items;
+        local percent = (rItems / items) or 0;
+        
+        return rItems, items, percent;
     else
         return false, false;
     end
@@ -195,7 +197,7 @@ function SIL_Resil:GroupOutput(dest, to)
     local dest, to, color = SIL_Group:GroupDest(dest, to);
     
     local groupPercent = self:GroupSum();
-    groupPercent = self:FormatPercent(groupPercent, true);
+    groupPercent = self:FormatPercent(groupPercent, color);
     
     SIL:PrintTo(format(L.resil.outputHeader, groupPercent), dest, to);
     
@@ -216,7 +218,7 @@ function SIL_Resil:GroupOutput(dest, to)
 		if score and tonumber(score) and 0 < score then
             -- print(name, SIL:FormatScore(score, items, color), self:FormatScore(rItems, items, color));
             local preferance, percent, slash =  self:FormatScore(rItems, items, color);
-            str = format('%s (%s) %s', name, SIL:FormatScore(score, items, color), slash);
+            str = format('%s %s (%s)', name, slash, SIL:FormatScore(score, items, color));
             
             if items <= SIL.grayScore then
                 str = str..' *';
@@ -238,14 +240,8 @@ function SIL_Resil:SortScore(a,b)
     -- Get everything we need
     local scoreA = SIL:Cache(a, 'score') or 0;
     local scoreB = SIL:Cache(b, 'score') or 0;
-    local resilA = SIL:Cache(a, 'resil') or 0;
-    local resilB = SIL:Cache(b, 'resil') or 0;
-    local itemsA = SIL:Cache(a, 'items') or 1;
-    local itemsB = SIL:Cache(b, 'items') or 1;
-    
-    -- Do a little math
-    local percentA = resilA / itemsA;
-    local percentB = resilB / itemsB;
+    local resilA, itemsA, percentA = self:GetItemCount(a)
+    local resilB, itemsB, percentB = self:GetItemCount(b)
     
     -- If percents match then do score
     if percentA == percentB then

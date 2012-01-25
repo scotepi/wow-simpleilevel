@@ -34,13 +34,13 @@ function SIL_Group:OnInitialize()
     SIL:Print(L.group.load, GetAddOnMetadata("SimpleILevel_Group", "Version"));
     
     -- Keep our self.group sane
-    self:RegisterEvent("PARTY_MEMBERRS_CHANGED", function() SIL_Group:UpdateGroup(false) end);
+    self:RegisterEvent("PARTY_MEMBERRS_CHANGED", function() SIL_Group:UpdateGroup() end);
     
-    self:UpdateGroup(false);
+    self:UpdateGroup();
 end
 
 -- Popupdate SIL_Group.group
-function SIL_Group:UpdateGroup()
+function SIL_Group:UpdateGroup(startAutoscan)
     
     -- Reset the group table
     self.group = {};
@@ -87,7 +87,7 @@ function SIL_Group:UpdateGroup()
     if 1 < #self.group and SIL:GetAutoscan() then
         
         -- Start autoscan
-        if not self.autoscan then
+        if not self.autoscan and startAutoscan then
             self:AutoscanStart();
         else
             self:Autoscan();
@@ -117,7 +117,7 @@ end
 
 -- Sumerize SIL_Group
 function SIL_Group:GroupScore()
-    self:UpdateGroup(false);
+    self:UpdateGroup();
     
     local groupSize = 0;
     local totalScore = 0;
@@ -137,8 +137,8 @@ function SIL_Group:GroupScore()
         end
     end
     
+    -- SIL:UpdateLDB();
     local groupAvg = totalScore / groupSize;
-    SIL:UpdateLDBText(groupName, groupAvg);
     return groupAvg, groupSize, groupMin, groupMax;
 end
 
@@ -289,7 +289,7 @@ function SIL_Group:Autoscan(autoscan)
         
         SIL:Debug('Found someone to Scan!', UnitName(target), target, reason, value);
         
-        SIL:GetScoreTarget(target, true, function(...) SIL_Group:AutoscanCallback(...); end);
+        SIL:GetScoreTarget(target, true);
         
         -- Reset failed
         self.autoscanFailed = 0;
@@ -306,15 +306,6 @@ function SIL_Group:Autoscan(autoscan)
                 self:AutoscanStop();
             end
         end
-    end
-end
-
--- Not sure what to do with this yet other then debug
-function SIL_Group:AutoscanCallback(guid, score, items, age)
-    if guid then
-        SIL:Debug('AutoscanCallback', SIL:Cache(guid, 'name'), guid, score, items, age);
-    else
-        SIL:Debug('AutoscanCallback');
     end
 end
 
