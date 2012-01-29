@@ -1,6 +1,6 @@
 --[[
 ToDo:
-    - Make the dropdown menu plugable
+    - 
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
@@ -24,6 +24,7 @@ SIL.menuItems = {
     bottom = {},
 };
 SIL.cache = {};
+--SIL.L = L;              -- Non-local locals
 
 -- Load Libs
 SIL.aceConfig = LibStub:GetLibrary("AceConfig-3.0");
@@ -1069,187 +1070,111 @@ function SIL:ShowOptions()
     end
 end
 
-
-function SIL:OpenMenu(window)
-	if InCombatLockdown() then return end
-	
-	if not self.silmenu then
+function SIL:OpenMenu()
+    if not self.silmenu then
 		self.silmenu = CreateFrame("Frame", "SILMenu")
 	end
-	local menu = self.silmenu
-	
-	local score, age, items = self:GetScoreTarget('player', true);
-	
-	-- Start a group score
-    local groupScore, groupCount = false;
-    if SIL_Group then
-        groupScore, groupCount = SIL_Group:GroupScore(false);
-        groupScore = self:FormatScore(groupScore);
-    end
-	
-    -- Start the menu
-	menu.displayMode = "MENU";
-	local info = {};
-	menu.initialize = function(self,level)
-		if not level then return end
-		wipe(info);
+    
+    self.silmenu.initialize = function(...) SIL:ShowMenu(...) end;
+    
+    local x,y = GetCursorPosition(UIParent);
+	ToggleDropDownMenu(1, nil, self.silmenu, "UIParent", x / UIParent:GetEffectiveScale() , y / UIParent:GetEffectiveScale());
+end
+
+function SIL:ShowMenu(s, level)
+    if not level or not tonumber(level) then return end
+    
+    local info = {};
+    local spacer = { disabled = 1, notCheckable = 1 };
+    
+    if level == 1 then
+    
+        -- Title / Version
+        info.isTitle = 1;
+        info.text = L.core.name..' '..SIL.version;
+        info.notCheckable = 1;
+        UIDropDownMenu_AddButton(info, level);
         
-		if level == 1 then
-			
-			-- Title
-			info.isTitle = 1;
-			info.text = L.core.name..' '..SIL.version;
-			info.notCheckable = 1;
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- Spacer
-			wipe(info);
-			info.disabled = 1;
-			info.notCheckable = 1;
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- Some sort of group
-			if GetNumPartyMembers() > 0 and SIL_Group then
-				wipe(info);
-				info.notCheckable = 1;
-				info.hasArrow = 1;
-				info.text = L.group.options.group..' '..groupScore;
-				info.value = {};
-				UIDropDownMenu_AddButton(info, level);
-				
-				-- Spacer
-				wipe(info);
-				info.disabled = 1;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
-			end
-			
-			-- Advanced Tool tip
-			wipe(info);
-			info.text = L.core.options.ttAdvanced;
-			info.func = function() SIL:ToggleAdvanced(); end;
-			info.checked = SIL:GetAdvanced();
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- Autoscan
-			wipe(info);
-			info.text = L.core.options.autoscan;
-			info.func = function() SIL:ToggleAutoscan(); end;
-			info.checked = SIL:GetAutoscan();
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- Minimap
-			wipe(info);
-			info.text = L.core.options.minimap;
-			info.func = function() SIL:ToggleMinimap(); end;
-			info.checked = SIL:GetMinimap();
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- Label Text
-			wipe(info);
-			info.text = L.core.options.ldbSource;
-			info.func = function() SIL:ToggleLDBlabel(); end;
-			info.checked = SIL:GetLDBlabel();
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- Spacer
-			wipe(info);
-			info.disabled = 1;
-			info.notCheckable = 1;
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- Options
-			wipe(info);
-			info.text = L.core.options.open;
-			info.func = function() SIL:ShowOptions(); end;
-			info.notCheckable = 1;
-			UIDropDownMenu_AddButton(info, level);
-			
-			-- My Score
-			wipe(info);
-			info.text = format(L.core.scoreYour, SIL:FormatScore(score, items));
-			info.notClickable = 1;
-			info.notCheckable = 1;
-			UIDropDownMenu_AddButton(info, level);
-			
-		elseif level == 2 then
-			if type(UIDROPDOWNMENU_MENU_VALUE) == "table" and SIL_Group then
-				local v = UIDROPDOWNMENU_MENU_VALUE;
-				
-				wipe(info)
-		        info.isTitle = 1;
-				info.notCheckable = 1;
-		        info.text = L.group.options.group;
-		        UIDropDownMenu_AddButton(info, level);
-				
-				-- Console - CHAT_MSG_SYSTEM 
-				wipe(info);
-				info.text = CHAT_MSG_SYSTEM;
-				info.func = function() SIL_Group:GroupOutput("SYSTEM"); end;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
-				
-				-- Spacer
-				wipe(info);
-				info.disabled = 1;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
-				
-				-- Party - CHAT_MSG_PARTY
-				wipe(info);
-				info.text = CHAT_MSG_PARTY;
-				info.func = function() SIL_Group:GroupOutput("PARTY"); end;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
-				
-				-- Raid - CHAT_MSG_RAID 
-				if UnitInRaid("player") then
-					wipe(info);
-					info.text = CHAT_MSG_RAID;
-					info.func = function() SIL_Group:GroupOutput("RAID"); end;
-					info.notCheckable = 1;
-					UIDropDownMenu_AddButton(info, level);
-				end
-				
-				-- BG - CHAT_MSG_RAID 
-				if UnitInBattleground("player") then
-					wipe(info);
-					info.text = CHAT_MSG_BATTLEGROUND;
-					info.func = function() SIL_Group:GroupOutput("BG"); end;
-					info.notCheckable = 1;
-					UIDropDownMenu_AddButton(info, level);
-				end
-				
-				-- Guild - CHAT_MSG_GUILD 
-				if IsInGuild() then
-					wipe(info);
-					info.text = CHAT_MSG_GUILD;
-					info.func = function() SIL_Group:GroupOutput("GUILD"); end;
-					info.notCheckable = 1;
-					UIDropDownMenu_AddButton(info, level);
-					
-					-- Officer - CHAT_MSG_OFFICER
-					if SIL:CanOfficerChat() then
-						wipe(info);
-						info.text = CHAT_MSG_OFFICER;
-						info.func = function() SIL_Group:GroupOutput("OFFICER"); end;
-						info.notCheckable = 1;
-						UIDropDownMenu_AddButton(info, level);
-					end
-				end
-				
-				-- Say - CHAT_MSG_SAY
-				wipe(info);
-				info.text = CHAT_MSG_SAY;
-				info.func = function() SIL_Group:GroupOutput("SAY"); end;
-				info.notCheckable = 1;
-				UIDropDownMenu_AddButton(info, level);
-			end
-		end
-	end
-	
-	local x,y = GetCursorPosition(UIParent);
-	ToggleDropDownMenu(1, nil, menu, "UIParent", x / UIParent:GetEffectiveScale() , y / UIParent:GetEffectiveScale());
+        -- Spacer
+        UIDropDownMenu_AddButton(spacer, level);
+        
+        -- Top
+        if self:RunMenuItems('top', level) then
+            UIDropDownMenu_AddButton(spacer, level);
+        end
+        
+        -- Middle
+        if self:RunMenuItems('middle', level) then
+            UIDropDownMenu_AddButton(spacer, level);
+        end
+        
+        -- Bottom
+        if self:RunMenuItems('bottom', level) then
+            UIDropDownMenu_AddButton(spacer, level);
+        end   
+        
+        -- Options
+        wipe(info);
+        info.text = L.core.options.open;
+        info.func = function() SIL:ShowOptions(); end;
+        info.notCheckable = 1;
+        UIDropDownMenu_AddButton(info, level);
+        
+        -- My Score
+        wipe(info);
+        local score, age, items = self:GetScoreTarget('player', true);
+        info.text = format(L.core.scoreYour, SIL:FormatScore(score, items));
+        info.notClickable = 1;
+        info.notCheckable = 1;
+        UIDropDownMenu_AddButton(info, level);
+        
+    elseif tonumber(level) and UIDROPDOWNMENU_MENU_VALUE then
+        
+        -- Top
+        if self:RunMenuItems('top', level, UIDROPDOWNMENU_MENU_VALUE) then
+            UIDropDownMenu_AddButton(spacer, level);
+        end
+        
+        if self:RunMenuItems('middle', level, UIDROPDOWNMENU_MENU_VALUE) then
+            UIDropDownMenu_AddButton(spacer, level);
+        end
+        
+        self:RunMenuItems('bottom', level, UIDROPDOWNMENU_MENU_VALUE);
+    end
+end
+
+function SIL:RunMenuItems(where, level, parent)
+    where = strlower(where);
+    local lev = level;
+    
+    if level and parent then
+        level = level..'-'..parent;
+    end
+    
+    local foundSomething = false;
+    
+    if self.menuItems[where] and self.menuItems[where][level] then
+        for _,info in pairs(self.menuItems[where][level]) do
+            
+            -- Run functions for a name
+            if info.text and type(info.text) == 'function' then
+                info.text = info.text(where, lev, parent);
+            end
+            
+            local enabled = true;
+            
+            if info.enabled and type(info.enabled) == 'function' then
+                enabled = info.enabled();
+            end
+            
+            if enabled then
+                UIDropDownMenu_AddButton(info, lev);
+                foundSomething = true;
+            end
+        end
+    end
+    
+    return foundSomething;
 end
 
 function SIL:UpdateLDB(force, auto)
@@ -1346,15 +1271,6 @@ function SIL:Cache(guid, what)
 end
 
 function SIL:AddDefaultMenuItems()
-    -- Title, this may move to just default freeing up top
-    self:AddMenuItems('top', {
-        text = L.core.name..' '..self.version,
-        isTitle = 1,
-        notCheckable = 1,
-    }, 1);
-    
-    
-    
     --[[   Middle  ]]
     
     -- Advanced
@@ -1384,41 +1300,28 @@ function SIL:AddDefaultMenuItems()
         func = function() SIL:ToggleLDBlabel(); end,
         checked = SIL:GetLDBlabel(),
     }, 1);
-    
-    
-    
-    --[[   Bottom  ]]
-    
-    -- Open Options
-    self:AddMenuItems('bottom', {
-        text = L.core.options.open,
-        func = function() SIL:ShowOptions(); end,
-        notCheckable = 1,
-    }, 1);
-    
-    -- Score
-    self:AddMenuItems('bottom', {
-        text = function() 
-            local score, age, items = self:GetScoreTarget('player');
-            return format(L.core.scoreYour, SIL:FormatScore(score, items)) 
-        end,
-        notClickable = 1,
-        notCheckable = 1,
-    }, 1);
-    
 end
 
 --[[ 
     For what see List of button attributes
     - http://wowprogramming.com/utils/xmlbrowser/live/FrameXML/UIDropDownMenu.lua
+    
+    +++
+    info.text = can be a function(where, level, parent), make sure you return value
+    info.enabled = function(where, level, parent); this is backwards, but if enabled is present then it is ran to see if the item should be shown
 ]]
-function SIL:AddMenuItems(where, what, level, parent)
-    if not where and not what and not self.menuItems[where] and type(what) ~= table then return end;
+function SIL:AddMenuItems(where, info, level, parent)
+    if not where and not info and not self.menuItems[where] and type(info) ~= 'table' then return end;
+    where = strlower(where);
     level = level or 1;
+    
+    if parent then
+        level = level..'-'..parent;
+    end
     
     if not self.menuItems[where][level] then
         self.menuItems[where][level] = {};
     end
     
-    table.insert(self.menuItems[where][level], what);
+    table.insert(self.menuItems[where][level], info);
 end

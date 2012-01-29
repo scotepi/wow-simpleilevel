@@ -1,18 +1,26 @@
 ## Interface: 40300
 
 ## Title: Simple iLevel
-## Notes: Adds the Average iLevel (AiL) to the tool tip of other players
+## Notes: Adds the Average iLevel (AiL) to the tooltip of other players
 
 ## Title-ptBR: iLevel Simples
+## Title-frFR: Simple iLevel
+## Title-deDE: Simple iLevel
+## Title-koKR: Simple iLevel
+## Title-esMX: Simple iLevel
+## Title-ruRU: Simple iLevel
 ## Title-zhCN: 简易物品等级
+## Title-esES: Simple iLevel
 ## Title-zhTW: 簡易物品等級
 
 ## Notes-ptBR: Incluir iLevel Medio (AiL) na informacção flutuante dos players
 ## Notes-frFR: Ajout le iLevel moyen (AiL) à l'infobulle des autres joueurs
 ## Notes-deDE: Fügt das durchschnittliche iLevel in den Tooltip des Spielers ein
 ## Notes-koKR: 다른 플레이어의 툴팁에 평균 아이템 레벨(AiL)을 추가합니다.
+## Notes-esMX: Adds the Average iLevel (AiL) to the tooltip of other players
 ## Notes-ruRU: Добавлять средний iLvL (AiL) в подсказки игроков
 ## Notes-zhCN: 提示栏显示其它玩家的平均物品等级
+## Notes-esMX: Adds the Average iLevel (AiL) to the tooltip of other players
 ## Notes-zhTW: 提示欄顯示其他玩家的平均物品等級
 
 ## Author: Scotepi
