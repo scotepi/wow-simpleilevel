@@ -36,7 +36,106 @@ function SIL_Group:OnInitialize()
     -- Keep our self.group sane
     self:RegisterEvent("PARTY_MEMBERRS_CHANGED", function() SIL_Group:UpdateGroup() end);
     
+    -- Add Menu Items
+    self:SetupSILMenu();
+    
     self:UpdateGroup();
+end
+
+function SIL_Group:SetupSILMenu()
+    -- Add menu items
+    SIL:AddMenuItems('top', {
+        text = function() 
+                local groupScore = SIL_Group:GroupScore(false);
+                groupScore = SIL:FormatScore(groupScore);
+                return L.group.options.group..' '..groupScore;
+            end,
+        func = function() SIL:ToggleAdvanced(); end,
+        notCheckable = 1,
+        hasArrow = 1,
+        value = 'SIL_Group',
+        enabled = function() 
+                local t = SIL_Group:GroupType();
+                return t ~= 'solo';
+            end,
+    }, 1);
+    
+    -- Submenu Title
+    SIL:AddMenuItems('top', {
+        text = L.group.options.group,
+        isTitle = 1,
+        notCheckable = 1,
+    }, 2, 'SIL_Group');
+    
+    
+    -- System
+    SIL:AddMenuItems('middle', {    
+        text = CHAT_MSG_SYSTEM,
+        func = function() SIL_Group:GroupOutput("SYSTEM"); end,
+        notCheckable = 1,
+    }, 2, 'SIL_Group');
+    
+    -- Party
+    SIL:AddMenuItems('middle', {   
+        text = CHAT_MSG_PARTY;
+        func = function() SIL_Group:GroupOutput("PARTY"); end;
+        notCheckable = 1;
+        enabled = function() 
+                local t = SIL_Group:GroupType();
+                return t == 'party' or t == 'arena';
+            end,
+    }, 2, 'SIL_Group');
+    
+    -- Raid
+    SIL:AddMenuItems('middle', {    
+        text = CHAT_MSG_RAID;
+        func = function() SIL_Group:GroupOutput("RAID"); end;
+        notCheckable = 1;
+        enabled = function() return UnitInRaid("player"); end,
+    }, 2, 'SIL_Group');
+    
+    -- Battleground
+    SIL:AddMenuItems('middle', {    
+        text = CHAT_MSG_BATTLEGROUND;
+        func = function() SIL_Group:GroupOutput("BG"); end;
+        notCheckable = 1;
+        enabled = function() return UnitInBattleground("player"); end,
+    }, 2, 'SIL_Group');
+    
+    -- Guild
+    SIL:AddMenuItems('middle', {    
+        text = CHAT_MSG_GUILD;
+        func = function() SIL_Group:GroupOutput("GUILD"); end;
+        notCheckable = 1;
+        enabled = function() return IsInGuild(); end,
+    }, 2, 'SIL_Group');
+    
+    -- Guild - Officer
+    SIL:AddMenuItems('middle', {    
+        text = CHAT_MSG_OFFICER;
+        func = function() SIL_Group:GroupOutput("OFFICER"); end;
+        notCheckable = 1;
+        enabled = function() return SIL:CanOfficerChat(); end,
+    }, 2, 'SIL_Group');
+    
+    -- Say
+    SIL:AddMenuItems('middle', {    
+        text = CHAT_MSG_SAY;
+        func = function() SIL_Group:GroupOutput("SAY"); end;
+        notCheckable = 1;
+    }, 2, 'SIL_Group');
+    
+    -- Sums
+    SIL:AddMenuItems('bottom', {    
+        text = function()
+                local groupAvg, groupSize, groupMin, groupMax = SIL_Group:GroupScore(false);
+                groupMin = SIL:FormatScore(groupMin);
+                groupMax = SIL:FormatScore(groupMax);
+                
+                return groupMin..' / '..groupMax;
+            end;
+        notCheckable = 1;
+    }, 2, 'SIL_Group');
 end
 
 -- Popupdate SIL_Group.group
@@ -119,11 +218,11 @@ end
 function SIL_Group:GroupScore()
     self:UpdateGroup();
     
+    local playerScore = SIL:Cache(UnitGUID('player'), 'score');
     local groupSize = 0;
     local totalScore = 0;
-    local groupMin = totalScore;
-    local groupMax = totalScore;
-    local groupType, groupName = self:GroupType();
+    local groupMin = playerScore;
+    local groupMax = playerScore;
     
     for _,guid in pairs(self.group) do
         local score = SIL:Cache(guid, 'score');

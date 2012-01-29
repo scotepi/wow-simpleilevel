@@ -66,15 +66,14 @@ SIL_Options = {
 					get = function(i) return SIL:GetAdvanced(); end,
 					order = 1,
 				},
-                ttCombat = { -- Tooltip in Combat
+                combat = { -- Tooltip in Combat
 					name = L.core.options.ttCombat,
 					desc = L.core.options.ttCombatDesc,
 					type = "toggle",
 					get = function(i) return SIL:GetTTCombat(); end,
 					set = function(i,v) SIL:SetTTCombat(v);  end,
 					order = 2,
-                    cmdHidden = true,
-				},
+                },
                 color = { -- Color Score
 					name = L.core.options.color,
 					desc = L.core.options.colorDesc,
