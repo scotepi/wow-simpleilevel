@@ -77,9 +77,9 @@ function SIL_Group:SetupSILMenu()
     
     -- Party
     SIL:AddMenuItems('middle', {   
-        text = CHAT_MSG_PARTY;
-        func = function() SIL_Group:GroupOutput("PARTY"); end;
-        notCheckable = 1;
+        text = CHAT_MSG_PARTY,
+        func = function() SIL_Group:GroupOutput("PARTY"); end,
+        notCheckable = 1,
         enabled = function() 
                 local t = SIL_Group:GroupType();
                 return t == 'party' or t == 'arena';
@@ -88,41 +88,41 @@ function SIL_Group:SetupSILMenu()
     
     -- Raid
     SIL:AddMenuItems('middle', {    
-        text = CHAT_MSG_RAID;
-        func = function() SIL_Group:GroupOutput("RAID"); end;
-        notCheckable = 1;
+        text = CHAT_MSG_RAID,
+        func = function() SIL_Group:GroupOutput("RAID"); end,
+        notCheckable = 1,
         enabled = function() return UnitInRaid("player"); end,
     }, 2, 'SIL_Group');
     
     -- Battleground
     SIL:AddMenuItems('middle', {    
-        text = CHAT_MSG_BATTLEGROUND;
-        func = function() SIL_Group:GroupOutput("BG"); end;
-        notCheckable = 1;
+        text = CHAT_MSG_BATTLEGROUND,
+        func = function() SIL_Group:GroupOutput("BG"); end,
+        notCheckable = 1,
         enabled = function() return UnitInBattleground("player"); end,
     }, 2, 'SIL_Group');
     
     -- Guild
     SIL:AddMenuItems('middle', {    
-        text = CHAT_MSG_GUILD;
-        func = function() SIL_Group:GroupOutput("GUILD"); end;
-        notCheckable = 1;
+        text = CHAT_MSG_GUILD,
+        func = function() SIL_Group:GroupOutput("GUILD"); end,
+        notCheckable = 1,
         enabled = function() return IsInGuild(); end,
     }, 2, 'SIL_Group');
     
     -- Guild - Officer
     SIL:AddMenuItems('middle', {    
-        text = CHAT_MSG_OFFICER;
-        func = function() SIL_Group:GroupOutput("OFFICER"); end;
-        notCheckable = 1;
+        text = CHAT_MSG_OFFICER,
+        func = function() SIL_Group:GroupOutput("OFFICER"); end,
+        notCheckable = 1,
         enabled = function() return SIL:CanOfficerChat(); end,
     }, 2, 'SIL_Group');
     
     -- Say
     SIL:AddMenuItems('middle', {    
-        text = CHAT_MSG_SAY;
-        func = function() SIL_Group:GroupOutput("SAY"); end;
-        notCheckable = 1;
+        text = CHAT_MSG_SAY,
+        func = function() SIL_Group:GroupOutput("SAY"); end,
+        notCheckable = 1,
     }, 2, 'SIL_Group');
     
     -- Sums
@@ -133,8 +133,9 @@ function SIL_Group:SetupSILMenu()
                 groupMax = SIL:FormatScore(groupMax);
                 
                 return groupMin..' / '..groupMax;
-            end;
-        notCheckable = 1;
+            end,
+        notCheckable = 1,
+        disabled = 1,
     }, 2, 'SIL_Group');
 end
 

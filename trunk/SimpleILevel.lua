@@ -9,7 +9,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL = LibStub("AceAddon-3.0"):NewAddon(L.core.name, "AceEvent-3.0", "AceConsole-3.0", "AceTimer-3.0");
 SIL.category = GetAddOnMetadata("SimpleILevel", "X-Category");
 SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
-SIL.versionMajor = 2.5;                    -- Used for cache DB versioning
+SIL.versionMajor = 3;                    -- Used for cache DB versioning
 SIL.versionRev = 'r@project-revision@';    -- Used for version information
 SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
 SIL.hooks = {};   -- List of hooks in [type][] = function;
