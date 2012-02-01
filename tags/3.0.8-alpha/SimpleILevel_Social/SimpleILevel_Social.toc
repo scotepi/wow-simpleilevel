@@ -1,0 +1,22 @@
+## Interface: 40300
+
+## Title: Simple iLevel - Social
+## Notes: Added the AiL to chat windows for various channels
+
+## Title-deDE: Simple iLevel - Sozial
+## Title-koKR: Simple iLevel - 소셜
+## Title-ruRU: Simple iLevel - Общение
+## Title-zhTW: 簡易物品等級 - 社交
+
+## Notes-koKR: 다양한 채널의 대화창에 평균 아이템 레벨 표시
+## Notes-ruRU: Показывает количество ПвП предметов, которые одели другие игроки в подсказке
+## Notes-zhCN: 增加AiL到不同频道的聊天窗体
+## Notes-zhTW: 在聊天視窗的各個頻道中加入平均物品等級
+
+## Author: Scotepi
+## Version: @project-version@
+## Dependencies: SimpleILevel
+## SavedVariables: SIL_Social
+## LoadOnDemand: 1
+
+SimpleILevel_Social.lua
