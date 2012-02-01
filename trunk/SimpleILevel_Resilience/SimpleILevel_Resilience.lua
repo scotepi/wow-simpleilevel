@@ -124,7 +124,7 @@ function SIL_Resil:Inspect(guid, score, itemCount, age, itemTable)
 		end
 	end
 	
-	SIL.cache[guid].resil = rItems;
+	SIL_CacheGUID[guid].resil = rItems;
 end
 
 function SIL_Resil:Tooltip(guid)
