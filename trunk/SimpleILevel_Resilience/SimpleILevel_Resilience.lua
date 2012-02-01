@@ -6,18 +6,6 @@ ToDo:
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL_Resil = LibStub("AceAddon-3.0"):NewAddon('SIL_Resil', "AceEvent-3.0");
 
--- Add /sil pvp
-if SIL_Group then
-    SIL_Options.args.pvp = {
-                name = L.resil.options.group,
-                desc = L.resil.options.groupDesc,
-                type = "input",
-                guiHidden = true,
-                set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Resil:GroupOutput(dest, to); end,
-                get = function() return ''; end,
-            };
-end
-
 function SIL_Resil:OnInitialize()
     SIL:Print(L.resil.load, GetAddOnMetadata("SimpleILevel_Resilience", "Version"));
     
@@ -49,6 +37,71 @@ function SIL_Resil:OnInitialize()
                 },
             }); 
     end
+    
+    -- add /sil pvp
+    self:SetupSILMenu();
+    self:AddSlash();
+    SIL:AddHook('loadmodule', function(m) if m == 'group' then SIL_Resil:AddSlash() end end);
+end
+
+function SIL_Resil:SetupSILMenu()
+    
+    SIL:AddMenuItems('middle', {
+        text = L.resil.options.name,
+        isTitle = 1,
+        notCheckable = 1,
+    }, 1);
+    
+    SIL:AddMenuItems('middle', {
+        text = L.resil.options.ttType,
+        notCheckable = 0,
+        hasArrow = 1,
+        value = 'SIL_ResilOpt',
+    }, 1);
+    
+    -- Submenu Title
+    SIL:AddMenuItems('top', {
+        text = L.resil.options.ttType,
+        isTitle = 1,
+        notCheckable = 1,
+    }, 2, 'SIL_ResilOpt');
+    
+    
+    SIL:AddMenuItems('middle', {    
+        text = 'Off',
+        func = function() SIL_Resil:SetTooltip(0); end,
+        checked = function() return SIL_Resil:GetTooltip() == 0 end,
+    }, 2, 'SIL_ResilOpt');
+    
+    SIL:AddMenuItems('middle', {    
+        text = '9/17 52.9%',
+        func = function() SIL_Resil:SetTooltip(1); end,
+        checked = function() return SIL_Resil:GetTooltip() == 1 end,
+    }, 2, 'SIL_ResilOpt');
+    
+    SIL:AddMenuItems('middle', {    
+        text = '52.9%',
+        func = function() SIL_Resil:SetTooltip(3); end,
+        checked = function() return SIL_Resil:GetTooltip() == 3 end,
+    }, 2, 'SIL_ResilOpt');
+    
+    SIL:AddMenuItems('middle', {    
+        text = '9/17',
+        func = function() SIL_Resil:SetTooltip(2); end,
+        checked = function() return SIL_Resil:GetTooltip() == 2 end,
+    }, 2, 'SIL_ResilOpt');
+end
+
+function SIL_Resil:AddSlash()
+    -- Add /sil pvp
+    SIL_Options.args.pvp = {
+                name = L.resil.options.group,
+                desc = L.resil.options.groupDesc,
+                type = "input",
+                guiHidden = true,
+                set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Resil:GroupOutput(dest, to); end,
+                get = function() return ''; end,
+            };
 end
 
 function SIL_Resil:Inspect(guid, score, itemCount, age, itemTable)
@@ -171,12 +224,12 @@ function SIL_Resil:ColorScore(percent, items)
 end
 
 function SIL_Resil:GroupSum()
-    SIL_Group:UpdateGroup(true);
+    SIL:UpdateGroup();
     
     local totalResil = 0;
     local totalItems = 0;
     
-    for _,guid in ipairs(SIL_Group.group) do
+    for _,guid in ipairs(SIL.group) do
         local resil = SIL:Cache(guid, 'resil') or 0;
         local items = SIL:Cache(guid, 'items') or 1;
         
@@ -192,19 +245,17 @@ function SIL_Resil:GroupSum()
 end
 
 function SIL_Resil:GroupOutput(dest, to)
-    if not SIL_Group then return false; end
-    
-    local dest, to, color = SIL_Group:GroupDest(dest, to);
+    local dest, to, color = SIL:GroupDest(dest, to);
     
     local groupPercent = self:GroupSum();
     groupPercent = self:FormatPercent(groupPercent, color);
     
     SIL:PrintTo(format(L.resil.outputHeader, groupPercent), dest, to);
     
-    table.sort(SIL_Group.group, function(...) return SIL_Resil:SortScore(...); end);
+    table.sort(SIL.group, function(...) return SIL_Resil:SortScore(...); end);
     
     local rough = false;
-    for _,guid in ipairs(SIL_Group.group) do
+    for _,guid in ipairs(SIL.group) do
 		local name = SIL:Cache(guid, 'name');
 		local rItems, items = self:GetItemCount(guid);
 		local score = SIL:Cache(guid, 'score');

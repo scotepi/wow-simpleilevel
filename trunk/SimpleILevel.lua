@@ -12,18 +12,20 @@ SIL.version = GetAddOnMetadata("SimpleILevel", "Version");
 SIL.versionMajor = 3;                    -- Used for cache DB versioning
 SIL.versionRev = 'r@project-revision@';    -- Used for version information
 SIL.action = {};        -- DB of unitGUID->function to run when a update comes through
-SIL.hooks = {};   -- List of hooks in [type][] = function;
+SIL.hooks = {};         -- List of hooks in [type][] = function;
 SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
 SIL.grayScore = 8;      -- Number of items to consider gray/aprox
 SIL.debug = false;      -- Debug for SIL:Debug() output
 SIL.ldbAuto = false;    -- AceTimer for LDB
-SIL.menuItems = {
+SIL.menuItems = {       -- Table for the dropdown menu
     top = {},
     middle = {},
     bottom = {},
 };
-SIL.cache = {};
+SIL.cache = {};         -- Memory referance to SIL_CacheGUID
+SIL.modules = {};       -- Modules
+SIL.group = {};         -- Group Members by guid
 --SIL.L = L;              -- Non-local locals
 
 -- Load Libs
@@ -43,7 +45,8 @@ function SIL:OnInitialize()
     
     -- Tell the player we are being loaded
 	self:Print(format(L.core.load, self.version));
-    
+    self:ModulesProcess();
+        
     -- Load settings
     self.db = LibStub("AceDB-3.0"):New("SIL_Settings", SIL_Defaults, true);
 	self:UpdateSettings();
@@ -88,10 +91,13 @@ function SIL:OnInitialize()
     self.inspect:AddHook(L.core.name, 'items', function(...) SIL:ProcessInspect(...); end);
     GameTooltip:HookScript("OnTooltipSetUnit", function(...) SIL:TooltipHook(...); end);
     self:Autoscan(self:GetAutoscan());
-    self:RegisterEvent("PLAYER_TARGET_CHANGED");
-    self:RegisterEvent("UPDATE_MOUSEOVER_UNIT");
-    self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+    
+    -- Events
+    self:RegisterEvent("PLAYER_TARGET_CHANGED", function() if CanInspect('target') then SIL:GetScoreTarget('target'); end end);
+    self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() SIL:ShowTooltip(); end);
+    self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() SIL:StartScore('player'); end);
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function() SIL:UpdateLDB(); end);
+    self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() SIL:UpdateGroup() end);
     
     -- Add to Paperdoll - not relevent as of 4.3, well see
     table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L.core.name);
@@ -124,6 +130,9 @@ function SIL:OnInitialize()
     self:StartScore('player');
     self:LDBSetAuto();
     self:UpdateLDB(); -- This may cause excesive loading time...
+    
+    -- Process modules
+    self:ModulesLoad();
 end
 
 -- Make sure the database is the latest version
@@ -224,24 +233,6 @@ end
     Event Handlers
     
 ]]
-function SIL:PLAYER_TARGET_CHANGED(e, target)
-    if not target then target = 'target'; end
-
-    if CanInspect(target) then
-        self:GetScoreTarget(target, false);
-    end
-end
-
-function SIL:UPDATE_MOUSEOVER_UNIT()
-	self:ShowTooltip();
-end
-
-function SIL:PLAYER_EQUIPMENT_CHANGED()
-    --print('PLAYER_EQUIPMENT_CHANGED'); 
-    self:StartScore('player');
-end
-
--- Used for autoscaning the group when people change gear
 function SIL:UNIT_INVENTORY_CHANGED(e, unitID)
     --print('UNIT_INVENTORY_CHANGED'); 
 	if InCombatLockdown() then return end
@@ -982,6 +973,7 @@ function SIL:GetLDBlabel() return self.db.global.ldbLabel; end
 function SIL:GetLDBrefresh() return self.db.global.ldbRefresh; end
 function SIL:GetTTCombat() return self.db.global.ttCombat; end
 function SIL:GetColorScore() return self.db.global.color; end
+function SIL:GetModule(m) return self.db.char.module[m]; end
 
 -- Toggle
 function SIL:ToggleAdvanced() self:SetAdvanced(not self:GetAdvanced()); end
@@ -992,6 +984,7 @@ function SIL:ToggleLabel() self:SetLabel(not self:GetLabel()); end
 function SIL:ToggleLDBlabel() self:SetLDBlabel(not self:GetLDBlabel()); end
 function SIL:ToggleTTCombat() self:SetTTCombat(not self:GetTTCombat()); end
 function SIL:ToggleColorScore() self:SetColorScore(not self:GetColorScore()); end
+function SIL:ToggleColorScore(m) self:SetModule(m, not self:GetModule(m)); end
 
 -- Advanced sets
 function SIL:SetPurge(hours) 
@@ -1032,6 +1025,14 @@ function SIL:SetLDB(v)
 	end
 	
 	self:UpdateLDB(true);
+end
+
+function SIL:SetModule(m, v)
+    self.db.char.module[m] = v;
+    
+    if v then
+        self:ModulesLoad(m);
+    end
 end
 
 --[[
@@ -1296,7 +1297,7 @@ function SIL:AddDefaultMenuItems()
     
     -- LDB Text
     self:AddMenuItems('middle', {
-        text = L.core.options.minimap,
+        text = L.core.options.ldbSource,
         func = function() SIL:ToggleLDBlabel(); end,
         checked = SIL:GetLDBlabel(),
     }, 1);
@@ -1324,4 +1325,142 @@ function SIL:AddMenuItems(where, info, level, parent)
     end
     
     table.insert(self.menuItems[where][level], info);
+end
+
+function SIL:ModulesProcess()
+    for index=1,GetNumAddOns() do
+        local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(index);
+        if string.sub(name, 1, 13) == 'SimpleILevel_' then
+            local module = strlower(string.sub(name, 14));
+            
+            self.modules[module] = {
+                name = name,
+                title = title,
+                notes = notes,
+                enabled = enabled,
+                loadable = loadable,
+                reason = reason,
+                module = module,
+            }
+            
+            SIL_Defaults.char.module[module] = true;
+        end
+    end
+end
+
+function SIL:ModulesList()
+    local t = {};
+    
+    for name,info in pairs(self.modules) do
+        t[name] = info.title;
+    end
+    
+    return t;
+end
+
+function SIL:ModulesLoad(m)
+    if m and self.modules[m] then
+        self:LoadAddOn(self.modules[m].name, m);
+    else
+        for module,info in pairs(self.modules) do
+            if self:GetModule(module) then
+                self:LoadAddOn(info.name, module);
+            end
+        end
+    end
+end
+
+function SIL:LoadAddOn(name, module)
+    local loaded, reason = LoadAddOn(name);
+    
+    if loaded then
+        self:RunHooks('loadmodule', module);
+    else
+        self:Print(_G['ADDON_'..reason]);
+    end
+end
+
+function SIL:UpdateGroup()
+    self.group = {};
+    
+    local playerGUID = self:AddPlayer('player');
+    table.insert(self.group, playerGUID);
+    
+    if UnitInRaid() then
+        for i=1,MAX_RAID_MEMBERS do
+            local target = 'raid'..i;
+            local guid = self:AddPlayer(target);
+
+            if guid and guid ~= playerGUID then
+                table.insert(self.group, guid);
+            end
+        end
+    elseif GetNumPartyMembers() > 0 then
+        for i=1,MAX_PARTY_MEMBERS do
+            local target = 'party'..i;
+            local guid = self:AddPlayer(target);
+            
+            if guid then
+                table.insert(self.group, guid);
+            end
+        end
+    end
+end
+
+function SIL:GroupDest(dest, to)
+	local valid = false;
+	local color = false;
+    
+	if not dest then dest = "SYSTEM"; valid = true; end
+	if dest == '' then dest = "SYSTEM"; valid = true; end
+	dest = string.upper(dest);
+	
+	-- Some short codes, should be a table
+	if dest == 'P'  then dest = 'PARTY'; valid = true; end
+	if dest == 'R' then dest = 'RAID'; valid = true; end
+	if dest == 'BG' then dest = 'BATTLEGROUND'; valid = true; end
+	if dest == 'G' then dest = 'GUILD'; valid = true; end
+	if dest == 'U' then dest = 'GROUP'; valid = true; end
+	if dest == 'A' then dest = 'GROUP'; valid = true; end
+	if dest == 'O' then dest = 'OFFICER'; valid = true; end
+	if dest == 'S' then dest = 'SAY'; valid = true; end
+	if dest == 'T' then dest = 'WHISPER'; valid = true; end
+	if dest == 'W' then dest = 'WHISPER'; valid = true; end
+	if dest == 'TELL' then dest = 'WHISPER'; valid = true; end
+	if dest == 'C' then dest = 'CHANNEL'; valid = true; end
+	
+	-- Find out if its a valid dest
+	for fixed,loc in pairs(SIL_Channels) do
+		if dest == string.upper(loc) then
+			dest = fixed;
+			valid = true;
+		elseif dest == string.upper(fixed) then
+			dest = fixed;
+			valid = true;
+		end
+	end
+	
+	-- Default to system
+	if not valid then
+		dest = "SYSTEM";
+	end
+	
+	-- Figure out GROUP
+	if dest == 'GROUP' then
+        if UnitInBattleground("player") then
+            dest = 'BATTLEGROUND';
+		elseif UnitInRaid("player") then
+			dest = 'RAID';
+		elseif GetNumPartyMembers() > 0 then
+			dest = 'PARTY';
+		else
+			dest = 'SAY';
+		end
+	end
+	
+    if dest == "SYSTEM" then
+        color = true;
+    end
+    
+	return dest, to, color;
 end

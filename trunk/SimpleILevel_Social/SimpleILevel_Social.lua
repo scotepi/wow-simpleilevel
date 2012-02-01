@@ -24,7 +24,7 @@ end
 
 function SIL_Soc:ChatHook()
 	for event,enabled in pairs(self.db.global.chatEvents) do
-        if enabled and self:GetEnabled() then
+        if enabled then
             self:ChatHookEvent(event);
         end
 	end
@@ -32,7 +32,7 @@ end
 
 function SIL_Soc:ChatUnhook()
 	for event,enabled in pairs(self.db.global.chatEvents) do
-        if not enabled or not self:GetEnabled() then
+        if not enabled then
             self:ChatUnhookEvent(event);
         end
 	end
@@ -42,19 +42,15 @@ function SIL_Soc:ChatHookEvent(event) ChatFrame_AddMessageEventFilter(event, SIL
 function SIL_Soc:ChatUnhookEvent(event) ChatFrame_RemoveMessageEventFilter(event, SILSoc_ChatFilter); end
 
 function SIL_Soc:ChatFilter(s, event, msg, name,...)
-    if self:GetEnabled() then
-        local score, age, items = SIL:GetScoreName(name);
+    local score, age, items = SIL:GetScoreName(name);
+    
+    if score then
+        local formated = SIL:FormatScore(score, items, self:GetColorScore());
+        local newMsg = '('..formated..') '..msg;
         
-        if score then
-            local formated = SIL:FormatScore(score, items, self:GetColorScore());
-            local newMsg = '('..formated..') '..msg;
-            
-            return false, newMsg, name, ...;
-        else
-            return false, msg, name, ...;
-        end
+        return false, newMsg, name, ...;
     else
-        self:ChatUnhook();
+        return false, msg, name, ...;
     end
 end
 
@@ -67,11 +63,9 @@ SILSoc_ChatFilter = function(...) return SIL_Soc:ChatFilter(...); end;
 function SIL_Soc:SetColorScore(v) self.db.global.color = v; end
 
 function SIL_Soc:GetColorScore() return self.db.global.color; end
-function SIL_Soc:GetEnabled() return self.db.global.enabled; end
 function SIL_Soc:GetChatEvent(e) return self.db.global.chatEvents[e]; end
 
 function SIL_Soc:ToggleColorScore() self:SetColorScore(not self:GetColorScore()); end
-function SIL_Soc:ToggleEnabled() self:SetEnabled(not self:GetEnabled()); end
 function SIL_Soc:ToggleChatEvent(e) self:SetChatEvent(e, not self:GetChatEvent(e)); end
 
 -- More advanced ones
@@ -85,35 +79,16 @@ function SIL_Soc:SetChatEvent(e, v)
     end
 end
 
-function SIL_Soc:SetEnabled(v) 
-    self.db.global.enabled = v;
-    
-    if v then
-        self:ChatHook();
-    else
-        self:ChatUnhook();
-    end
-end
-
 SILSoc_Options = {
 	name = L.social.options.name,
 	type = "group",
 	args = {
-        enabled = {
-            name = L.social.options.enabled,
-            desc = L.social.options.enabledDesc,
-            type = "toggle",
-            set = function(i,v) SIL_Soc:SetEnabled(v); end,
-            get = function(i) return SIL_Soc:GetEnabled(); end,
-            order = 1,
-        },
         color = {
             name = L.social.options.color,
             desc = L.social.options.colorDesc,
             type = "toggle",
             set = function(i,v) SIL_Soc:SetColorScore(v); end,
             get = function(i) return SIL_Soc:GetColorScore(); end,
-            disabled = function() return not SIL_Soc:GetEnabled(); end,
             order = 5,
         },
         
@@ -123,7 +98,6 @@ SILSoc_Options = {
             values = function() return SIL_Soc.eventNames; end;
             get = function(s,e) return SIL_Soc:GetChatEvent(e) end;
             set = function(s,e,v) return SIL_Soc:SetChatEvent(e, v) end;
-            disabled = function() return not SIL_Soc:GetEnabled(); end,
             order = 100,
         },
     }
@@ -131,7 +105,6 @@ SILSoc_Options = {
 
 SILSoc_Defaults = {
     global = {
-        enabled = true, -- Enabled the whole addon
         color = true,	-- Color the score in the chat frame
         chatEvents = {  -- Event and the status
             CHAT_MSG_PARTY                  = true,

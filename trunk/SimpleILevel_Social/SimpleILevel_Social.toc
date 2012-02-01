@@ -17,5 +17,6 @@
 ## Version: @project-version@
 ## Dependencies: SimpleILevel
 ## SavedVariables: SIL_Social
+## LoadOnDemand: 1
 
 SimpleILevel_Social.lua

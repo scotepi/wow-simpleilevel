@@ -16,7 +16,7 @@
 ## Author: Scotepi
 ## Version: @project-version@
 ## Dependencies: SimpleILevel
-## OptionalDeps: SimpleILevel_Group
 ## SavedVariables: SIL_ResilSettings
+## LoadOnDemand: 1
 
 SimpleILevel_Resilience.lua
