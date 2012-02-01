@@ -175,6 +175,16 @@ SIL_Options = {
 				},
 			},
 		},
+        
+        module = {
+            name = L.core.options.modules,
+            desc = L.core.options.modulesDesc,
+            type = 'multiselect',
+            values = function() return SIL:ModulesList(); end,
+            get = function(s,m) return SIL:GetModule(m) end,
+            set = function(s,m,v) return SIL:SetModule(m, v) end,
+            order = 3,
+        },
 		
 		purge = {
 			name = L.core.options.purge,
@@ -249,9 +259,13 @@ SIL_Defaults = {
 		ldbText = true,			-- LDB Text
 		ldbLabel = true,		-- LDB Label
 		ldbRefresh = 30,		-- LDB Refresh Rate
-        ttCombat = true;        -- Tooltip in combat
-        color = true;           -- Color the score
+        ttCombat = true,        -- Tooltip in combat
+        color = true,           -- Color the score
+        
 	},
+    char = {
+        module = {},            -- Module State
+    }
 };
 
 -- From http://www.wowhead.com/items?filter=qu=7;sl=16:18:5:8:11:10:1:23:7:21:2:22:13:24:15:28:14:4:3:19:25:12:17:6:9;minle=1;maxle=1;cr=166;crs=3;crv=0

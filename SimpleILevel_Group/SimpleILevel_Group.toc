@@ -17,5 +17,6 @@
 ## Author: Scotepi
 ## Version: @project-version@
 ## Dependencies: SimpleILevel
+## LoadOnDemand: 1
 
 SimpleILevel_Group.lua

@@ -5,13 +5,23 @@ ToDo:
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL_Group = LibStub("AceAddon-3.0"):NewAddon('SIL_Group', "AceEvent-3.0", "AceTimer-3.0");
-SIL_Group.group = {};  -- { guid, score }
 SIL_Group.autoscan = false;
 SIL_Group.autoscanFailed = 0;
 SIL_Group.autoscanLog = {};
 
--- Update SIL_Options table
-SIL_Options.args.group = {
+function SIL_Group:OnInitialize()
+    SIL:Print(L.group.load, GetAddOnMetadata("SimpleILevel_Group", "Version"));
+    
+    -- Additional Setup
+    self:SetupSILMenu();
+    self:AddSlash();
+    
+    self:UpdateGroup();
+end
+
+function SIL_Group:AddSlash()
+    -- Update SIL_Options table
+    SIL_Options.args.group = {
             name = L.group.options.group,
             desc = L.group.options.groupDesc,
             type = "input",
@@ -19,7 +29,7 @@ SIL_Options.args.group = {
             set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Group:GroupOutput(dest, to); end,
             get = function() return ''; end,
         };
-SIL_Options.args.party = {
+    SIL_Options.args.party = {
             name = L.group.options.group,
             desc = L.group.options.groupDesc,
             type = "input",
@@ -27,19 +37,7 @@ SIL_Options.args.party = {
             set = function(i,v) dest, to = strsplit(' ', v, 2); SIL_Group:GroupOutput(dest, to); end,
             get = function() return ''; end,
         };
-SIL_Options.args.raid = SIL_Options.args.party;
-
-
-function SIL_Group:OnInitialize()
-    SIL:Print(L.group.load, GetAddOnMetadata("SimpleILevel_Group", "Version"));
-    
-    -- Keep our self.group sane
-    self:RegisterEvent("PARTY_MEMBERRS_CHANGED", function() SIL_Group:UpdateGroup() end);
-    
-    -- Add Menu Items
-    self:SetupSILMenu();
-    
-    self:UpdateGroup();
+    SIL_Options.args.raid = SIL_Options.args.party;
 end
 
 function SIL_Group:SetupSILMenu()
@@ -50,7 +48,6 @@ function SIL_Group:SetupSILMenu()
                 groupScore = SIL:FormatScore(groupScore);
                 return L.group.options.group..' '..groupScore;
             end,
-        func = function() SIL:ToggleAdvanced(); end,
         notCheckable = 1,
         hasArrow = 1,
         value = 'SIL_Group',
@@ -142,49 +139,10 @@ end
 -- Popupdate SIL_Group.group
 function SIL_Group:UpdateGroup(startAutoscan)
     
-    -- Reset the group table
-    self.group = {};
-
-    local yourGUID = UnitGUID('player');
-    local yourScore = SIL:GetScoreTarget('player');
-    local groupSize = 0;
-    
-    if self:AddGroupMember(yourGUID, 'player') then
-        groupSize = groupSize + 1;
-    end
-    
-    local groupType = self:GroupType();
-    
-    if groupType == 'raid' or groupType == 'battleground' then
-        for i = 1, 40 do
-            local target = 'raid'..i;
-            local guid = SIL:AddPlayer(target);
-            
-            -- Skip ourself
-            if guid and not UnitIsUnit('player', target) then
-                local score = SIL:GetScoreTarget(target);
-                
-                if self:AddGroupMember(guid, target) then
-                    groupSize = groupSize + 1;
-                end
-            end
-        end
-    elseif groupType == 'party' then
-        for i = 1,4 do
-			if GetPartyMember(i) then
-				local target = 'party'..i;
-                local guid = SIL:AddPlayer(target);
-                local score = SIL:GetScoreTarget(target);
-                
-                if guid and self:AddGroupMember(guid, target) then
-                    groupSize = groupSize + 1;
-                end
-            end
-        end
-    end
+    SIL:UpdateGroup();
     
     -- Make sure we are in a group
-    if 1 < #self.group and SIL:GetAutoscan() then
+    if 1 < #SIL.group and SIL:GetAutoscan() then
         
         -- Start autoscan
         if not self.autoscan and startAutoscan then
@@ -192,26 +150,6 @@ function SIL_Group:UpdateGroup(startAutoscan)
         else
             self:Autoscan();
         end
-    end
-end
-
-function SIL_Group:AddGroupMember(guid, target)
-    if guid and SIL:Cache(guid) and not self:InTable(self.group, guid) then
-        
-        -- Set the autoscan log
-        if not self.autoscanLog[guid] then
-            self.autoscanLog[guid] = 0;
-        end
-        
-        table.insert(self.group, guid);
-        
-        if SIL:Cache('guid', 'score') then
-            return true;
-        else
-            return false;
-        end
-    else
-        return false;
     end
 end
 
@@ -225,7 +163,7 @@ function SIL_Group:GroupScore()
     local groupMin = playerScore;
     local groupMax = playerScore;
     
-    for _,guid in pairs(self.group) do
+    for _,guid in pairs(SIL.group) do
         local score = SIL:Cache(guid, 'score');
         
         if score and score ~= 0 then
@@ -247,7 +185,7 @@ function SIL_Group:GroupOutput(dest, to)
     
     self:UpdateGroup(true); -- Get the scores updated
     local groupAvg, groupSize, groupMin, groupMax = self:GroupScore(true);
-    local dest, to, color = self:GroupDest(dest, to);
+    local dest, to, color = SIL:GroupDest(dest, to);
     local rough = false;
     
 	groupAvgFmt = SIL:FormatScore(groupAvg, 16, color);
@@ -255,9 +193,9 @@ function SIL_Group:GroupOutput(dest, to)
 	SIL:PrintTo(format(L.group.outputHeader, groupAvgFmt), dest, to);
     
     -- Sort by score
-    table.sort(self.group, function(...) return SIL_Group:SortScore(...); end);
+    table.sort(SIL.group, function(...) return SIL_Group:SortScore(...); end);
     
-    for _,guid in ipairs(self.group) do
+    for _,guid in ipairs(SIL.group) do
 		local name = SIL:Cache(guid, 'name');
 		local items = SIL:Cache(guid, 'items');
 		local score = SIL:Cache(guid, 'score');
@@ -304,61 +242,6 @@ function SIL_Group:GroupType()
     end
 end
 
-function SIL_Group:GroupDest(dest, to)
-	local valid = false;
-	local color = false;
-    
-	if not ( dest ) then dest = "SYSTEM"; valid = true; end
-	if ( dest == '' ) then dest = "SYSTEM"; valid = true; end
-	dest = string.upper(dest);
-	
-	-- Some short codes
-	if ( dest == 'P' ) then dest = 'PARTY'; valid = true; end
-	if ( dest == 'R' ) then dest = 'RAID'; valid = true; end
-	if ( dest == 'BG' ) then dest = 'BATTLEGROUND'; valid = true; end
-	if ( dest == 'G' ) then dest = 'GUILD'; valid = true; end
-	if ( dest == 'U' ) then dest = 'GROUP'; valid = true; end
-	if ( dest == 'O' ) then dest = 'OFFICER'; valid = true; end
-	if ( dest == 'S' ) then dest = 'SAY'; valid = true; end
-	if ( dest == 'T' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'W' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'TELL' ) then dest = 'WHISPER'; valid = true; end
-	if ( dest == 'C' ) then dest = 'CHANNEL'; valid = true; end
-	
-	-- Find out if its a valid dest
-	for fixed,loc in pairs(SIL_Channels) do
-		if ( dest == string.upper(loc) ) then
-			dest = fixed;
-			valid = true;
-		elseif ( dest == string.upper(fixed) ) then
-			dest = fixed;
-			valid = true;
-		end
-	end
-	
-	-- Default to system
-	if not ( valid ) then
-		dest = "SYSTEM";
-	end
-	
-	-- Figure out GROUP
-	if ( dest == 'GROUP' ) then
-		if ( UnitInRaid("player") ) then
-			dest = 'RAID';
-		elseif ( GetNumPartyMembers() > 0 ) then
-			dest = 'PARTY';
-		else
-			dest = 'SAY';
-		end
-	end
-	
-    if dest == "SYSTEM" then
-        color = true;
-    end
-    
-	return dest, to, color;
-end
-
 function SIL_Group:SortScore(a, b)
     scoreA = SIL:Cache(a, 'score') or 0;
     scoreB = SIL:Cache(b, 'score') or 0;
@@ -373,12 +256,12 @@ function SIL_Group:Autoscan(autoscan)
     if InCombatLockdown() then return end
     
     -- Check that we have a good group values
-    if type(self.group) ~= 'table' or #self.group == 0 then
+    if type(SIL.group) ~= 'table' or #SIL.group == 0 then
         self:UpdateGroup();
     end
     
     -- Stop if we are all alone :(
-    if autoscan and 1 == #self.group then self:AutoscanStop(); end
+    if autoscan and 1 == #SIL.group then self:AutoscanStop(); end
     
     -- Get the worst score in the group
     local target, reason, value = self:AutoscanNext(autoscan);
@@ -426,7 +309,7 @@ function SIL_Group:AutoscanNext()
     local oldScoreT = false;
     
     -- Loop
-    for _,guid in pairs(self.group) do
+    for _,guid in pairs(SIL.group) do
         local target = SIL:Cache(guid, 'target');
         
         if CanInspect(target) and self.autoscanLog[guid] <= 3 and not UnitIsUnit('player', target) then
