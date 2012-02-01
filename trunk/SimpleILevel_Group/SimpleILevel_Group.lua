@@ -43,8 +43,10 @@ end
 function SIL_Group:SetupSILMenu()
     -- Add menu items
     SIL:AddMenuItems('top', {
-        text = function() 
+        text = L.group.options.group, 
+        textFunc = function() 
                 local groupScore = SIL_Group:GroupScore(false);
+                print('text', groupScore);
                 groupScore = SIL:FormatScore(groupScore);
                 return L.group.options.group..' '..groupScore;
             end,
@@ -124,7 +126,7 @@ function SIL_Group:SetupSILMenu()
     
     -- Sums
     SIL:AddMenuItems('bottom', {    
-        text = function()
+        textFunc = function()
                 local groupAvg, groupSize, groupMin, groupMax = SIL_Group:GroupScore(false);
                 groupMin = SIL:FormatScore(groupMin);
                 groupMax = SIL:FormatScore(groupMax);
@@ -311,6 +313,10 @@ function SIL_Group:AutoscanNext()
     -- Loop
     for _,guid in pairs(SIL.group) do
         local target = SIL:Cache(guid, 'target');
+        
+        if not self.autoscanLog[guid] then
+            self.autoscanLog[guid] = 0;
+        end
         
         if CanInspect(target) and self.autoscanLog[guid] <= 3 and not UnitIsUnit('player', target) then
             
