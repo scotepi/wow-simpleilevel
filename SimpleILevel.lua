@@ -23,7 +23,6 @@ SIL.menuItems = {       -- Table for the dropdown menu
     middle = {},
     bottom = {},
 };
-SIL.cache = {};         -- Memory referance to SIL_CacheGUID
 SIL.modules = {};       -- Modules
 SIL.group = {};         -- Group Members by guid
 --SIL.L = L;              -- Non-local locals
@@ -40,8 +39,7 @@ SIL.callback = LibStub("CallbackHandler-1.0"):New(SIL);
 function SIL:OnInitialize()
 
     -- Make sure everything is ok with the db
-    self.cache = SIL_CacheGUID;
-    if not self.cache or type(self.cache) ~= 'table' then self.cache = {}; end
+    if not SIL_CacheGUID or type(SIL_CacheGUID) ~= 'table' then SIL_CacheGUID = {}; end
     
     -- Tell the player we are being loaded
 	self:Print(format(L.core.load, self.version));
@@ -141,16 +139,16 @@ function SIL:UpdateSettings()
     if self.db.global.version == self.versionMajor then
         -- Same version
     elseif self.db.global.version > 2.4 and self.db.global.version < 2.5 then
-        for guid,info in pairs(self.cache) do
-            self.cache[guid].guid = nil;
+        for guid,info in pairs(SIL_CacheGUID) do
+            SIL_CacheGUID[guid].guid = nil;
         end
     elseif self.db.global.version < 2.4 then
-        for guid,info in pairs(self.cache) do
-            self.cache[guid].total = nil;
-            self.cache[guid].tooltip = nil;
+        for guid,info in pairs(SIL_CacheGUID) do
+            SIL_CacheGUID[guid].total = nil;
+            SIL_CacheGUID[guid].tooltip = nil;
             
-            self.cache[guid].level = 85; --ASSuME
-            --self.cache[guid].guid = guid;
+            SIL_CacheGUID[guid].level = 85; --ASSuME
+            --SIL_CacheGUID[guid].guid = guid;
         end
     end
     
@@ -181,9 +179,9 @@ function SIL:PurgeCache(hours)
 		local maxAge = time() - (tonumber(hours) * 3600);
 		local count = 0;
 		
-		for guid,info in pairs(self.cache) do
+		for guid,info in pairs(SIL_CacheGUID) do
 			if type(info.time) == "number" and info.time < maxAge then
-				self.cache[guid] = nil;
+				SIL_CacheGUID[guid] = nil;
 				count = 1 + count;
                 
                 self:RunHooks('purge', guid);
@@ -283,7 +281,7 @@ function SIL:SlashReset()
 	self:SetMinimap(true);
     
     -- Clear the cache
-    self.cache = {};
+    SIL_CacheGUID = {};
     self:GetScoreTarget('player', true);
     
     -- Update version information
@@ -393,7 +391,7 @@ function SIL:NameToGUID(name, realm)
 		name = strlower(name);
 		local likely = false;
         
-		for guid,info in pairs(self.cache) do
+		for guid,info in pairs(SIL_CacheGUID) do
 			if strlower(info.name) == name and info.realm == realm then
 				return guid;
             elseif strlower(info.name) == name then
@@ -428,10 +426,10 @@ end
 function SIL:ClearScore(target)
 	local guid = self:GetGUID(target);
 	
-	if self.cache[guid] then
-		self.cache[guid].score = false;
-		self.cache[guid].items = false;
-		self.cache[guid].time = false;
+	if SIL_CacheGUID[guid] then
+		SIL_CacheGUID[guid].score = false;
+		SIL_CacheGUID[guid].items = false;
+		SIL_CacheGUID[guid].time = false;
 		
         self:RunHooks('purge', guid);
         
@@ -701,20 +699,20 @@ function SIL:AddPlayer(target)
         if name and realm and class and level then
             
             -- Start a table for them
-            if not self.cache[guid] then
-                self.cache[guid] = {};
+            if not SIL_CacheGUID[guid] then
+                SIL_CacheGUID[guid] = {};
             end
             
-            self.cache[guid].name = name;
-            self.cache[guid].realm = realm;
-            self.cache[guid].class = class;
-            self.cache[guid].level = level;
-            self.cache[guid].target = target;
+            SIL_CacheGUID[guid].name = name;
+            SIL_CacheGUID[guid].realm = realm;
+            SIL_CacheGUID[guid].class = class;
+            SIL_CacheGUID[guid].level = level;
+            SIL_CacheGUID[guid].target = target;
             
-            if not self.cache[guid].score or self.cache[guid].score == 0 then
-                self.cache[guid].score = false;
-                self.cache[guid].items = false;
-                self.cache[guid].time = false;
+            if not SIL_CacheGUID[guid].score or SIL_CacheGUID[guid].score == 0 then
+                SIL_CacheGUID[guid].score = false;
+                SIL_CacheGUID[guid].items = false;
+                SIL_CacheGUID[guid].time = false;
             end
             
             return guid;
@@ -733,9 +731,9 @@ function SIL:SetScore(guid, score, items, age)
         t = time() - age; 
     end
     
-    self.cache[guid].score = score;
-    self.cache[guid].items = items;
-    self.cache[guid].time = t;
+    SIL_CacheGUID[guid].score = score;
+    SIL_CacheGUID[guid].items = items;
+    SIL_CacheGUID[guid].time = t;
 end
 
 -- Get a relative iLevel on Heirlooms
@@ -1258,13 +1256,13 @@ end
 function SIL:Cache(guid, what)
     if not guid and not tonumber(guid) then return false end
     
-    if self.cache[guid] and what then
+    if SIL_CacheGUID[guid] and what then
         if what == 'age' then
-            return time() - self.cache[guid].time;
+            return time() - SIL_CacheGUID[guid].time;
         else
-            return self.cache[guid][what];
+            return SIL_CacheGUID[guid][what];
         end
-    elseif self.cache[guid] then
+    elseif SIL_CacheGUID[guid] then
         return true;
     else
         return false;
