@@ -1158,8 +1158,8 @@ function SIL:RunMenuItems(where, level, parent)
         for _,info in pairs(self.menuItems[where][level]) do
             
             -- Run functions for a name
-            if info.text and type(info.text) == 'function' then
-                info.text = info.text(where, lev, parent);
+            if info.textFunc and type(info.textFunc) == 'function' then
+                info.text = info.textFunc(where, lev, parent);
             end
             
             local enabled = true;
@@ -1308,7 +1308,7 @@ end
     - http://wowprogramming.com/utils/xmlbrowser/live/FrameXML/UIDropDownMenu.lua
     
     +++
-    info.text = can be a function(where, level, parent), make sure you return value
+    info.textFunc = function(where, level, parent); this is ran to update info.text when the menu is shown
     info.enabled = function(where, level, parent); this is backwards, but if enabled is present then it is ran to see if the item should be shown
 ]]
 function SIL:AddMenuItems(where, info, level, parent)
