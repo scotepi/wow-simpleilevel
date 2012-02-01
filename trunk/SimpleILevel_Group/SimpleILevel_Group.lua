@@ -45,8 +45,7 @@ function SIL_Group:SetupSILMenu()
     SIL:AddMenuItems('top', {
         text = L.group.options.group, 
         textFunc = function() 
-                local groupScore = SIL_Group:GroupScore(false);
-                print('text', groupScore);
+                local groupScore = SIL_Group:GroupScore();
                 groupScore = SIL:FormatScore(groupScore);
                 return L.group.options.group..' '..groupScore;
             end,
@@ -127,11 +126,12 @@ function SIL_Group:SetupSILMenu()
     -- Sums
     SIL:AddMenuItems('bottom', {    
         textFunc = function()
-                local groupAvg, groupSize, groupMin, groupMax = SIL_Group:GroupScore(false);
+                local groupAvg, groupSize, groupMin, groupMax = SIL_Group:GroupScore();
                 groupMin = SIL:FormatScore(groupMin);
+                groupAvg = SIL:FormatScore(groupAvg);
                 groupMax = SIL:FormatScore(groupMax);
                 
-                return groupMin..' / '..groupMax;
+                return groupMin..' '..groupAvg..' '..groupMax;
             end,
         notCheckable = 1,
         disabled = 1,
@@ -281,8 +281,6 @@ function SIL_Group:Autoscan(autoscan)
         
     -- Bummer :(
     else
-        SIL:Debug('Cant find anyone to scan :(');
-        
         if autoscan then
             self.autoscanFailed = self.autoscanFailed + 1;
             

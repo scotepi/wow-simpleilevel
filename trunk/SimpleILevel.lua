@@ -1059,12 +1059,12 @@ function SIL:ShowOptions()
                     if element.hasChildren and element.collapsed then
                         OptionsListButtonToggle_OnClick(button.toggle);
                     end
-                    
-                    break;
+                
+                -- Hide anything else that is open
+                elseif type(button.element.collapsed) == 'boolean' and not button.element.collapsed then
+                    OptionsListButtonToggle_OnClick(button.toggle);
                 end
             end
-            
-            break;
         end
     end
 end
@@ -1326,14 +1326,16 @@ function SIL:AddMenuItems(where, info, level, parent)
 end
 
 function SIL:ModulesProcess()
+    local _,silTitle = GetAddOnInfo('SimpleILevel');
+    
     for index=1,GetNumAddOns() do
         local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(index);
         if string.sub(name, 1, 13) == 'SimpleILevel_' then
             local module = strlower(string.sub(name, 14));
-            
             self.modules[module] = {
                 name = name,
                 title = title,
+                stitle = string.gsub(title, silTitle..' %- ', ''),
                 notes = notes,
                 enabled = enabled,
                 loadable = loadable,
@@ -1350,7 +1352,7 @@ function SIL:ModulesList()
     local t = {};
     
     for name,info in pairs(self.modules) do
-        t[name] = info.title;
+        t[name] = info.stitle;
     end
     
     return t;
@@ -1384,7 +1386,7 @@ function SIL:UpdateGroup()
     local playerGUID = self:AddPlayer('player');
     table.insert(self.group, playerGUID);
     
-    if UnitInRaid() then
+    if UnitInBattleground('player') or UnitInRaid('player') then
         for i=1,MAX_RAID_MEMBERS do
             local target = 'raid'..i;
             local guid = self:AddPlayer(target);
