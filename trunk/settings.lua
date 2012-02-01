@@ -250,7 +250,7 @@ SIL_Defaults = {
 		purge = 360,			-- How often to automaticly purge
 		advanced = false,		-- Display extra information in the tooltips
 		autoscan = true,		-- Automaticly scan for changes
-		cinfo = true,			-- Character Info/Paperdoll info
+		cinfo = false,			-- Character Info/Paperdoll info
 		minimap = {
 			hide = false,		-- Minimap Icon
 		},

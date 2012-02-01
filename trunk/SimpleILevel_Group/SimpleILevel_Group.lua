@@ -299,7 +299,7 @@ function SIL_Group:AutoscanNext()
     -- Macro to clear the score of everyone in your group and reset SIL_Group
     -- /run for _,g in pairs(SIL_Group.group) do SIL_CacheGUID[g]=nil; end SIL_Group.group={}; SIL_Group.autoscanLog={}; SIL.debug=true; SIL_Group:UpdateGroup();
     
-    local yourScore = SIL:GetScoreTarget('player', false);
+    local yourScore = SIL:GetScoreTarget('player', false) or 100;
     
     -- Set some high min values
     local lowItems = SIL.grayScore * 1.5;            -- currently 8 * 1.5 = 12 items
