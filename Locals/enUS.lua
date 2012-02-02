@@ -63,6 +63,7 @@ L.core = {
 	},
 }
 L.group = {
+	addonName = "Simple iLevel - Group",
 	desc = "View the AiL of everyone in your group",
 	load = "Group Module Loaded",
 	name = "SiL Group",
@@ -76,6 +77,7 @@ L.group = {
 	},
 }
 L.resil = {
+	addonName = "Simple iLevel - Resilience",
 	desc = "Shows the amount of PvP gear other players have equipped in the tooltip",
 	load = "Resilience Module Loaded",
 	name = "SiL Resilience",
@@ -98,6 +100,7 @@ L.resil = {
 	},
 }
 L.social = {
+	addonName = "Simple iLevel - Social",
 	desc = "Added the AiL to chat windows for various channels",
 	load = "Social Module Loaded",
 	name = "SiL Social",

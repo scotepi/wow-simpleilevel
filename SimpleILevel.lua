@@ -1332,10 +1332,13 @@ function SIL:ModulesProcess()
         local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(index);
         if string.sub(name, 1, 13) == 'SimpleILevel_' then
             local module = strlower(string.sub(name, 14));
+            local stitle = string.gsub(title, silTitle..' %- ', '');
+            stitle = string.gsub(stitle, silTitle..': ', '');
+            
             self.modules[module] = {
                 name = name,
                 title = title,
-                stitle = string.gsub(title, silTitle..' %- ', ''),
+                stitle = stitle,
                 notes = notes,
                 enabled = enabled,
                 loadable = loadable,

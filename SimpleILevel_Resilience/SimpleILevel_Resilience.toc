@@ -4,12 +4,13 @@
 ## Notes: Shows the amount of PvP gear other players have equipped in the tooltip
 
 ## Title-deDE: Simple iLevel - Abhärtung
-## Title-koKR: Simple iLevel - 탄력도
-## Title-ruRU: Simple iLevel - Устойчивость
-## Title-zhCN: 提示栏显示其它玩家的平均物品等级 - 韧性
-## Title-zhTW: 提示欄顯示其他玩家的平均物品等級 - 韌性
+## Title-koKR: Simple iLevel - 탄력
+## Title-ruRU: 简易物品等级 - 韧性
+## Title-zhCN: 简易物品等级 - 韧性
+## Title-zhTW: 簡易物品等級 - 韌性
 
 ## Notes-koKR: 툴팁에 다른 플레이어가 장착한 PvP 장비에 대한 내용를 표시
+## Notes-ruRU: Показывает количество ПвП предметов, которые одели другие игроки в подсказке
 ## Notes-zhCN: 在提示信息中显示其其他玩家装备的PvP装备数量
 ## Notes-zhTW: 在工具提示中顯示其他玩家裝備了幾件PvP裝
 
