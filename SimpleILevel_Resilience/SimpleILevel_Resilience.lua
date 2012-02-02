@@ -140,7 +140,7 @@ function SIL_Resil:Tooltip(guid)
 end
 
 function SIL_Resil:GetItemCount(guid)
-    if guid and tonumber(guid) and SIL:Cache(guid) and SIL:Cache(guid, 'resil') then
+    if guid and tonumber(guid) then
         local rItems = SIL:Cache(guid, 'resil') or 0;
         local items = SIL:Cache(guid, 'items') or 1;
         local percent = (rItems / items) or 0;
