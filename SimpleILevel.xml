@@ -13,4 +13,5 @@
     
 	<Script file="settings.lua" />
 	<Script file="SimpleILevel.lua" />
+	<Script file="misc.lua" />
 </Ui>
