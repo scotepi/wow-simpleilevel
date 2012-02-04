@@ -1,6 +1,10 @@
 --[[
 ToDo:
-    - 
+    - Move more Group Functionality to here
+        * Autoscan
+        * SIL_Group:GroupType();
+    - On UpdateGroup if there is no data do a rough scan
+    - Group methods within this file
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
@@ -18,6 +22,7 @@ SIL.lastScan = {};      -- target = time();
 SIL.grayScore = 8;      -- Number of items to consider gray/aprox
 SIL.debug = false;      -- Debug for SIL:Debug() output
 SIL.ldbAuto = false;    -- AceTimer for LDB
+SIL.menu = false;       -- Menu frame
 SIL.menuItems = {       -- Table for the dropdown menu
     top = {},
     middle = {},
@@ -57,8 +62,12 @@ function SIL:OnInitialize()
         text = 'n/a',
         category = self.category,
         version = self.version,
-        OnClick = function(...) SIL:OpenMenu(...); end,
+        OnClick = function(...) SIL:MenuOpen(...); end,
         OnTooltipShow = function(tt)
+                            if SIL:GetLDB() and SIL.ldb.text then
+                                tt:AddLine(SIL.ldb.text);
+                            end
+                            
                             tt:AddLine(L.core.minimapClick);
                             tt:AddLine(L.core.minimapClickDrag);
             end,
@@ -68,8 +77,6 @@ function SIL:OnInitialize()
 	if not self:GetLDB() then
 		ldbObj.type = 'launcher';
 		ldbObj.text = nil;
-	else
-		--self:RegisterEvent("PARTY_MEMBERS_CHANGED"); -- I would like to find something lighter then this
 	end
     
     -- Start LDB
@@ -122,7 +129,7 @@ function SIL:OnInitialize()
 	self:AutoPurge(true);
     
     -- Build the menu
-    self:AddDefaultMenuItems();
+    self:MenuInitialize();
     
     -- Get working on a score for the player
     self:StartScore('player');
@@ -332,37 +339,6 @@ end
 
 --[[
 
-    Genaric LUA functions
-
-]]
-function SIL:Strpad(str, length, pad)
-	if not pad then pad = ' '; end
-	length = tonumber(length);
-	
-	if type(length) == "number" then
-		while string.len(str) < length do
-			str = str..pad;
-		end
-	end
-	
-	return str;
-end
-
--- from http://www.wowpedia.org/Round
-function SIL:Round(number, decimals)
-    return (("%%.%df"):format(decimals)):format(number);
-end
-
--- from http://www.wowpedia.org/RGBPercToHex
-function SIL:RGBtoHex(r, g, b)
-	r = r <= 1 and r >= 0 and r or 0
-	g = g <= 1 and g >= 0 and g or 0
-	b = b <= 1 and b >= 0 and b or 0
-	return string.format("%02x%02x%02x", r*255, g*255, b*255)
-end
-
---[[
-
     Basic Functions
 
 ]]
@@ -440,6 +416,8 @@ function SIL:ClearScore(target)
 end;
 
 function SIL:AgeToText(age, color)
+    if type(color) == 'nil' then color = true; end
+    
 	if type(age) == 'number' then
 		if age > 86400 then
 			age = self:Round(age / 86400, 2);
@@ -469,13 +447,6 @@ function SIL:AgeToText(age, color)
 	end
 end
 
--- Play around with to test how color changes will work
-function SIL:ColorTest(l,h)
-	for i = l,h do
-		self:Print(self:FormatScore(i));
-	end
-end
-
 -- print a message to channel or whisper player/channel
 function SIL:PrintTo(message, channel, to)
 	if channel == "print" or channel == "SYSTEM" then
@@ -489,24 +460,6 @@ function SIL:PrintTo(message, channel, to)
 	else
 		self:Print(message);
 	end
-end
-
-function SIL:CanOfficerChat()
-	GuildControlSetRank(select(3,GetGuildInfo("player")));
-	local flags = self:Flags2Table(GuildControlGetRankFlags());
-	return flags[4];
-end
-
-function SIL:Flags2Table(...)
-	local ret = {}
-	for i = 1, select("#", ...) do
-		if (select(i, ...)) then
-			ret[i] = true;
-		else
-			ret[i] = false;
-		end
-	end
-	return ret;
 end
 
 function SIL:Debug(...)
@@ -1069,113 +1022,6 @@ function SIL:ShowOptions()
     end
 end
 
-function SIL:OpenMenu()
-    if not self.silmenu then
-		self.silmenu = CreateFrame("Frame", "SILMenu")
-	end
-    
-    self.silmenu.initialize = function(...) SIL:ShowMenu(...) end;
-    
-    local x,y = GetCursorPosition(UIParent);
-	ToggleDropDownMenu(1, nil, self.silmenu, "UIParent", x / UIParent:GetEffectiveScale() , y / UIParent:GetEffectiveScale());
-end
-
-function SIL:ShowMenu(s, level)
-    if not level or not tonumber(level) then return end
-    
-    local info = {};
-    local spacer = { disabled = 1, notCheckable = 1 };
-    
-    if level == 1 then
-    
-        -- Title / Version
-        info.isTitle = 1;
-        info.text = L.core.name..' '..SIL.version;
-        info.notCheckable = 1;
-        UIDropDownMenu_AddButton(info, level);
-        
-        -- Spacer
-        UIDropDownMenu_AddButton(spacer, level);
-        
-        -- Top
-        if self:RunMenuItems('top', level) then
-            UIDropDownMenu_AddButton(spacer, level);
-        end
-        
-        -- Middle
-        if self:RunMenuItems('middle', level) then
-            UIDropDownMenu_AddButton(spacer, level);
-        end
-        
-        -- Bottom
-        if self:RunMenuItems('bottom', level) then
-            UIDropDownMenu_AddButton(spacer, level);
-        end   
-        
-        -- Options
-        wipe(info);
-        info.text = L.core.options.open;
-        info.func = function() SIL:ShowOptions(); end;
-        info.notCheckable = 1;
-        UIDropDownMenu_AddButton(info, level);
-        
-        -- My Score
-        wipe(info);
-        local score, age, items = self:GetScoreTarget('player', true);
-        info.text = format(L.core.scoreYour, SIL:FormatScore(score, items));
-        info.notClickable = 1;
-        info.notCheckable = 1;
-        UIDropDownMenu_AddButton(info, level);
-        
-    elseif tonumber(level) and UIDROPDOWNMENU_MENU_VALUE then
-        
-        -- Top
-        if self:RunMenuItems('top', level, UIDROPDOWNMENU_MENU_VALUE) then
-            UIDropDownMenu_AddButton(spacer, level);
-        end
-        
-        if self:RunMenuItems('middle', level, UIDROPDOWNMENU_MENU_VALUE) then
-            UIDropDownMenu_AddButton(spacer, level);
-        end
-        
-        self:RunMenuItems('bottom', level, UIDROPDOWNMENU_MENU_VALUE);
-    end
-end
-
-function SIL:RunMenuItems(where, level, parent)
-    where = strlower(where);
-    local lev = level;
-    
-    if level and parent then
-        level = level..'-'..parent;
-    end
-    
-    local foundSomething = false;
-    
-    if self.menuItems[where] and self.menuItems[where][level] then
-        for _,info in pairs(self.menuItems[where][level]) do
-            
-            -- Run functions for a name
-            if info.textFunc and type(info.textFunc) == 'function' then
-                info.text = info.textFunc(where, lev, parent);
-            end
-            
-            local enabled = true;
-            
-            if info.enabled and type(info.enabled) == 'function' then
-                enabled = info.enabled();
-            end
-            
-            if enabled then
-                UIDropDownMenu_AddButton(info, lev);
-                foundSomething = true;
-            end
-        end
-    end
-    
-    return foundSomething;
-end
-
 function SIL:UpdateLDB(force, auto)
     
 	if self:GetLDB() then
@@ -1269,120 +1115,6 @@ function SIL:Cache(guid, what)
     end
 end
 
-function SIL:AddDefaultMenuItems()
-    --[[   Middle  ]]
-    
-    -- Advanced
-    self:AddMenuItems('middle', {
-        text = L.core.options.ttAdvanced,
-        func = function() SIL:ToggleAdvanced(); end,
-        checked = SIL:GetAdvanced(),
-    }, 1);
-    
-    -- Autoscan
-    self:AddMenuItems('middle', {
-        text = L.core.options.autoscan,
-        func = function() SIL:ToggleAutoscan(); end,
-        checked = SIL:GetAutoscan(),
-    }, 1);
-    
-    -- Minimap
-    self:AddMenuItems('middle', {
-        text = L.core.options.minimap,
-        func = function() SIL:ToggleMinimap(); end,
-        checked = SIL:GetMinimap(),
-    }, 1);
-    
-    -- LDB Text
-    self:AddMenuItems('middle', {
-        text = L.core.options.ldbSource,
-        func = function() SIL:ToggleLDBlabel(); end,
-        checked = SIL:GetLDBlabel(),
-    }, 1);
-end
-
---[[ 
-    For what see List of button attributes
-    - http://wowprogramming.com/utils/xmlbrowser/live/FrameXML/UIDropDownMenu.lua
-    
-    +++
-    info.textFunc = function(where, level, parent); this is ran to update info.text when the menu is shown
-    info.enabled = function(where, level, parent); this is backwards, but if enabled is present then it is ran to see if the item should be shown
-]]
-function SIL:AddMenuItems(where, info, level, parent)
-    if not where and not info and not self.menuItems[where] and type(info) ~= 'table' then return end;
-    where = strlower(where);
-    level = level or 1;
-    
-    if parent then
-        level = level..'-'..parent;
-    end
-    
-    if not self.menuItems[where][level] then
-        self.menuItems[where][level] = {};
-    end
-    
-    table.insert(self.menuItems[where][level], info);
-end
-
-function SIL:ModulesProcess()
-    local _,silTitle = GetAddOnInfo('SimpleILevel');
-    
-    for index=1,GetNumAddOns() do
-        local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(index);
-        if string.sub(name, 1, 13) == 'SimpleILevel_' then
-            local module = strlower(string.sub(name, 14));
-            local stitle = string.gsub(title, silTitle..' %- ', '');
-            stitle = string.gsub(stitle, silTitle..': ', '');
-            
-            self.modules[module] = {
-                name = name,
-                title = title,
-                stitle = stitle,
-                notes = notes,
-                enabled = enabled,
-                loadable = loadable,
-                reason = reason,
-                module = module,
-            }
-            
-            SIL_Defaults.char.module[module] = true;
-        end
-    end
-end
-
-function SIL:ModulesList()
-    local t = {};
-    
-    for name,info in pairs(self.modules) do
-        t[name] = info.stitle;
-    end
-    
-    return t;
-end
-
-function SIL:ModulesLoad(m)
-    if m and self.modules[m] then
-        self:LoadAddOn(self.modules[m].name, m);
-    else
-        for module,info in pairs(self.modules) do
-            if self:GetModule(module) then
-                self:LoadAddOn(info.name, module);
-            end
-        end
-    end
-end
-
-function SIL:LoadAddOn(name, module)
-    local loaded, reason = LoadAddOn(name);
-    
-    if loaded then
-        self:RunHooks('loadmodule', module);
-    else
-        self:Print(_G['ADDON_'..reason]);
-    end
-end
-
 function SIL:UpdateGroup()
     self.group = {};
     
@@ -1396,6 +1128,10 @@ function SIL:UpdateGroup()
 
             if guid and guid ~= playerGUID then
                 table.insert(self.group, guid);
+                
+                if not self:Cache(guid, 'score') then
+                    self:RoughScore(target);
+                end
             end
         end
     elseif GetNumPartyMembers() > 0 then
@@ -1405,6 +1141,10 @@ function SIL:UpdateGroup()
             
             if guid then
                 table.insert(self.group, guid);
+                
+                if not self:Cache(guid, 'score') then
+                    self:RoughScore(target);
+                end
             end
         end
     end
