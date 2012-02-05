@@ -20,7 +20,6 @@ SIL.hooks = {};         -- List of hooks in [type][] = function;
 SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
 SIL.grayScore = 8;      -- Number of items to consider gray/aprox
-SIL.debug = false;      -- Debug for SIL:Debug() output
 SIL.ldbAuto = false;    -- AceTimer for LDB
 SIL.menu = false;       -- Menu frame
 SIL.menuItems = {       -- Table for the dropdown menu
@@ -463,8 +462,8 @@ function SIL:PrintTo(message, channel, to)
 end
 
 function SIL:Debug(...)
-	if SIL_Debug or SIL.debug then
-		print('SIL Debug: ', ...);
+	if SIL.db.char.debug then
+		print('SIL |cFFFF0000Debug:|r ', ...);
 	end
 end
 
@@ -982,7 +981,7 @@ function SIL:SetModule(m, v)
     self.db.char.module[m] = v;
     
     if v then
-        self:ModulesLoad(m);
+        self:ModuleLoad(m);
     end
 end
 
@@ -1093,7 +1092,7 @@ function SIL:GMICallback(name)
     local score, age, items = self:GetScoreName(name);
 	
 	if score and tonumber(score) and 0 < score then
-		return SIL:FormatScore(score, items, false);
+		return self:FormatScore(score, items, false);
 	else
         return 'n/a';
     end

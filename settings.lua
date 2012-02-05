@@ -235,8 +235,8 @@ SIL_Options = {
         debug = {
 			name = 'Debug Mode',
 			type = "toggle",
-			set = function(i,v) SIL.debug = v; SIL:Print('Setting Dubug', v); end,
-            get = function() return SIL.debug; end,
+			set = function(i,v) SIL.db.char.debug = v; SIL:Print('Setting Dubug', v); end,
+            get = function() return SIL.db.char.debug; end,
 			hidden = true,
 			guiHidden = true,
 			cmdHidden = true,
@@ -255,16 +255,15 @@ SIL_Defaults = {
 			hide = false,		-- Minimap Icon
 		},
 		version = 1,			-- Version for future referance
---		versionMinor = 1,
 		ldbText = true,			-- LDB Text
 		ldbLabel = true,		-- LDB Label
 		ldbRefresh = 30,		-- LDB Refresh Rate
         ttCombat = true,        -- Tooltip in combat
         color = true,           -- Color the score
-        
 	},
     char = {
         module = {},            -- Module State
+        debug = false,          -- Debug mode
     }
 };
 
