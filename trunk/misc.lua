@@ -170,6 +170,7 @@ function SIL:ModulesProcess()
     
     for index=1,GetNumAddOns() do
         local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(index);
+        
         if string.sub(name, 1, 13) == 'SimpleILevel_' then
             local module = strlower(string.sub(name, 14));
             local stitle = string.gsub(title, silTitle..' %- ', '');
@@ -201,33 +202,29 @@ function SIL:ModulesList()
     return t;
 end
 
-function SIL:ModulesLoad(m)
-    local name = false;
-    local module = false;
-    
-    if m and self.modules[m] then
-        name = self.modules[m].name;
-        module = m;
-    else
-        for m,info in pairs(self.modules) do
-            if self:GetModule(m) then
-                module = m;
-                name = info.name;
-            end
-        end
-    end
-    
-    if name and module then
-        local loaded, reason = LoadAddOn(name);
-        
-        if loaded then
-            self:RunHooks('loadmodule', module);
-        else
-            self:Print(_G['ADDON_'..reason]);
+function SIL:ModulesLoad()
+    for module,info in pairs(self.modules) do
+        if self:GetModule(module) then
+            self:ModuleLoad(module)
         end
     end
 end
 
+function SIL:ModuleLoad(module)
+    if module and self.modules[module] then
+        local name = self.modules[module].name;
+        local loaded, reason = LoadAddOn(name);
+        
+        if loaded then
+            self:RunHooks('loadmodule', module);
+            return true;
+        else
+            self:Print(_G['ADDON_'..reason]);
+        end
+    end
+    
+    return false;
+end
 
 --[[
         Random Methods
