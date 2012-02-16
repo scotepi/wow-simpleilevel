@@ -463,7 +463,7 @@ end
 
 function SIL:Debug(...)
 	if SIL.db.char.debug then
-		print('SIL |cFFFF0000Debug:|r ', ...);
+		print('|cFFFF0000SIL Debug:|r ', ...);
 	end
 end
 

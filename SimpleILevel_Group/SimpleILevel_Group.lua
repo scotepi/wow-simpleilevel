@@ -79,8 +79,7 @@ function SIL_Group:SetupSILMenu()
         func = function() SIL_Group:GroupOutput("PARTY"); end,
         notCheckable = 1,
         enabled = function() 
-                local t = SIL_Group:GroupType();
-                return t == 'party' or t == 'arena';
+                return GetNumPartyMembers() > 0;
             end,
     }, 2, 'SIL_Group');
     
