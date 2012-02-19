@@ -303,7 +303,7 @@ function SIL:SlashGet(name)
         local score, age, items = self:GetScoreName(name);
         
         if score then
-			local name = SIL:Cache(self:NameToGUID(name), 'name')
+			local name = self:Cache(self:NameToGUID(name), 'name')
             
 			self:Print(format(L.core.slashGetScore, name, self:FormatScore(score, items), self:AgeToText(age)));
             
@@ -342,8 +342,8 @@ end
 
 ]]
 function SIL:GUIDtoName(guid)
-	if guid and tonumber(guid) and SIL:Cache(guid) then
-		return SIL:Cache(guid, 'name'), SIL:Cache(guid, 'realm');
+	if guid and tonumber(guid) and self:Cache(guid) then
+		return self:Cache(guid, 'name'), self:Cache(guid, 'realm');
 	else
 		return false;
 	end
@@ -476,10 +476,10 @@ end
 function SIL:GetScore(guid, attemptUpdate, target, callback)
     if not tonumber(guid) then return false; end
     
-	if SIL:Cache(guid) and SIL:Cache(guid, 'score') then
-		local score = SIL:Cache(guid, 'score');
-		local age = SIL:Cache(guid, 'age');
-		local items = SIL:Cache(guid, 'items');
+	if self:Cache(guid) and self:Cache(guid, 'score') then
+		local score = self:Cache(guid, 'score');
+		local age = self:Cache(guid, 'age') or time();
+		local items = self:Cache(guid, 'items');
 		local startScore = nil;
         
         -- If a target was passed and we are over age
@@ -544,9 +544,9 @@ function SIL:StartScore(target, callback)
 end
 
 function SIL:ProcessInspect(guid, data, age)
-    if guid and SIL:Cache(guid) and type(data) == 'table' and type(data.items) == 'table' then
+    if guid and self:Cache(guid) and type(data) == 'table' and type(data.items) == 'table' then
         
-        local totalScore, totalItems = self:GearSum(data.items, SIL:Cache(guid, 'level'));
+        local totalScore, totalItems = self:GearSum(data.items, self:Cache(guid, 'level'));
         
         if totalItems and 0 < totalItems then
             
@@ -625,7 +625,7 @@ function SIL:RoughScore(target)
         -- self:Debug('SIL:RoughScore', UnitName(target), score, totalItems);
         
         -- Set a score even tho its crap
-        if guid and SIL:Cache(guid) and (not SIL:Cache(guid, 'score') or SIL:Cache(guid, 'items') < totalItems) then
+        if guid and self:Cache(guid) and (not self:Cache(guid, 'score') or self:Cache(guid, 'items') < totalItems) then
             self:SetScore(guid, score, 1, self:GetAge() + 1);
         end
         
@@ -1103,7 +1103,11 @@ function SIL:Cache(guid, what)
     
     if SIL_CacheGUID[guid] and what then
         if what == 'age' then
-            return time() - SIL_CacheGUID[guid].time;
+            if SIL_CacheGUID[guid].time then
+                return time() - SIL_CacheGUID[guid].time;
+            else
+                return nil;
+            end
         else
             return SIL_CacheGUID[guid][what];
         end
