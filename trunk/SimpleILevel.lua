@@ -1013,7 +1013,7 @@ function SIL:ShowOptions()
                     end
                 
                 -- Hide anything else that is open
-                elseif type(button.element.collapsed) == 'boolean' and not button.element.collapsed then
+                elseif button.element and type(button.element.collapsed) == 'boolean' and not button.element.collapsed then
                     OptionsListButtonToggle_OnClick(button.toggle);
                 end
             end
