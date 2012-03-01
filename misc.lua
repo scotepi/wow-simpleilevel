@@ -15,28 +15,28 @@ function SIL:MenuInitialize()
     self:AddMenuItems('middle', {
         text = L.core.options.ttAdvanced,
         func = function() SIL:ToggleAdvanced(); end,
-        checked = SIL:GetAdvanced(),
+        checked = function() return SIL:GetAdvanced(); end,
     }, 1);
     
     -- Autoscan
     self:AddMenuItems('middle', {
         text = L.core.options.autoscan,
         func = function() SIL:ToggleAutoscan(); end,
-        checked = SIL:GetAutoscan(),
+        checked = function() return SIL:GetAutoscan(); end,
     }, 1);
     
     -- Minimap
     self:AddMenuItems('middle', {
         text = L.core.options.minimap,
         func = function() SIL:ToggleMinimap(); end,
-        checked = SIL:GetMinimap(),
+        checked = function() return SIL:GetMinimap(); end,
     }, 1);
     
     -- LDB Text
     self:AddMenuItems('middle', {
         text = L.core.options.ldbSource,
         func = function() SIL:ToggleLDBlabel(); end,
-        checked = SIL:GetLDBlabel(),
+        checked = function() return SIL:GetLDBlabel(); end,
     }, 1);
 end
 
