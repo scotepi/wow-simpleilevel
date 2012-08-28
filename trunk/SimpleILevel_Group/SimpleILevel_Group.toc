@@ -1,4 +1,4 @@
-## Interface: 40300
+## Interface: 50001
 
 ## Title: Simple iLevel - Group
 ## Notes: View the AiL of everyone in your group
@@ -6,13 +6,14 @@
 ## Title-deDE: Simple iLevel - Gruppe
 ## Title-koKR: Simple iLevel - 그룹
 ## Title-ruRU: Simple iLevel - Группа
-## Title-zhCN: 简易物品等级 - 队伍
-## Title-zhTW: 簡易物品等級 - 團體
+## Title-zhCN: SiL - 团体
+## Title-zhTW: SiL - 團體
 
+## Notes-deDE: Zeige die durchschnittliche Gegenstandsstufe von allen aus deiner Gruppe
 ## Notes-koKR: 모든 그룹원의 평균 아이템레벨 표시
 ## Notes-ruRU: Посмотреть средний урвоень предметов всех в вашей группе
-## Notes-zhCN: 查看你队伍中所有人的AiL.
-## Notes-zhTW: 觀看團體中所有人的平均物品等級
+## Notes-zhCN: 查看团体所有人的平均物品等级
+## Notes-zhTW: 觀看團體所有人的平均物品等級
 
 ## Author: Scotepi
 ## Version: @project-version@

@@ -101,7 +101,7 @@ function SIL:OnInitialize()
     self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() SIL:ShowTooltip(); end);
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() SIL:StartScore('player'); end);
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function() SIL:UpdateLDB(); end);
-    self:RegisterEvent("PARTY_MEMBERS_CHANGED", function() SIL:UpdateGroup() end);
+    self:RegisterEvent("GROUP_ROSTER_UPDATE", function() SIL:UpdateGroup() end);
     
     -- Add to Paperdoll - not relevent as of 4.3, well see
     table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L.core.name);
@@ -966,10 +966,10 @@ function SIL:SetLDB(v)
 	self.db.global.ldbText = v;
 	
 	if v then
-		--self:RegisterEvent("PARTY_MEMBERS_CHANGED");
+		--self:RegisterEvent("GROUP_ROSTER_UPDATE");
 		self.ldb.type = 'data source';
 	else
-		--self:UnregisterEvent("PARTY_MEMBERS_CHANGED");
+		--self:UnregisterEvent("GROUP_ROSTER_UPDATE");
 		self.ldb.type = 'launcher';
 		self.ldb.text = nil;
 	end
@@ -1137,7 +1137,7 @@ function SIL:UpdateGroup()
                 end
             end
         end
-    elseif GetNumPartyMembers() > 0 then
+    elseif GetNumSubgroupMembers() > 0 then
         for i=1,MAX_PARTY_MEMBERS do
             local target = 'party'..i;
             local guid = self:AddPlayer(target);
@@ -1197,7 +1197,7 @@ function SIL:GroupDest(dest, to)
             dest = 'BATTLEGROUND';
 		elseif UnitInRaid("player") then
 			dest = 'RAID';
-		elseif GetNumPartyMembers() > 0 then
+		elseif GetNumSubgroupMembers() > 0 then
 			dest = 'PARTY';
 		else
 			dest = 'SAY';
