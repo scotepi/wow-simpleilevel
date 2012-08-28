@@ -79,7 +79,7 @@ function SIL_Group:SetupSILMenu()
         func = function() SIL_Group:GroupOutput("PARTY"); end,
         notCheckable = 1,
         enabled = function() 
-                return GetNumPartyMembers() > 0;
+                return GetNumSubgroupMembers() > 0;
             end,
     }, 2, 'SIL_Group');
     
@@ -236,7 +236,7 @@ function SIL_Group:GroupType()
         return 'battleground', CHAT_MSG_BATTLEGROUND;
     elseif UnitInRaid("player") then
         return 'raid', CHAT_MSG_RAID;
-    elseif GetNumPartyMembers() > 0 then
+    elseif GetNumSubgroupMembers() > 0 then
         return 'party', CHAT_MSG_PARTY;
     else
         return 'solo', UnitName('player');

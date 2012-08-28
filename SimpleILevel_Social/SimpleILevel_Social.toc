@@ -1,4 +1,4 @@
-## Interface: 40300
+## Interface: 50001
 
 ## Title: Simple iLevel - Social
 ## Notes: Added the AiL to chat windows for various channels
@@ -6,13 +6,14 @@
 ## Title-deDE: Simple iLevel - Sozial
 ## Title-koKR: Simple iLevel - 소셜
 ## Title-ruRU: Simple iLevel - Общение
-## Title-zhCN: 简易物品等级 - 社交
-## Title-zhTW: 簡易物品等級 - 社交
+## Title-zhCN: SiL - 社交
+## Title-zhTW: SiL - 社交
 
+## Notes-deDE: Fügt die durchschnittliche Gegenstandsstufe im Chatfenster für verschiedene Kanäle hinzu
 ## Notes-koKR: 다양한 채널의 대화창에 평균 아이템 레벨 표시
 ## Notes-ruRU: Добавлен средний уровень предметов в окно чата для разных каналов
-## Notes-zhCN: 增加AiL到不同频道的聊天窗体
-## Notes-zhTW: 在聊天視窗的各個頻道中加入平均物品等級
+## Notes-zhCN: 于聊天窗体各频道加入平均物品等级
+## Notes-zhTW: 於聊天視窗各頻道加入平均物品等級
 
 ## Author: Scotepi
 ## Version: @project-version@
