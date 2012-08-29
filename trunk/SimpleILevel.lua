@@ -584,8 +584,10 @@ function SIL:GearSum(items, level)
         local totalScore = 0;
         
         for i,itemLink in pairs(items) do
-            if i ~= INVSLOT_BODY and itemLink then
+            if itemLink and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD ) then
                 local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
+                
+                --- print(i, itemLevel, itemLink);
                 
                 if itemLevel then
                     
