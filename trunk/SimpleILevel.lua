@@ -256,7 +256,7 @@ function SIL:TooltipHook()
 	if unit then
 		guid = UnitGUID(unit);
 	elseif name then
-		guid = SIL:NameToGUID(name);
+		guid = self:NameToGUID(name);
 	end
 	
 	if tonumber(guid) and tonumber(guid) > 0 then

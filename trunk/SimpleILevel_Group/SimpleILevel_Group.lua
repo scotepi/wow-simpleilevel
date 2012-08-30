@@ -164,7 +164,7 @@ function SIL_Group:GroupScore()
     local groupMin = playerScore;
     local groupMax = playerScore;
     
-    for _,guid in pairs(SIL.group) do
+    for junk1,guid in pairs(SIL.group) do
         local score = SIL:Cache(guid, 'score');
         
         if score and score ~= 0 then
@@ -196,7 +196,7 @@ function SIL_Group:GroupOutput(dest, to)
     -- Sort by score
     table.sort(SIL.group, function(...) return SIL_Group:SortScore(...); end);
     
-    for _,guid in ipairs(SIL.group) do
+    for junk1,guid in ipairs(SIL.group) do
 		local name = SIL:Cache(guid, 'name');
 		local items = SIL:Cache(guid, 'items');
 		local score = SIL:Cache(guid, 'score');
@@ -228,7 +228,7 @@ end
 
 -- Figure out the type of group we are in
 function SIL_Group:GroupType()
-    local _, itype = GetInstanceInfo();
+    local name, itype = GetInstanceInfo();
     
     if itype == 'arena' then
         return 'arena', ARENA;
@@ -308,7 +308,7 @@ function SIL_Group:AutoscanNext()
     local oldScoreT = false;
     
     -- Loop
-    for _,guid in pairs(SIL.group) do
+    for junk1,guid in pairs(SIL.group) do
         local target = SIL:Cache(guid, 'target');
         
         if not self.autoscanLog[guid] then
