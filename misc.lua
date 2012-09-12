@@ -118,7 +118,7 @@ function SIL:MenuRunItem(where, level, parent)
     local foundSomething = false;
     
     if self.menuItems[where] and self.menuItems[where][level] then
-        for _,info in pairs(self.menuItems[where][level]) do
+        for i,info in pairs(self.menuItems[where][level]) do
             
             -- Run functions for a name
             if info.textFunc and type(info.textFunc) == 'function' then
@@ -166,7 +166,7 @@ function SIL:AddMenuItems(where, info, level, parent)
 end
 
 function SIL:ModulesProcess()
-    local _,silTitle = GetAddOnInfo('SimpleILevel');
+    local silName,silTitle = GetAddOnInfo('SimpleILevel');
     
     for index=1,GetNumAddOns() do
         local name, title, notes, enabled, loadable, reason, security = GetAddOnInfo(index);

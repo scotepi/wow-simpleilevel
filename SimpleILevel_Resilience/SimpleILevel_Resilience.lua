@@ -229,7 +229,7 @@ function SIL_Resil:GroupSum()
     local totalResil = 0;
     local totalItems = 0;
     
-    for _,guid in ipairs(SIL.group) do
+    for i,guid in ipairs(SIL.group) do
         local resil = SIL:Cache(guid, 'resil') or 0;
         local items = SIL:Cache(guid, 'items') or 1;
         
@@ -255,7 +255,7 @@ function SIL_Resil:GroupOutput(dest, to)
     table.sort(SIL.group, function(...) return SIL_Resil:SortScore(...); end);
     
     local rough = false;
-    for _,guid in ipairs(SIL.group) do
+    for i,guid in ipairs(SIL.group) do
 		local name = SIL:Cache(guid, 'name');
 		local rItems, items = self:GetItemCount(guid);
 		local score = SIL:Cache(guid, 'score');

@@ -214,7 +214,7 @@ function SIL:RunHooks(hookType, ...)
     local r = {};
     
     if self.hooks[hookType] then
-        for _,callback in pairs(self.hooks[hookType]) do
+        for i,callback in pairs(self.hooks[hookType]) do
             local ret = callback(...);
             
             if ret then
@@ -585,7 +585,7 @@ function SIL:GearSum(items, level)
         
         for i,itemLink in pairs(items) do
             if itemLink and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD ) then
-                local _, _, itemRarity , itemLevel = GetItemInfo(itemLink);
+                local name, link, itemRarity , itemLevel = GetItemInfo(itemLink);
                 
                 --- print(i, itemLevel, itemLink);
                 
@@ -643,7 +643,7 @@ function SIL:AddPlayer(target)
     
     if guid then
         local name, realm = UnitName(target);
-        local _, class = UnitClass(target);
+        local className, class = UnitClass(target);
         local level = UnitLevel(target);
         
         if not realm then
@@ -1029,7 +1029,7 @@ function SIL:UpdateLDB(force, auto)
 		local label = UnitName('player');
 		
         if SIL_Group then
-            _,label = SIL_Group:GroupType();
+            groupType,label = SIL_Group:GroupType();
 		end
         
 		-- Do we really need to update LDB?
