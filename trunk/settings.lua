@@ -36,11 +36,11 @@ SIL_Channels = {
 }
 SIL_GroupChannelString = '';
 local i = 0;
-for _,s in pairs(SIL_Channels) do
+for channel,name in pairs(SIL_Channels) do
     if i == 0 then
-        SIL_GroupChannelString = s;
+        SIL_GroupChannelString = name;
     else
-        SIL_GroupChannelString = SIL_GroupChannelString..'/'..s;
+        SIL_GroupChannelString = SIL_GroupChannelString..'/'..name;
     end
     i = i + 1;
 end
