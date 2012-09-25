@@ -92,6 +92,14 @@ SIL_Options = {
 					set = function(i,v) SIL:SetColorScore(v);  end,
 					order = 3,
 				},
+                round = { -- Round Score
+					name = L.core.options.round,
+					desc = L.core.options.roundDesc,
+					type = "toggle",
+					get = function(i) return SIL:GetRoundScore(); end,
+					set = function(i,v) SIL:SetRoundScore(v);  end,
+					order = 3,
+				},
                 
 				autoscan = { -- Autoscan Group Members
 					name = L.core.options.autoscan,
@@ -270,6 +278,7 @@ SIL_Defaults = {
 		ldbRefresh = 30,		-- LDB Refresh Rate
         ttCombat = true,        -- Tooltip in combat
         color = true,           -- Color the score
+        round = false,          -- Round the score
 	},
     char = {
         module = {},            -- Module State
