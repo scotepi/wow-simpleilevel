@@ -5,57 +5,33 @@ ToDo:
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
--- Coloring
-if time() < 1348531200 then
-
-    -- Cata
-    SIL_ColorIndex = {0,200,333,378,390,416,1000};
-    SIL_Colors = {
-        -- White base color
-        [0] = 		{['r']=255,	['g']=255,	['b']=255,	['p']=0,},
-        -- Yellow for wrath dungeon gear
-        [200] = 	{['r']=255,	['g']=204,	['b']=0,	['p']=0,},
-        -- Green for cata dungeon
-        [333] = 	{['r']=0,	['g']=204,	['b']=0,	['p']=200,},
-        -- Blue for heroic t11 final gear
-        [378] = 	{['r']=0,	['g']=102,	['b']=204,	['p']=333,},
-        -- Purple for t12
-        [390] = 	{['r']=163,	['g']=23,	['b']=238,	['p']=378,},
-        -- Red for a max score
-        [416] = 	{['r']=255,	['g']=0,	['b']=0,	['p']=390},
-        [1000] = 	{['r']=0,	['g']=0,	['b']=0,	['p']=416},
-    };
-else
-    
-    --[[
-        MoP Colors:
-            White 0, #FFFFFF, 255, 255, 255
-            Yellow 333, #FFFF00, 255, 255, 0
-            Green 463, #00FF00, 0, 255, 0
-            Teal 516, #00FFFF, 0, 255, 255
-            Blue H T15, #0066ff, 0, 102, 255 - Raw Blue was to dark
-            Purple H T16, #FF00FF, 255, 0, 255
-            Red H T17, #FF0000, 255, 0, 0
-    ]]--
-    SIL_ColorIndex = {0,333,463,516,550,600,1000};
-    SIL_Colors = {
-        -- White base color
-        [0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['p']=0,},
-        -- Yellow for Cata dungeon gear
-        [333] =     {['r']=255,     ['g']=255,      ['b']=0,        ['p']=0,},
-        -- Green for MoP dungeon gear
-        [463] =     {['r']=0,       ['g']=255,      ['b']=0,        ['p']=333,},
-        -- Teal for Heroic T14
-        [516] =     {['r']=0,       ['g']=255,      ['b']=255,      ['p']=463,},
-        -- Blue for Heroic T15
-        [550] =     {['r']=0,       ['g']=102,        ['b']=255,      ['p']=516,},
-        -- Purple for Heroic T16
-        [600] =     {['r']=255,     ['g']=0,        ['b']=255,      ['p']=550,},
-        -- Red for a max score
-        [1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['p']=600,},
-    };
-end
-
+--[[
+    MoP Colors:
+        White 0, #FFFFFF, 255, 255, 255
+        Yellow 333, #FFFF00, 255, 255, 0
+        Green 463, #00FF00, 0, 255, 0
+        Teal 516, #00FFFF, 0, 255, 255
+        Blue H T15, #0066ff, 0, 102, 255 - Raw Blue was to dark
+        Purple H T16, #FF00FF, 255, 0, 255
+        Red H T17, #FF0000, 255, 0, 0
+]]--
+SIL_ColorIndex = {0,333,463,516,550,600,1000};
+SIL_Colors = {
+    -- White base color
+    [0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['p']=0,},
+    -- Yellow for Cata dungeon gear
+    [333] =     {['r']=255,     ['g']=255,      ['b']=0,        ['p']=0,},
+    -- Green for MoP dungeon gear
+    [463] =     {['r']=0,       ['g']=255,      ['b']=0,        ['p']=333,},
+    -- Teal for Heroic T14
+    [516] =     {['r']=0,       ['g']=255,      ['b']=255,      ['p']=463,},
+    -- Blue for Heroic T15
+    [550] =     {['r']=0,       ['g']=102,      ['b']=255,      ['p']=516,},
+    -- Purple for Heroic T16
+    [600] =     {['r']=255,     ['g']=0,        ['b']=255,      ['p']=550,},
+    -- Red for a max score
+    [1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['p']=600,},
+};
 
 -- Suported channel localization table
 SIL_Channels = {
