@@ -158,7 +158,7 @@ function SIL_Resil:FormatPercent(percent, color)
         percent = percent / 100;
     end
     
-    local percentText = SIL:Round(percent * 100, 1);
+    local percentText = self:FormatPercent(percent);
     
     if color then
         local hexColor = self:ColorScore(percent);
@@ -171,7 +171,7 @@ end
 function SIL_Resil:FormatScore(rItems, items, color)
     if tonumber(rItems) and 0 < rItems and rItems < 1 then
         local percent = rItems;
-        local percentText = SIL:Round(percent * 100, 1);
+        local percentText = self:FormatPercent(percent);
         
         if items then
             local hexColor = self:ColorScore(percent, SIL.grayScore + 1);
@@ -186,7 +186,7 @@ function SIL_Resil:FormatScore(rItems, items, color)
     if not items or not tonumber(items) then items = 1 end
     
     local hexColor = self:ColorScore(rItems / items, items)
-    local percent = SIL:Round((rItems / items) * 100, 1);
+    local percent = self:FormatPercent(rItems / items)
     local slash = rItems..'/'..items;
     
     if color then
@@ -205,6 +205,14 @@ function SIL_Resil:FormatScore(rItems, items, color)
     end
     
     return preferance, percent, slash;
+end
+
+function SIL_Resil:FormatPercent(percent)
+    if SIL:GetRoundScore() then
+        return SIL:Round(tonumber(percent) * 100, 0);
+    else
+        return SIL:Round(tonumber(percent) * 100, 1);
+    end
 end
 
     -- /run for i=1,17 do print(i,SIL_Resil:FormatScore(i,17,true)); end
