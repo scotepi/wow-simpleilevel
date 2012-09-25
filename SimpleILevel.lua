@@ -5,6 +5,8 @@ ToDo:
         * SIL_Group:GroupType();
     - On UpdateGroup if there is no data do a rough scan
     - Group methods within this file
+    - Better way to hooking tooltips
+    -
 ]]
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
@@ -137,6 +139,11 @@ function SIL:OnInitialize()
     
     -- Process modules
     self:ModulesLoad();
+    
+    -- Localization Notice
+    if GetLocale() == 'ptBR' or GetLocale() == 'frFR' or GetLocale() == 'itIT' or GetLocale() == 'esMX' or GetLocale() == 'esES' then
+        self:Print("Help Localize Simple iLevel! http://j.mp/localSIL")
+    end
 end
 
 -- Make sure the database is the latest version
