@@ -731,7 +731,13 @@ function SIL:FormatScore(score, items, color)
     if type(color) == 'nil' then color = true; end
     
     if tonumber(score) and tonumber(items) then
-		local scoreR = self:Round(tonumber(score), 1);
+        local scoreR
+        
+        if self:GetRoundScore() then
+            scoreR = self:Round(tonumber(score), 0);
+        else
+            scoreR = self:Round(tonumber(score), 1);
+        end
         
 		if color then
             local hexColor = self:ColorScore(score, items);
@@ -911,6 +917,7 @@ function SIL:SetLDBlabel(v) self.db.global.ldbLabel = v; self:UpdateLDB(true); e
 function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; self:LDBSetAuto() end
 function SIL:SetTTCombat(v) self.db.global.ttCombat = v; end
 function SIL:SetColorScore(v) self.db.global.color = v; end
+function SIL:SetRoundScore(v) self.db.global.round = v; end
 
 -- Get
 function SIL:GetAdvanced() return self.db.global.advanced; end
@@ -925,6 +932,7 @@ function SIL:GetLDBlabel() return self.db.global.ldbLabel; end
 function SIL:GetLDBrefresh() return self.db.global.ldbRefresh; end
 function SIL:GetTTCombat() return self.db.global.ttCombat; end
 function SIL:GetColorScore() return self.db.global.color; end
+function SIL:GetRoundScore() return self.db.global.round; end
 function SIL:GetModule(m) return self.db.char.module[m]; end
 
 -- Toggle
@@ -936,6 +944,7 @@ function SIL:ToggleLabel() self:SetLabel(not self:GetLabel()); end
 function SIL:ToggleLDBlabel() self:SetLDBlabel(not self:GetLDBlabel()); end
 function SIL:ToggleTTCombat() self:SetTTCombat(not self:GetTTCombat()); end
 function SIL:ToggleColorScore() self:SetColorScore(not self:GetColorScore()); end
+function SIL:ToggleRoundScore() self:SetRoundScore(not self:GetRoundScore()); end
 function SIL:ToggleColorScore(m) self:SetModule(m, not self:GetModule(m)); end
 
 -- Advanced sets
