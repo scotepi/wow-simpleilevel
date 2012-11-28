@@ -21,7 +21,7 @@ SIL.action = {};        -- DB of unitGUID->function to run when a update comes t
 SIL.hooks = {};         -- List of hooks in [type][] = function;
 SIL.autoscan = 0;       -- time() value of last autoscan, must be more then 1sec
 SIL.lastScan = {};      -- target = time();
-SIL.grayScore = 8;      -- Number of items to consider gray/aprox
+SIL.grayScore = 7;      -- Number of items to consider gray/aprox
 SIL.ldbAuto = false;    -- AceTimer for LDB
 SIL.menu = false;       -- Menu frame
 SIL.menuItems = {       -- Table for the dropdown menu
@@ -719,6 +719,11 @@ function SIL:Heirloom(level, itemLink)
 				level = 80;
 			end
 		end
+        
+        -- There are currently no 1-90 Heirlooms
+        if level > 85 then
+            level = 85
+        end
 	end
 	
 	if level > 80 then
