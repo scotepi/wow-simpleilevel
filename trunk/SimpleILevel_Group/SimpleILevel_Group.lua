@@ -201,6 +201,7 @@ function SIL_Group:GroupOutput(dest, to)
 		local items = SIL:Cache(guid, 'items');
 		local score = SIL:Cache(guid, 'score');
         local class = SIL:Cache(guid, 'class');
+        local age = SIL:Cache(guid, 'age');
         local str = '';
         
 		if color then
@@ -208,9 +209,12 @@ function SIL_Group:GroupOutput(dest, to)
         end
             
 		if score and tonumber(score) and 0 < score then
-            str = format('%s (%s)', name, SIL:FormatScore(score, items, color));
+            str = format('%s - %s', name, SIL:FormatScore(score, items, color));
             
             if items <= SIL.grayScore then
+                str = str..' *';
+                rough = true;
+            elseif (SIL:GetAge() * 2) <= age then
                 str = str..' *';
                 rough = true;
             end
