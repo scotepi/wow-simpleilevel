@@ -1,4 +1,4 @@
-## Interface: 50001
+## Interface: 50100
 
 ## Title: Simple iLevel - Resilience
 ## Notes: Shows the amount of PvP gear other players have equipped in the tooltip

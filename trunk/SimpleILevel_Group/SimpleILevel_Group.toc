@@ -1,4 +1,4 @@
-## Interface: 50001
+## Interface: 50100
 
 ## Title: Simple iLevel - Group
 ## Notes: View the AiL of everyone in your group
