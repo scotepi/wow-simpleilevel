@@ -113,7 +113,7 @@ function SIL_Resil:Inspect(guid, score, itemCount, age, itemTable)
 		for i,itemLink in pairs(itemTable) do
 			local stats = GetItemStats(itemLink);
             
-			if stats['ITEM_MOD_RESILIENCE_RATING_SHORT'] then
+			if stats and stats['ITEM_MOD_RESILIENCE_RATING_SHORT'] then
 				local raw = stats['ITEM_MOD_RESILIENCE_RATING_SHORT'];
 				
 				resilience = resilience + raw;
