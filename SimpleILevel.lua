@@ -592,16 +592,8 @@ function SIL:GearSum(items, level)
         
         for i,itemLink in pairs(items) do
             if itemLink and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD ) then
-                local name, link, itemRarity , itemLevel = GetItemInfo(itemLink);
-                
-                if SIL.db.char.debug then
-                    local itemLevelActual = self:GetActualItemLevel(itemLink);
-
-                    if itemLevel ~= itemLevelActual then
-                        self:Debug(itemLevel, itemLevelActual, itemLink);
-                        itemLevel = itemLevelActual;
-                    end
-                end
+                -- local name, link, itemRarity , itemLevel = GetItemInfo(itemLink);
+                local itemLevel = self:GetActualItemLevel(itemLink);
 
                 --- print(i, itemLevel, itemLink);
                 
@@ -624,7 +616,7 @@ function SIL:GearSum(items, level)
     end
 end
 
--- Thanks to Ro of Underhill-US http://us.battle.net/wow/en/forum/topic/7199032730#9
+-- Thanks to Ro of Hyjal-US http://us.battle.net/wow/en/forum/topic/7199032730#9
 function SIL:GetActualItemLevel(link)
   local levelAdjust={ -- 11th item:id field and level adjustment
     ["0"]=0,["1"]=8,["373"]=4,["374"]=8,["375"]=4,["376"]=4,
@@ -955,6 +947,7 @@ function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; self:LDBSetAuto() e
 function SIL:SetTTCombat(v) self.db.global.ttCombat = v; end
 function SIL:SetColorScore(v) self.db.global.color = v; end
 function SIL:SetRoundScore(v) self.db.global.round = v; end
+function SIL:SetDebug(v) self.db.char.debug = v; end
 
 -- Get
 function SIL:GetAdvanced() return self.db.global.advanced; end
@@ -971,6 +964,7 @@ function SIL:GetTTCombat() return self.db.global.ttCombat; end
 function SIL:GetColorScore() return self.db.global.color; end
 function SIL:GetRoundScore() return self.db.global.round; end
 function SIL:GetModule(m) return self.db.char.module[m]; end
+function SIL:GetDebug(m) return self.db.char.debug; end
 
 -- Toggle
 function SIL:ToggleAdvanced() self:SetAdvanced(not self:GetAdvanced()); end
@@ -983,6 +977,7 @@ function SIL:ToggleTTCombat() self:SetTTCombat(not self:GetTTCombat()); end
 function SIL:ToggleColorScore() self:SetColorScore(not self:GetColorScore()); end
 function SIL:ToggleRoundScore() self:SetRoundScore(not self:GetRoundScore()); end
 function SIL:ToggleColorScore(m) self:SetModule(m, not self:GetModule(m)); end
+function SIL:ToggleDebug(m) self:SetDebug(not self:GetDebug()); end
 
 -- Advanced sets
 function SIL:SetPurge(hours) 
@@ -1221,7 +1216,8 @@ function SIL:GroupDest(dest, to)
 	if dest == 'T' then dest = 'WHISPER'; valid = true; end
 	if dest == 'W' then dest = 'WHISPER'; valid = true; end
 	if dest == 'TELL' then dest = 'WHISPER'; valid = true; end
-	if dest == 'C' then dest = 'CHANNEL'; valid = true; end
+    if dest == 'C' then dest = 'CHANNEL'; valid = true; end
+	if dest == 'I' then dest = 'INSTANCE'; valid = true; end
 	
 	-- Find out if its a valid dest
 	for fixed,loc in pairs(SIL_Channels) do
