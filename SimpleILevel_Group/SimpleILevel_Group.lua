@@ -78,9 +78,7 @@ function SIL_Group:SetupSILMenu()
         text = CHAT_MSG_PARTY,
         func = function() SIL_Group:GroupOutput("PARTY"); end,
         notCheckable = 1,
-        enabled = function() 
-                return GetNumSubgroupMembers() > 0;
-            end,
+        enabled = function() return IsInGroup(LE_PARTY_CATEGORY_HOME); end,
     }, 2, 'SIL_Group');
     
     -- Raid
@@ -88,7 +86,7 @@ function SIL_Group:SetupSILMenu()
         text = CHAT_MSG_RAID,
         func = function() SIL_Group:GroupOutput("RAID"); end,
         notCheckable = 1,
-        enabled = function() return UnitInRaid("player"); end,
+        enabled = function() return IsInRaid(); end,
     }, 2, 'SIL_Group');
     
     -- Battleground
@@ -97,6 +95,14 @@ function SIL_Group:SetupSILMenu()
         func = function() SIL_Group:GroupOutput("BG"); end,
         notCheckable = 1,
         enabled = function() return UnitInBattleground("player"); end,
+    }, 2, 'SIL_Group');
+
+    -- Instance
+    SIL:AddMenuItems('middle', {    
+        text = INSTANCE_CHAT_MESSAGE,
+        func = function() SIL_Group:GroupOutput("I"); end,
+        notCheckable = 1,
+        enabled = function() return IsInLFGDungeon(); end,
     }, 2, 'SIL_Group');
     
     -- Guild
@@ -304,7 +310,7 @@ function SIL_Group:AutoscanNext()
     
     -- Set some high min values
     local lowItems = SIL.grayScore * 1.5;            -- currently 8 * 1.5 = 12 items
-    local lowScore = yourScore / 2;                  -- this should scale well leveling
+    local lowScore = yourScore / 2;                  -- this should scale well while leveling
     local oldScore = time() - (SIL:GetAge() * 0.75); -- 75% of max age
     
     local lowItemsT = false;
@@ -319,13 +325,13 @@ function SIL_Group:AutoscanNext()
             self.autoscanLog[guid] = 0;
         end
         
-        if CanInspect(target) and self.autoscanLog[guid] <= 3 and not UnitIsUnit('player', target) then
+        if CanInspect(target) and CheckInteractDistance(target, 1) and self.autoscanLog[guid] <= 3 and not UnitIsUnit('player', target) then
             
             local items = SIL:Cache(guid, 'items') or 0;
             local score = SIL:Cache(guid, 'score') or 0;
             local time = SIL:Cache(guid, 'time') or 0;
             
-            -- SIL:Debug(SIL:Cache(guid, 'name'), SIL:Cache(guid, 'items'), items, SIL:Cache(guid, 'score'), score, SIL:Cache(guid, 'time'), time);
+            -- SIL:Debug(SIL:Cache(guid, 'name'), items, score, time);
             
             -- Items
             if items < lowItems then
