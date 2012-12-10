@@ -18,19 +18,19 @@ local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 SIL_ColorIndex = {0,333,463,516,550,600,1000};
 SIL_Colors = {
     -- White base color
-    [0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['p']=0,},
+    [0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['rgb']='FFFFFF',   ['p']=0,},
     -- Yellow for Cata dungeon gear
-    [333] =     {['r']=255,     ['g']=255,      ['b']=0,        ['p']=0,},
+    [333] =     {['r']=255,     ['g']=255,      ['b']=0,        ['rgb']='FFFF00',   ['p']=0,},
     -- Green for MoP dungeon gear
-    [463] =     {['r']=0,       ['g']=255,      ['b']=0,        ['p']=333,},
+    [463] =     {['r']=0,       ['g']=255,      ['b']=0,        ['rgb']='00FF00',   ['p']=333,},
     -- Teal for Heroic T14
-    [516] =     {['r']=0,       ['g']=255,      ['b']=255,      ['p']=463,},
+    [516] =     {['r']=0,       ['g']=255,      ['b']=255,      ['rgb']='00FFFF',   ['p']=463,},
     -- Blue for Heroic T15
-    [550] =     {['r']=0,       ['g']=102,      ['b']=255,      ['p']=516,},
+    [550] =     {['r']=0,       ['g']=102,      ['b']=255,      ['rgb']='0066ff',   ['p']=516,},
     -- Purple for Heroic T16
-    [600] =     {['r']=255,     ['g']=0,        ['b']=255,      ['p']=550,},
+    [600] =     {['r']=255,     ['g']=0,        ['b']=255,      ['rgb']='FF00FF',   ['p']=550,},
     -- Red for a max score
-    [1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['p']=600,},
+    [1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['rgb']='FF0000',   ['p']=600,},
 };
 
 -- Suported channel localization table
@@ -42,6 +42,7 @@ SIL_Channels = {
     GUILD = string.lower(CHAT_MSG_GUILD),
     SAY = string.lower(CHAT_MSG_SAY),
     BATTLEGROUND = string.lower(CHAT_MSG_BATTLEGROUND),
+    INSTANCE = string.lower(INSTANCE_CHAT_MESSAGE),
     OFFICER = string.lower(CHAT_MSG_OFFICER),
 }
 SIL_GroupChannelString = '';
@@ -253,8 +254,8 @@ SIL_Options = {
         debug = {
 			name = 'Debug Mode',
 			type = "toggle",
-			set = function(i,v) SIL.db.char.debug = v; SIL:Print('Setting Dubug', v); end,
-            get = function() return SIL.db.char.debug; end,
+            set = function(i,v) SIL:SetDebug(v); end,
+            get = function(i) return SIL:GetDebug(); end,
 			hidden = true,
 			guiHidden = true,
 			cmdHidden = true,
