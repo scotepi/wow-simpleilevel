@@ -1199,7 +1199,7 @@ end
 function SIL:GroupDest(dest, to)
 	local valid = false;
 	local color = false;
-    
+
 	if not dest then dest = "SYSTEM"; valid = true; end
 	if dest == '' then dest = "SYSTEM"; valid = true; end
 	dest = string.upper(dest);
@@ -1217,7 +1217,7 @@ function SIL:GroupDest(dest, to)
 	if dest == 'W' then dest = 'WHISPER'; valid = true; end
 	if dest == 'TELL' then dest = 'WHISPER'; valid = true; end
     if dest == 'C' then dest = 'CHANNEL'; valid = true; end
-	if dest == 'I' then dest = 'INSTANCE'; valid = true; end
+	if dest == 'I' then dest = 'INSTANCE_CHAT'; valid = true; end
 	
 	-- Find out if its a valid dest
 	for fixed,loc in pairs(SIL_Channels) do
@@ -1236,12 +1236,14 @@ function SIL:GroupDest(dest, to)
 	end
 	
 	-- Figure out GROUP
-	if dest == 'GROUP' then
+	if dest == 'GROUP' and IsInGroup() then
         if UnitInBattleground("player") then
             dest = 'BATTLEGROUND';
+        elseif IsInGroup(LE_PARTY_CATEGORY_INSTANCE) then
+            dest = 'INSTANCE_CHAT';
 		elseif UnitInRaid("player") then
 			dest = 'RAID';
-		elseif GetNumSubgroupMembers() > 0 then
+		elseif IsInGroup(LE_PARTY_CATEGORY_HOME) then
 			dest = 'PARTY';
 		else
 			dest = 'SAY';
