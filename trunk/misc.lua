@@ -244,7 +244,10 @@ end
 
 
 function SIL:CanOfficerChat()
-	GuildControlSetRank(select(3,GetGuildInfo("player")));
+    if not IsInGuild() then return false; end
+
+    local _, _, guildRankIndex = GetGuildInfo("player");
+	GuildControlSetRank(guildRankIndex + 1);
 	local flags = self:Flags2Table(GuildControlGetRankFlags());
 	return flags[4];
 end
