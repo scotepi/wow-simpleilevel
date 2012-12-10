@@ -1217,7 +1217,7 @@ function SIL:GroupDest(dest, to)
 	if dest == 'W' then dest = 'WHISPER'; valid = true; end
 	if dest == 'TELL' then dest = 'WHISPER'; valid = true; end
     if dest == 'C' then dest = 'CHANNEL'; valid = true; end
-	if dest == 'I' then dest = 'INSTANCE_CHAT'; valid = true; end
+    if dest == 'I' then dest = 'INSTANCE_CHAT'; valid = true; end
 	
 	-- Find out if its a valid dest
 	for fixed,loc in pairs(SIL_Channels) do
