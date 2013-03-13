@@ -625,7 +625,7 @@ function SIL:GetActualItemLevel(link)
     ["457"]=8,["458"]=0,["459"]=4,["460"]=8,["461"]=12,["462"]=16}
   local baseLevel = select(4,GetItemInfo(link))
   local upgrade = link:match(":(%d+)\124h%[")
-  if baseLevel and upgrade then
+  if baseLevel and upgrade and levelAdjust[upgrade] then
     return baseLevel + levelAdjust[upgrade]
   else
     return baseLevel
