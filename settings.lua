@@ -15,7 +15,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
         Purple H T16, #FF00FF, 255, 0, 255
         Red H T17, #FF0000, 255, 0, 0
 ]]--
-SIL_ColorIndex = {0,333,463,516,541,600,1000};
+SIL_ColorIndex = {0,333,463,516,549,600,1000};
 SIL_Colors = {
     -- White base color
     [0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['rgb']='FFFFFF',   ['p']=0,},
@@ -26,9 +26,9 @@ SIL_Colors = {
     -- Teal for Heroic T14
     [516] =     {['r']=0,       ['g']=255,      ['b']=255,      ['rgb']='00FFFF',   ['p']=463,},
     -- Blue for Heroic T15
-    [541] =     {['r']=0,       ['g']=102,      ['b']=255,      ['rgb']='0066ff',   ['p']=516,},
+    [549] =     {['r']=0,       ['g']=102,      ['b']=255,      ['rgb']='0066ff',   ['p']=516,},
     -- Purple for Heroic T16
-    [600] =     {['r']=255,     ['g']=0,        ['b']=255,      ['rgb']='FF00FF',   ['p']=541,},
+    [600] =     {['r']=255,     ['g']=0,        ['b']=255,      ['rgb']='FF00FF',   ['p']=549,},
     -- Red for a max score
     [1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['rgb']='FF0000',   ['p']=600,},
 };
