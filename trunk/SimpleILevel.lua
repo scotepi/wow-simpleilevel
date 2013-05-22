@@ -618,18 +618,20 @@ end
 
 -- Thanks to Ro of Hyjal-US http://us.battle.net/wow/en/forum/topic/7199032730#9
 function SIL:GetActualItemLevel(link)
-  local levelAdjust={ -- 11th item:id field and level adjustment
-    ["0"]=0,["1"]=8,["373"]=4,["374"]=8,["375"]=4,["376"]=4,
-    ["377"]=4,["379"]=4,["380"]=4,["445"]=0,["446"]=4,["447"]=8,
-    ["451"]=0,["452"]=8,["453"]=0,["454"]=4,["455"]=8,["456"]=0,
-    ["457"]=8,["458"]=0,["459"]=4,["460"]=8,["461"]=12,["462"]=16}
-  local baseLevel = select(4,GetItemInfo(link))
-  local upgrade = link:match(":(%d+)\124h%[")
-  if baseLevel and upgrade and levelAdjust[upgrade] then
-    return baseLevel + levelAdjust[upgrade]
-  else
-    return baseLevel
-  end
+    local levelAdjust={ -- 11th item:id field and level adjustment
+        ["0"]=0,["1"]=8,["373"]=4,["374"]=8,["375"]=4,["376"]=4,
+        ["377"]=4,["379"]=4,["380"]=4,["445"]=0,["446"]=4,["447"]=8,
+        ["451"]=0,["452"]=8,["453"]=0,["454"]=4,["455"]=8,["456"]=0,
+        ["457"]=8,["458"]=0,["459"]=4,["460"]=8,["461"]=12,["462"]=16,
+        ["465"]=0,["466"]=4,["467"]=8,
+    }
+    local baseLevel = select(4,GetItemInfo(link))
+    local upgrade = link:match(":(%d+)\124h%[")
+    if baseLevel and upgrade and levelAdjust[upgrade] then
+        return baseLevel + levelAdjust[upgrade]
+    else
+        return baseLevel
+    end
 end
 
 -- /run for i=1,25 do t='raid'..i; if UnitExists(t) then print(i, UnitName(t), CanInspect(t), SIL:RoughScore(t)); end end
@@ -712,6 +714,7 @@ function SIL:SetScore(guid, score, items, age)
     SIL_CacheGUID[guid].score = score;
     SIL_CacheGUID[guid].items = items;
     SIL_CacheGUID[guid].time = t;
+    self:Debug("SetScore", self:GUIDtoName(guid), self:FormatScore(score, items), items, age)
 end
 
 -- Get a relative iLevel on Heirlooms
