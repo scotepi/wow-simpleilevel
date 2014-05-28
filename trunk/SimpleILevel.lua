@@ -141,7 +141,7 @@ function SIL:OnInitialize()
     self:ModulesLoad();
     
     -- Localization Notice
-    if GetLocale() == 'ptBR' or GetLocale() == 'frFR' or GetLocale() == 'itIT' or GetLocale() == 'esMX' or GetLocale() == 'esES' then
+    if GetLocale() == 'itIT' or GetLocale() == 'esMX' or GetLocale() == 'esES' then
         self:Print("Help Localize Simple iLevel! http://j.mp/localSIL")
     end
 end
