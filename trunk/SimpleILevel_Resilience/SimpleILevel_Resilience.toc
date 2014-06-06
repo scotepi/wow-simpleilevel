@@ -29,6 +29,5 @@
 ## Dependencies: SimpleILevel
 ## SavedVariables: SIL_ResilSettings
 ## LoadOnDemand: 1
-## DefaultState: disabled
 
 SimpleILevel_Resilience.lua
