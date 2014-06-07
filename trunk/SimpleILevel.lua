@@ -40,6 +40,7 @@ SIL.inspect = LibStub:GetLibrary("LibInspect");
 SIL.ldb = LibStub:GetLibrary("LibDataBroker-1.1");
 SIL.ldbIcon = LibStub:GetLibrary("LibDBIcon-1.0");
 SIL.callback = LibStub("CallbackHandler-1.0"):New(SIL);
+SIL.itemUpgrade = LibStub("LibItemUpgradeInfo-1.0");
 
 -- OnLoad
 function SIL:OnInitialize()
@@ -593,7 +594,7 @@ function SIL:GearSum(items, level)
         for i,itemLink in pairs(items) do
             if itemLink and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD ) then
                 -- local name, link, itemRarity , itemLevel = GetItemInfo(itemLink);
-                local itemLevel = self:GetActualItemLevel(itemLink);
+                local itemLevel = self.itemUpgrade:GetUpgradedItemLevel(itemLink);
 
                 --- print(i, itemLevel, itemLink);
                 
@@ -617,7 +618,7 @@ function SIL:GearSum(items, level)
 end
 
 -- Thanks to Ro of Hyjal-US http://us.battle.net/wow/en/forum/topic/7199032730#9
-function SIL:GetActualItemLevel(link)
+function SIL:GetActualItemLevelOld(link)
     -- Updated for 5.4.8
     local levelAdjust={ -- 11th item:id field and level adjustment
         ["0"]=0,["1"]=8,["373"]=4,["374"]=8,["375"]=4,["376"]=4,
@@ -632,7 +633,8 @@ function SIL:GetActualItemLevel(link)
     local baseLevel = select(4,GetItemInfo(link))
     local upgrade = link:match(":(%d+)\124h%[")
     if baseLevel and upgrade and levelAdjust[upgrade] then
-        return baseLevel + levelAdjust[upgrade]
+        local newLevel = baseLevel + levelAdjust[upgrade];
+        return newLevel
     else
         return baseLevel
     end

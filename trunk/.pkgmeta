@@ -13,14 +13,17 @@ externals:
     Libs/AceTimer-3.0: svn://svn.wowace.com/wow/ace3/mainline/trunk/AceTimer-3.0
 	Libs/LibDBIcon-1.0: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
     Libs/LibInspect: svn://svn.wowace.com/wow/libinspect/mainline/trunk
+    Libs/LibItemUpgradeInfo-1.0: git://git.wowace.com/wow/libitemupgradeinfo-1-0/mainline.git
 
 tools-used: 
     - libdatabroker-1-1
+	- LibItemUpgradeInfo-1.0
 	
 ignore:
     - Libs/LibDataBroker-1.1/README.textile
     - Libs/LibStub/tests
     - Libs/LibInspect/LibStub
+    - Libs/LibItemUpgradeInfo-1.0/LibStub
 	
 move-folders:
     SimpleILevel/SimpleILevel_Group: SimpleILevel_Group

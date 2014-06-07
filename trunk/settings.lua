@@ -253,7 +253,7 @@ SIL_Options = {
         
         leveladj = {
             name = 'Level Adjustment',
-            desc = "The id used for level adjusting upgraded items, please supply this with the differance in item level from base to current.",
+            desc = "[item link], used to get the level adjustment id of a item link.",
             type = "input",
             set = function(i,link)
                     local itemLevel = select(4,GetItemInfo(link));
@@ -262,9 +262,8 @@ SIL_Options = {
                         SIL:Print(link, "has a base item level", itemLevel, "with adjustment id", link:match(":(%d+)\124h%["));
                     end
                 end,
-            hidden = true,
             guiHidden = true,
-            cmdHidden = true,
+            cmdHidden = false,
         },
 
         debug = {
