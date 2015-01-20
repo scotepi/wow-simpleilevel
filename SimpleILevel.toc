@@ -27,7 +27,7 @@
 ## Author: Scotepi
 ## Version: @project-version@
 ## SavedVariables: SIL_Settings, SIL_CacheGUID
-## OptionalDeps: Ace3, CallbackHandler, LibDBIcon, LibInspect, GuildMemberInfo, LibDogTag-3.0
+## OptionalDeps: Ace3, CallbackHandler, LibDBIcon, LibInspect, GuildMemberInfo
 
 ## X-Category: Information
 
