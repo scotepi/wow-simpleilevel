@@ -306,3 +306,27 @@ SIL_Defaults = {
 SIL_Heirlooms = {
     [80] = {44102,42944,44096,42943,42950,48677,42946,42948,42947,42992,50255,44103,44107,44095,44098,44097,44105,42951,48683,48685,42949,48687,42984,44100,44101,44092,48718,44091,42952,48689,44099,42991,42985,48691,44094,44093,42945,48716},
 };
+
+-- LibDogTag Support
+local LibDogTag = LibStub("LibDogTag-3.0", true);
+if LibDogTag then
+    LibDogTag:AddTag("Unit", "ItemLevel", {
+           code = function(unit)
+              local ilvl = SIL:Cache(UnitGUID(unit), 'score')
+              if type(ilvl) == "number" then
+                 return ilvl
+              else
+                 return ''
+              end
+           end,
+           arg = {
+              'unit', 'string;undef', 'player'
+           },
+           ret = "number;string",
+           events = "UNIT_INVENTORY_CHANGED#$unit;INSPECT_READY#$unit",
+           doc = "Return the item level of unit (from Simple iLevel)",
+           example = ('[ItemLevel] => "%d"; [ItemLevel] => ""'):format(552.1),
+           category = "Characteristics"
+        }
+    );
+end
