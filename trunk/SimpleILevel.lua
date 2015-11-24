@@ -428,7 +428,8 @@ end;
 
 function SIL:AgeToText(age, color)
     if type(color) == 'nil' then color = true; end
-    
+    local hex = "00ff00";
+	
 	if type(age) == 'number' then
 		if age > 86400 then
 			age = self:Round(age / 86400, 2);
