@@ -18,7 +18,7 @@ function SIL_Resil:OnInitialize()
     SIL:AddHook('inspect', function(...) SIL_Resil:Inspect(...); end);
     
     -- Paperdoll
-    table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, 'SIL_Resil');
+    --table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, 'SIL_Resil');
 	if self:GetPaperdoll() then
 		PAPERDOLL_STATINFO['SIL_Resil'] = { updateFunc = function(...) SIL_Resil:UpdatePaperDollFrame(...); end };
 	else
