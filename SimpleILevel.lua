@@ -772,7 +772,8 @@ end
 function SIL:FormatScore(score, items, color)
     if not items then items = self.grayScore + 1; end
     if type(color) == 'nil' then color = true; end
-    
+    if score < 0 then score = 0; end	-- Ticket #29, thanks Torsin
+	
     if tonumber(score) and tonumber(items) then
         local scoreR
         
