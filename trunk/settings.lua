@@ -144,14 +144,14 @@ SIL_Options = {
                     get = function(i) return SIL:GetMinimap(); end,
                     order = 6,
                 },
-             --[[   cinfo = { -- Paperdoll Information
+				cinfo = { -- Paperdoll Information
                     name = L.core.options.paperdoll,
                     desc = L.core.options.paperdollDesc,
                     type = "toggle",
                     set = function(i,v) SIL:SetPaperdoll(v); end,
                     get = function(i) return SIL:GetPaperdoll(); end,
                     order = 7,
-                }, ]]--
+                },
                 mouseover = { -- Minimap Button
                     name = L.core.options.mouseover,
                     desc = L.core.options.mouseoverDesc,
