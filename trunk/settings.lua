@@ -144,15 +144,22 @@ SIL_Options = {
                     get = function(i) return SIL:GetMinimap(); end,
                     order = 6,
                 },
-                cinfo = { -- Paperdoll Information
+             --[[   cinfo = { -- Paperdoll Information
                     name = L.core.options.paperdoll,
                     desc = L.core.options.paperdollDesc,
                     type = "toggle",
                     set = function(i,v) SIL:SetPaperdoll(v); end,
                     get = function(i) return SIL:GetPaperdoll(); end,
                     order = 7,
+                }, ]]--
+                mouseover = { -- Minimap Button
+                    name = L.core.options.mouseover,
+                    desc = L.core.options.mouseoverDesc,
+                    type = "toggle",
+                    set = function(i,v) SIL:SetMouseOver(v); end,
+                    get = function(i) return SIL:GetMouseOver(); end,
+                    order = 6,
                 },
-                
                 
                 age = {
                     name = L.core.options.maxAge,
@@ -311,6 +318,7 @@ SIL_Defaults = {
         advanced = false,       -- Display extra information in the tooltips
         autoscan = true,        -- Automaticly scan for changes
         cinfo = false,          -- Character Info/Paperdoll info
+        mouseover = false,      -- Scan on mouse over
         minimap = {
             hide = false,       -- Minimap Icon
         },
