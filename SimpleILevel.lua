@@ -113,7 +113,9 @@ function SIL:OnInitialize()
 	end);
     
     -- Add to Paperdoll - not relevent as of 4.3, well see
-    -- table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L.core.name);
+    table.insert(PAPERDOLL_STATCATEGORIES[1].stats, {
+		  stat = L.core.name,
+	}); 
 	if self:GetPaperdoll() then
 		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
