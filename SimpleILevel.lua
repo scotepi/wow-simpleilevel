@@ -101,10 +101,16 @@ function SIL:OnInitialize()
     
     -- Events
     self:RegisterEvent("PLAYER_TARGET_CHANGED", function() if CanInspect('target') then SIL:GetScoreTarget('target'); end end);
-    self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() SIL:ShowTooltip(); end);
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() SIL:StartScore('player'); end);
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function() SIL:UpdateLDB(); end);
     self:RegisterEvent("GROUP_ROSTER_UPDATE", function() SIL:UpdateGroup() end);
+	self:RegisterEvent("UPDATE_MOUSEOVER_UNIT", function() 
+		if SIL:GetMouseOver() and CanInspect('mouseover') then
+			SIL:Debug('mouseover', UnitName('mouseover'));
+			SIL:GetScoreTarget('mouseover'); 
+		end
+		SIL:ShowTooltip();
+	end);
     
     -- Add to Paperdoll - not relevent as of 4.3, well see
     -- table.insert(PAPERDOLL_STATCATEGORIES["GENERAL"].stats, L.core.name);
@@ -962,6 +968,7 @@ function SIL:SetLDBrefresh(v) self.db.global.ldbRefresh = v; self:LDBSetAuto() e
 function SIL:SetTTCombat(v) self.db.global.ttCombat = v; end
 function SIL:SetColorScore(v) self.db.global.color = v; end
 function SIL:SetRoundScore(v) self.db.global.round = v; end
+function SIL:SetMouseOver(v) self.db.global.mouseover = v; end
 function SIL:SetDebug(v) self.db.char.debug = v; end
 
 -- Get
@@ -978,6 +985,7 @@ function SIL:GetLDBrefresh() return self.db.global.ldbRefresh; end
 function SIL:GetTTCombat() return self.db.global.ttCombat; end
 function SIL:GetColorScore() return self.db.global.color; end
 function SIL:GetRoundScore() return self.db.global.round; end
+function SIL:GetMouseOver() return self.db.global.mouseover; end
 function SIL:GetModule(m) return self.db.char.module[m]; end
 function SIL:GetDebug(m) return self.db.char.debug; end
 
@@ -991,6 +999,7 @@ function SIL:ToggleLDBlabel() self:SetLDBlabel(not self:GetLDBlabel()); end
 function SIL:ToggleTTCombat() self:SetTTCombat(not self:GetTTCombat()); end
 function SIL:ToggleColorScore() self:SetColorScore(not self:GetColorScore()); end
 function SIL:ToggleRoundScore() self:SetRoundScore(not self:GetRoundScore()); end
+function SIL:ToggleMouseOver() self:SetMouseOver(not self:GetMouseOver()); end
 function SIL:ToggleColorScore(m) self:SetModule(m, not self:GetModule(m)); end
 function SIL:ToggleDebug(m) self:SetDebug(not self:GetDebug()); end
 
