@@ -112,7 +112,7 @@ function SIL:OnInitialize()
 		SIL:ShowTooltip();
 	end);
     
-    -- Add to Paperdoll - not relevent as of 4.3, well see
+    -- Add to Paperdoll
 	if self:GetPaperdoll() then
 		self:RegisterPaperdoll();
 	end
@@ -1295,19 +1295,19 @@ function SIL:RegisterPaperdoll()
 	if not self:GetPaperdoll() then return false; end
 	
 	table.insert(PAPERDOLL_STATCATEGORIES[1].stats, {
-		  stat = L.core.name,
+		  stat = 'SIL',
 	});
-	PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+	PAPERDOLL_STATINFO['SIL'] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 end
 
 function SIL:UnregisterPaperdoll()
-	if not self:GetPaperdoll() then return false; end
+	if self:GetPaperdoll() then return false; end
 	
 	table.foreach(PAPERDOLL_STATCATEGORIES[1].stats, function(k, v)
-		if v.stat == L.core.name then
+		if v.stat == 'SIL' then
 			table.remove(PAPERDOLL_STATCATEGORIES[1].stats, k);
 		end
 	end);
 	
-	PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) return false; end };
+	PAPERDOLL_STATINFO['SIL'] = { updateFunc = function(...) return false; end };
 end
