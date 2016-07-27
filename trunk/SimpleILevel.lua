@@ -119,7 +119,7 @@ function SIL:OnInitialize()
 	if self:GetPaperdoll() then
 		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
-		PAPERDOLL_STATINFO[L.core.name] = nil;
+		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) return false; end };
 	end
     
     -- GuildMemberInfo
@@ -1027,7 +1027,7 @@ function SIL:SetPaperdoll(v)
 	if v then
 		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
 	else
-		PAPERDOLL_STATINFO[L.core.name] = nil;
+		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) return false; end };
 	end
 end
 
