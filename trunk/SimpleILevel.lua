@@ -113,13 +113,8 @@ function SIL:OnInitialize()
 	end);
     
     -- Add to Paperdoll - not relevent as of 4.3, well see
-    table.insert(PAPERDOLL_STATCATEGORIES[1].stats, {
-		  stat = L.core.name,
-	}); 
 	if self:GetPaperdoll() then
-		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
-	else
-		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) return false; end };
+		self:RegisterPaperdoll();
 	end
     
     -- GuildMemberInfo
@@ -1025,9 +1020,9 @@ function SIL:SetPaperdoll(v)
 	self.db.global.cinfo = v;
 	
 	if v then
-		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+		self:RegisterPaperdoll()
 	else
-		PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) return false; end };
+		self:UnregisterPaperdoll()
 	end
 end
 
@@ -1294,4 +1289,25 @@ function SIL:GroupDest(dest, to)
     end
     
 	return dest, to, color;
+end
+
+function SIL:RegisterPaperdoll()
+	if not self:GetPaperdoll() then return false; end
+	
+	table.insert(PAPERDOLL_STATCATEGORIES[1].stats, {
+		  stat = L.core.name,
+	});
+	PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) SIL:UpdatePaperDollFrame(...); end };
+end
+
+function SIL:UnregisterPaperdoll()
+	if not self:GetPaperdoll() then return false; end
+	
+	table.foreach(PAPERDOLL_STATCATEGORIES[1].stats, function(k, v)
+		if v.stat == L.core.name then
+			table.remove(PAPERDOLL_STATCATEGORIES[1].stats, k);
+		end
+	end);
+	
+	PAPERDOLL_STATINFO[L.core.name] = { updateFunc = function(...) return false; end };
 end
