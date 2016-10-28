@@ -798,6 +798,7 @@ end
 
 -- Format the score for color and round it to xxx.x
 function SIL:FormatScore(score, items, color)
+	if not score then score = 0; end
     if not items then items = self.grayScore + 1; end
     if type(color) == 'nil' then color = true; end
     if score < 0 then score = 0; end	-- Ticket #29, thanks Torsin
@@ -965,7 +966,9 @@ end
 
 function SIL:UpdatePaperDollFrame(statFrame, unit)
     local score, age, items = self:GetScoreTarget(unit, true);
-    local formated = self:FormatScore(score, items, false);
+    --local formated = self:FormatScore(score, items, false);
+	local formated = score and self:FormatScore(score, items, false) or "n/a";
+
     
     PaperDollFrame_SetLabelAndText(statFrame, L.core.name, formated, false);
     statFrame.tooltip = HIGHLIGHT_FONT_COLOR_CODE..L.core.name..FONT_COLOR_CODE_CLOSE;
