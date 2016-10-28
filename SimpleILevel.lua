@@ -609,15 +609,16 @@ function SIL:GearSum(items, level)
 		
         for i,itemLink in pairs(items) do
             if itemLink and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD ) then
-                -- local name, link, itemRarity , itemLevel = GetItemInfo(itemLink);
+                local name, link, itemRarity , itemLevelBlizz = GetItemInfo(itemLink);
                 local itemLevel = self.itemUpgrade:GetUpgradedItemLevel(itemLink);
 
                 -- print(totalItems, i, itemLevel, itemRarity, itemLink);
                 
                 if itemLevel then
-					local itemRarity = select(3, GetItemInfo(itemLink));
+					--local itemRarity = select(3, GetItemInfo(itemLink));
 					if itemRarity == 6 then
-						self:Debug('Artifact!', i, itemLink, itemLevel)
+						if itemLevelBlizz > itemLevel then itemLevel = itemLevelBlizz; end
+						self:Debug('Artifact!', i, itemLink, itemLevel, itemLevelBlizz)
 						-- Fix for Artifacts - Thanks Solofme
 						if totalItems == 15 then
 							-- Two handed Artifact
