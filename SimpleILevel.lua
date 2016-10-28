@@ -617,6 +617,7 @@ function SIL:GearSum(items, level)
                 if itemLevel then
 					local itemRarity = select(3, GetItemInfo(itemLink));
 					if itemRarity == 6 then
+						self:Debug('Artifact!', i, itemLink, itemLevel)
 						-- Fix for Artifacts - Thanks Solofme
 						if totalItems == 15 then
 							-- Two handed Artifact
@@ -966,7 +967,6 @@ end
 
 function SIL:UpdatePaperDollFrame(statFrame, unit)
     local score, age, items = self:GetScoreTarget(unit, true);
-    --local formated = self:FormatScore(score, items, false);
 	local formated = score and self:FormatScore(score, items, false) or "n/a";
 
     
