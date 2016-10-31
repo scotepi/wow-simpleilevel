@@ -607,6 +607,9 @@ function SIL:GearSum(items, level)
 			end
 		end
 		
+		-- Artifact fix for offhand not registering correct ilevel
+		local mainHandItemLevel = false;
+		
         for i,itemLink in pairs(items) do
             if itemLink and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD ) then
                 local name, link, itemRarity , itemLevelBlizz = GetItemInfo(itemLink);
@@ -615,10 +618,21 @@ function SIL:GearSum(items, level)
                 -- print(totalItems, i, itemLevel, itemRarity, itemLink);
                 
                 if itemLevel then
-					--local itemRarity = select(3, GetItemInfo(itemLink));
 					if itemRarity == 6 then
+						-- Bypass caching in LibItemUpgradeInfo-1 if need be
 						if itemLevelBlizz > itemLevel then itemLevel = itemLevelBlizz; end
-						self:Debug('Artifact!', i, itemLink, itemLevel, itemLevelBlizz)
+						self:Debug('Artifact!', i, itemLink, itemLevel, itemLevelBlizz);
+						
+						if i == INVSLOT_MAINHAND then 
+							totalScore = totalScore + itemLevel;
+							mainHandItemLevel = itemLevel;
+							
+						elseif i == INVSLOT_OFFHAND and mainHandItemLevel then
+							self:Debug('Using Main Hand iLevel', mainHandItemLevel, 'insted of offhand', itemLevel, itemLevelBlizz);
+							totalScore = totalScore + mainHandItemLevel;
+						end
+						
+						--[[
 						-- Fix for Artifacts - Thanks Solofme
 						if totalItems == 15 then
 							-- Two handed Artifact
@@ -634,6 +648,8 @@ function SIL:GearSum(items, level)
 							itemLevel = max(artifactLevel,itemLevel);
 							totalScore = totalScore + itemLevel * 2;
 						end
+						
+						]]--
 					elseif itemRarity == 7 then
 						-- Fix for heirlooms
                         itemLevel = self:Heirloom(level, itemLink);
