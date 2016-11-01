@@ -628,8 +628,12 @@ function SIL:GearSum(items, level)
 							mainHandItemLevel = itemLevel;
 							
 						elseif i == INVSLOT_OFFHAND and mainHandItemLevel then
-							self:Debug('Using Main Hand iLevel', mainHandItemLevel, 'insted of offhand', itemLevel, itemLevelBlizz);
-							totalScore = totalScore + mainHandItemLevel;
+							if itemLevel > mainHandItemLevel then
+								totalScore = totalScore + itemLevel;
+							else 
+								self:Debug('Using Main Hand iLevel', mainHandItemLevel, 'insted of offhand', itemLevel, itemLevelBlizz);
+								totalScore = totalScore + mainHandItemLevel;
+							end
 						end
 						
 						--[[
