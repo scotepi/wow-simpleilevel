@@ -668,6 +668,10 @@ function SIL:GearSum(items, level)
 			local scoreDiff = mainHandItemLevel - offHandItemLevel;
 			self:Debug('mainHandItemLevel > offHandItemLevel, using score from mainHand, adding', scoreDiff, 'to the totalScore');
 			totalScore = totalScore + scoreDiff;
+		elseif offHandArtifact and offHandArtifact and mainHandItemLevel < offHandItemLevel then
+			local scoreDiff = offHandItemLevel - mainHandItemLevel;
+			self:Debug('mainHandItemLevel < offHandItemLevel, using score from mainHand, adding', scoreDiff, 'to the totalScore');
+			totalScore = totalScore + scoreDiff;
 		end
 		
         return totalScore, totalItems;
