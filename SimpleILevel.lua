@@ -609,9 +609,9 @@ function SIL:GearSum(items, level)
 		
 		-- Artifact fix for offhand not registering correct ilevel
 		local mainHandArtifact = false;
-		local mainHandItemLevel = false;
+		local mainHandItemLevel = 0;
 		local offHandArtifact = false;
-		local offHandItemLevel = false;
+		local offHandItemLevel = 0;
 		
         for i,itemLink in pairs(items) do
             if itemLink and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD ) then
