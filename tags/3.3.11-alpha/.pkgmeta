@@ -1,0 +1,33 @@
+package-as: SimpleILevel
+
+externals:
+    Libs/LibStub: https://repos.wowace.com/wow/libstub/trunk
+    Libs/CallbackHandler-1.0: https://repos.wowace.com/wow/callbackhandler/trunk
+    Libs/AceAddon-3.0: https://repos.wowace.com/wow/ace3/trunk/AceAddon-3.0
+    Libs/AceEvent-3.0: https://repos.wowace.com/wow/ace3/trunk/AceEvent-3.0
+    Libs/AceLocale-3.0: https://repos.wowace.com/wow/ace3/trunk/AceLocale-3.0
+    Libs/AceGUI-3.0: https://repos.wowace.com/wow/ace3/trunk/AceGUI-3.0
+    Libs/AceConsole-3.0: https://repos.wowace.com/wow/ace3/trunk/AceConsole-3.0
+	Libs/AceConfig-3.0: https://repos.wowace.com/wow/ace3/trunk/AceConfig-3.0
+	Libs/AceDB-3.0: https://repos.wowace.com/wow/ace3/trunk/AceDB-3.0
+    Libs/AceTimer-3.0: https://repos.wowace.com/wow/ace3/trunk/AceTimer-3.0
+	Libs/LibDBIcon-1.0: https://repos.wowace.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
+    Libs/LibInspect: https://repos.wowace.com/wow/libinspect/trunk
+    Libs/LibItemUpgradeInfo-1.0: https://repos.wowace.com/wow/libitemupgradeinfo-1-0
+
+tools-used: 
+    - libdatabroker-1-1
+	- LibItemUpgradeInfo-1.0
+	
+ignore:
+    - Libs/LibDataBroker-1.1/README.textile
+    - Libs/LibStub/tests
+    - Libs/LibInspect/LibStub
+    - Libs/LibItemUpgradeInfo-1.0/LibStub
+	
+move-folders:
+    SimpleILevel/SimpleILevel_Group: SimpleILevel_Group
+    SimpleILevel/SimpleILevel_Resilience: SimpleILevel_Resilience
+    SimpleILevel/SimpleILevel_Social: SimpleILevel_Social
+    
+enable-nolib-creation: yes
