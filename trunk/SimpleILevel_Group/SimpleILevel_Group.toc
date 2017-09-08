@@ -1,4 +1,4 @@
-## Interface: 70200
+## Interface: 70300
 
 ## Title: Simple iLevel - Group
 ## Notes: View the AiL of everyone in your group
