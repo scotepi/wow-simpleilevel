@@ -1,4 +1,4 @@
-## Interface: 70300
+## Interface: 80000
 
 ## Title: Simple iLevel - Social
 ## Notes: Added the AiL to chat windows for various channels
