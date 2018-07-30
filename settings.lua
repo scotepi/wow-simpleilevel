@@ -19,22 +19,22 @@ local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 -- This should bump the day the expantion goes live
 -- local expansionID = GetExpansionLevel();
 
-SIL_ColorIndex = {0,630,700,825,880,895,1000};
+SIL_ColorIndex = {0,160,310,385,355,415,1000};
 SIL_Colors = {
 	-- White base color
 	[0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['rgb']='FFFFFF',   ['p']=0,},
-	-- Yellow for WoD dungeon gear
-	[630] =     {['r']=255,     ['g']=255,      ['b']=0,        ['rgb']='FFFF00',   ['p']=0,},
-	-- Green for Legion dungeon gear
-	[700] =     {['r']=0,       ['g']=255,      ['b']=0,        ['rgb']='00FF00',   ['p']=630,},
-	-- Teal for Legion Heroic
-	[825] =     {['r']=0,       ['g']=255,      ['b']=255,      ['rgb']='00FFFF',   ['p']=700,},
-	-- Blue for Mythic
-	[880] =     {['r']=0,       ['g']=102,      ['b']=255,      ['rgb']='0066ff',   ['p']=825,},
-	-- Purple for Legendary
-	[895] =     {['r']=255,     ['g']=0,        ['b']=255,      ['rgb']='FF00FF',   ['p']=880,},
+	-- Yellow for Legion dungeon gear
+	[160] =     {['r']=255,     ['g']=255,      ['b']=0,        ['rgb']='FFFF00',   ['p']=0,},
+	-- Green for BoA dungeon gear
+	[310] =     {['r']=0,       ['g']=255,      ['b']=0,        ['rgb']='00FF00',   ['p']=160,},
+	-- Teal for BoA R1 - Normal
+	[355] =     {['r']=0,       ['g']=255,      ['b']=255,      ['rgb']='00FFFF',   ['p']=310,},
+	-- Blue for BoA R1 - Mythic (will be R2 - Normal)
+	[385] =     {['r']=0,       ['g']=102,      ['b']=255,      ['rgb']='0066ff',   ['p']=355,},
+	-- Purple for BoA R2 - Mythic (will be R3 - Normal)
+	[415] =     {['r']=255,     ['g']=0,        ['b']=255,      ['rgb']='FF00FF',   ['p']=385,},
 	-- Red for a max score
-	[1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['rgb']='FF0000',   ['p']=895,},
+	[1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['rgb']='FF0000',   ['p']=415,},
 };
 
 
