@@ -478,7 +478,7 @@ function SIL:PrintTo(message, channel, to)
 end
 
 function SIL:Debug(...)
-	if SIL.db.char.debug then
+	if self:GetDebug() then
 		print('|cFFFF0000SIL Debug:|r ', ...);
 	end
 end
@@ -603,6 +603,7 @@ function SIL:GearSum(items, level)
 
         for i,itemLink in pairs(items) do
             if itemLink then
+                
                 local effectiveILvl, isPreview, baseILvl = GetDetailedItemLevelInfo(itemLink);
                 -- print(totalItems, i, itemLevel, itemRarity, itemLink);
                 
@@ -610,6 +611,14 @@ function SIL:GearSum(items, level)
                     totalItems = totalItems + 1;
                     totalScore = totalScore + effectiveILvl;
                     
+                    -- Run extra functions only if debug is on
+                    if self:GetDebug() then
+                        local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemIcon, itemSellPrice, itemClassID, itemSubClassID, bindType, expacID, itemSetID, isCraftingReagent = GetItemInfo(itemLink);
+                        
+                        if effectiveILvl ~= itemLevel then
+                            self:Debug("GearSum Mismatch", effectiveILvl, itemLevel, itemLink);
+                        end
+                    end
                     --self:Debug("GearSum", i, effectiveILvl, itemLink)
                 end -- itemLevel Check
             end -- itemLink Check
@@ -1106,7 +1115,7 @@ function SIL:LDBSetAuto()
     
     self.ldbAuto = self:ScheduleRepeatingTimer(function() 
         if not InCombatLockdown() then 
-            SIL:Debug('Auto LDB...'); 
+            --SIL:Debug('Auto LDB...'); 
             SIL:UpdateLDB(false, true); 
         end 
     end, self:GetLDBrefresh());
