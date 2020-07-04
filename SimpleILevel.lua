@@ -727,45 +727,6 @@ function SIL:SetScore(guid, score, items, age)
     self:Debug("SetScore", self:GUIDtoName(guid), self:FormatScore(score, items), items, age)
 end
 
--- Get a relative iLevel on Heirlooms
-function SIL:Heirloom(level, itemLink)
-	--[[
-		Here is how I came to the level 81-85 bracket
-		200 = level of 80 instance gear
-		333 = level of 85 instance gear
-		333 - 200 = 133 iLevels / 5 levels = 26.6 iLevel per level
-		so then that means for a level 83
-		83 - 80 = 3 * 26.6 = 79.8 + 200 = 279.8 iLevel
-	]]
-	
-	-- Check for Wrath Heirlooms that max at 80
-	if level > 80 then
-		local _, _, _, _, itemId = string.find(itemLink, "|?c?f?f?(%x*)|?H?([^:]*):?(%d+):?(%d*):?(%d*):?(%d*):?(%d*):?(%d*):?(%-?%d*):?(%-?%d*):?(%d*):?(%d*)|?h?%[?([^%[%]]*)%]?|?h?|?r?");
-		itemId = tonumber(itemId);
-		
-		-- Downgrade it to 80 if found
-		for k,iid in pairs(SIL_Heirlooms[80]) do
-			if iid == itemId then
-				level = 80;
-			end
-		end
-        
-        -- There are currently no 1-90 Heirlooms
-        if level > 85 then
-            level = 85
-        end
-	end
-	
-	if level > 80 then
-		return (( level - 80) * 26.6) + 200;
-	elseif level > 70 then
-		return (( level - 70) * 10) + 100;
-	elseif level > 60 then
-		return (( level - 60) * 4) + 60;
-	else
-		return level;
-	end
-end
 
 -- Format the score for color and round it to xxx.x
 function SIL:FormatScore(score, items, color)
