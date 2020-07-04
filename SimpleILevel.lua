@@ -595,8 +595,9 @@ function SIL:ProcessInspect(guid, data, age)
 end
 
 -- Rework thanks to Torsin https://mods.curse.com/addons/wow/simple-ilevel?comment=426
+-- TODO: Remove level in 4.0
 function SIL:GearSum(items, level)
-    if items and level and type(items) == 'table' then
+    if items and type(items) == 'table' then
         local totalItems = 0;
         local totalScore = 0;
 
