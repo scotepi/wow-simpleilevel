@@ -602,40 +602,18 @@ function SIL:GearSum(items, level)
 
         for i,itemLink in pairs(items) do
             if itemLink then
-                local name, link, itemRarity, itemLevelBlizz = GetItemInfo(itemLink);
-                local itemLevel = self.itemUpgrade:GetUpgradedItemLevel(itemLink);
+                local effectiveILvl, isPreview, baseILvl = GetDetailedItemLevelInfo(itemLink);
                 -- print(totalItems, i, itemLevel, itemRarity, itemLink);
                 
-                if itemLevel and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD )  then
+                if effectiveILvl and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD )  then
                     totalItems = totalItems + 1;
+                    totalScore = totalScore + effectiveILvl;
                     
-                    if itemLevelBlizz > itemLevel then 
-                        itemLevel = itemLevelBlizz; 
-                    end
-                    
-                    if itemRarity == 6 then
-                        -- Bypass caching in LibItemUpgradeInfo-1 if need be
-                        self:Debug('Artifact!', i, itemLink, itemLevel, itemLevelBlizz);
-                        if not items[INVSLOT_OFFHAND] and i == INVSLOT_MAINHAND then
-                            totalScore = totalScore + itemLevel * 2;
-                            totalItems = totalItems + 1;
-                            self:Debug("There is NO offhand, using mainhand", itemLevel);
-                        elseif i == INVSLOT_MAINHAND then
-                            if (itemLevel >= select(4, GetItemInfo(items[INVSLOT_OFFHAND]))) then
-                                totalScore = totalScore + (itemLevel * 2);
-                                self:Debug('mainHandItemLevel > offHandItemLevel, using score from mainHand.');
-                            else
-                                totalScore = totalScore + (select(4, GetItemInfo(items[INVSLOT_OFFHAND])) * 2);
-                                self:Debug('mainHandItemLevel < offHandItemLevel, using score from offHand.');
-                            end
-                        end
-                    else
-                        -- Normal item
-                        totalScore = totalScore + itemLevel;
-                    end
+                    --self:Debug("GearSum", i, effectiveILvl, itemLink)
                 end -- itemLevel Check
             end -- itemLink Check
         end -- for items loop
+        --self:Debug("GearSum Total:", totalScore, totalItems)
         
         return totalScore, totalItems;
     else
