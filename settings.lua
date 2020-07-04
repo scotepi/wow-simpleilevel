@@ -48,7 +48,6 @@ SIL_Channels = {
     SAY = string.lower(CHAT_MSG_SAY),
     BATTLEGROUND = string.lower(CHAT_MSG_BATTLEGROUND),
     INSTANCE_CHAT = string.lower(INSTANCE_CHAT_MESSAGE),
-    OFFICER = string.lower(CHAT_MSG_OFFICER),
 }
 SIL_GroupChannelString = '';
 local i = 0;

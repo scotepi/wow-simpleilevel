@@ -113,14 +113,6 @@ function SIL_Group:SetupSILMenu()
         enabled = function() return IsInGuild(); end,
     }, 2, 'SIL_Group');
     
-    -- Guild - Officer
-    SIL:AddMenuItems('middle', {    
-        text = CHAT_MSG_OFFICER,
-        func = function() SIL_Group:GroupOutput("OFFICER"); end,
-        notCheckable = 1,
-        enabled = function() return SIL:CanOfficerChat(); end,
-    }, 2, 'SIL_Group');
-    
     -- Say
     SIL:AddMenuItems('middle', {    
         text = CHAT_MSG_SAY,

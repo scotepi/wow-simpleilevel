@@ -243,27 +243,6 @@ function SIL:RGBtoHex(r, g, b)
 end
 
 
-function SIL:CanOfficerChat()
-    if not IsInGuild() then return false; end
-
-    local _, _, guildRankIndex = GetGuildInfo("player");
-	GuildControlSetRank(guildRankIndex + 1);
-	local flags = self:Flags2Table(GuildControlGetRankFlags());
-	return flags[4];
-end
-
-function SIL:Flags2Table(...)
-	local ret = {}
-	for i = 1, select("#", ...) do
-		if (select(i, ...)) then
-			ret[i] = true;
-		else
-			ret[i] = false;
-		end
-	end
-	return ret;
-end
-
 -- Play around with to test how color changes will work
 function SIL:ColorTest(l,h)
 	for i = l,h do
