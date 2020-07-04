@@ -1,4 +1,4 @@
-## Interface: 80000
+## Interface: 83000
 
 ## Title: Simple iLevel
 ## Notes: Adds the Average iLevel (AiL) to the tooltip of other players
