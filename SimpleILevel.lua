@@ -40,7 +40,7 @@ SIL.inspect = LibStub:GetLibrary("LibInspect");
 SIL.ldb = LibStub:GetLibrary("LibDataBroker-1.1");
 SIL.ldbIcon = LibStub:GetLibrary("LibDBIcon-1.0");
 SIL.callback = LibStub("CallbackHandler-1.0"):New(SIL);
-SIL.itemUpgrade = LibStub("LibItemUpgradeInfo-1.0");
+
 
 -- OnLoad
 function SIL:OnInitialize()
