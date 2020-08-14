@@ -616,7 +616,7 @@ function SIL:GearSum(items, level)
                         local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemIcon, itemSellPrice, itemClassID, itemSubClassID, bindType, expacID, itemSetID, isCraftingReagent = GetItemInfo(itemLink);
                         
                         if effectiveILvl ~= itemLevel then
-                            self:Debug("GearSum Mismatch", effectiveILvl, itemLevel, itemLink);
+                            --self:Debug("GearSum Mismatch", effectiveILvl, itemLevel, itemLink);
                         end
                     end
                     --self:Debug("GearSum", i, effectiveILvl, itemLink)
