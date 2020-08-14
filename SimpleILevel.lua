@@ -100,7 +100,7 @@ function SIL:OnInitialize()
     self:Autoscan(self:GetAutoscan());
     
     -- Events
-    self:RegisterEvent("PLAYER_TARGET_CHANGED", function() if CanInspect('target') then SIL:GetScoreTarget('target'); end end);
+    self:RegisterEvent("PLAYER_TARGET_CHANGED", function() if (CanInspect('target') and SIL:ShouldInspect('target')) then SIL:GetScoreTarget('target'); end end);
     self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED", function() SIL:StartScore('player'); end);
     self:RegisterEvent("PLAYER_ENTERING_WORLD", function() SIL:UpdateLDB(); end);
     self:RegisterEvent("GROUP_ROSTER_UPDATE", function() SIL:UpdateGroup() end);
@@ -1279,4 +1279,24 @@ function SIL:UnregisterPaperdoll()
 	end);
 	
 	PAPERDOLL_STATINFO['SIL'] = { updateFunc = function(...) return false; end };
+end
+
+
+-- /dump SIL:ShouldInspect('target')
+function SIL:ShouldInspect(target)
+    local guid = self:GetGUID(target)
+    local age = self:Cache(guid, 'age') or time()
+    local ageCheck = self:GetAge() < age
+    local items = self:Cache(guid, 'items') or 0
+    local itemCheck = items <= self.grayScore
+    
+    self:Debug('ShouldInspect', CanInspect(target), ageCheck, itemCheck)
+    
+    if CanInspect(target) and ageCheck and itemCheck then
+        self:Debug('Should Inspect', age, items)
+        return true
+    else
+        self:Debug('Should Not Inspect', age, items)
+        return false
+    end
 end
