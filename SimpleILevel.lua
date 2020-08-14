@@ -1292,7 +1292,7 @@ function SIL:ShouldInspect(target)
     
     self:Debug('ShouldInspect', CanInspect(target), ageCheck, itemCheck)
     
-    if CanInspect(target) and ageCheck and itemCheck then
+    if CanInspect(target) and (ageCheck or itemCheck) then
         self:Debug('Should Inspect', age, items)
         return true
     else
