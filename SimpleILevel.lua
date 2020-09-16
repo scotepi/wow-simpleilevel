@@ -609,7 +609,7 @@ function SIL:GearSum(items, level)
                 
                 if effectiveILvl and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD )  then
                     totalItems = totalItems + 1;
-                    totalScore = totalScore + (effectiveILvl * 2);
+                    totalScore = totalScore + effectiveILvl;
                     
                     -- Run extra functions only if debug is on
                     if self:GetDebug() then
