@@ -604,12 +604,25 @@ function SIL:GearSum(items, level)
         for i,itemLink in pairs(items) do
             if itemLink then
                 
-                local effectiveILvl, isPreview, baseILvl = GetDetailedItemLevelInfo(itemLink);
+                local effectiveILvl = GetDetailedItemLevelInfo(itemLink);
+                local itemEquipLoc = select(9, GetItemInfo(itemLink));
                 -- print(totalItems, i, itemLevel, itemRarity, itemLink);
                 
                 if effectiveILvl and not ( i == INVSLOT_BODY or i == INVSLOT_RANGED or i == INVSLOT_TABARD )  then
                     totalItems = totalItems + 1;
-                    totalScore = totalScore + effectiveILvl;
+                    
+                    -- Thanks to Torsin for fix, Issue #9
+                    if i == INVSLOT_MAINHAND and not items[INVSLOT_OFFHAND] then
+                        if itemEquipLoc == "INVTYPE_2HWEAPON" or itemEquipLoc == "INVTYPE_RANGED" then
+                            totalScore = totalScore + effectiveILvl;
+                            
+                            self:Debug("GearSum", "MissingOffhand", "Mainhand * 2", effectiveILvl, itemEquipLoc);
+                        else
+                            self:Debug("GearSum", "MissingOffhand", "Mainhand is 1h", effectiveILvl, itemEquipLoc);
+                        end
+                    else
+                        totalScore = totalScore + effectiveILvl;
+                    end
                     
                     -- Run extra functions only if debug is on
                     if self:GetDebug() then
