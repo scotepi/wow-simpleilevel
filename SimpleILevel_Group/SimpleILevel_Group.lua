@@ -175,8 +175,13 @@ function SIL_Group:GroupScore()
     end
     
     -- SIL:UpdateLDB();
-    local groupAvg = totalScore / groupSize;
-    return groupAvg, groupSize, groupMin, groupMax;
+    if (0 < groupSize) then
+        local groupAvg = totalScore / groupSize;
+        return groupAvg, groupSize, groupMin, groupMax;
+    else
+        SIL:Debug("Group Size eq ", groupSize)
+        return false
+    end
 end
 
 function SIL_Group:GroupOutput(dest, to)
