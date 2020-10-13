@@ -1,4 +1,4 @@
-## Interface: 80300
+## Interface: 90001
 
 ## Title: Simple iLevel - Social
 ## Notes: Added the AiL to chat windows for various channels

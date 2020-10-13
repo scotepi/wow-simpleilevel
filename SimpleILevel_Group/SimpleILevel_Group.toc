@@ -1,4 +1,4 @@
-## Interface: 80300
+## Interface: 90001
 
 ## Title: Simple iLevel - Group
 ## Notes: View the AiL of everyone in your group

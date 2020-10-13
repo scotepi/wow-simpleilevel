@@ -1,4 +1,4 @@
-## Interface: 80300
+## Interface: 90001
 
 ## Title: Simple iLevel
 ## Notes: Adds the Average iLevel (AiL) to the tooltip of other players
