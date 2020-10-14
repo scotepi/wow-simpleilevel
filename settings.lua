@@ -27,7 +27,7 @@ SIL_Colors = {
 	[30] =     {['r']=255,     ['g']=255,      ['b']=0,        ['rgb']='FFFF00',   ['p']=0,},
 	-- Green, Level 50, old Level 120
 	[58] =     {['r']=0,       ['g']=255,      ['b']=0,        ['rgb']='00FF00',   ['p']=30,},
-	-- Teal, Level 50 full eipiq, used to be 445
+	-- Teal, Level 50 full epic, used to be 445
 	[100] =     {['r']=0,       ['g']=255,      ['b']=255,      ['rgb']='00FFFF',   ['p']=58,},
 	-- Blue, Was 475 ish
 	[130] =     {['r']=0,       ['g']=102,      ['b']=255,      ['rgb']='0066ff',   ['p']=100,},
