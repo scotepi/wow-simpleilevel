@@ -17,7 +17,6 @@ ToDo:
 -- This should bump the day the expantion goes live
 -- local expansionID = GetExpansionLevel();
 
-SIL_ColorIndex = {0,30,58,100,130,145,1000};
 SIL_Colors = {
 	-- White base color
 	[0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['rgb']='FFFFFF',   ['p']=0,},
@@ -34,3 +33,14 @@ SIL_Colors = {
 	-- Red for a max score
 	[1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['rgb']='FF0000',   ['p']=145,},
 };
+
+-- Build the index
+SIL_ColorIndex = {}
+local i = 1
+for scoreStep,_ in pairs(SIL_Colors) do
+    SIL_ColorIndex[i] = scoreStep
+    i = i + 1
+end
+
+-- Sort the index
+table.sort(SIL_ColorIndex)
