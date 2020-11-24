@@ -5,17 +5,6 @@ ToDo:
 
 local L = LibStub("AceLocale-3.0"):GetLocale("SimpleILevel", true);
 
---[[
-    MoP Colors:
-        White 0, #FFFFFF, 255, 255, 255
-        Yellow 463, #FFFF00, 255, 255, 0
-        Green 463, #00FF00, 0, 255, 0
-        Teal 518, #00FFFF, 0, 255, 255
-        Blue H T17, #0066ff, 0, 102, 255 - Raw Blue was to dark
-        Purple H T18, #FF00FF, 255, 0, 255
-        Red H T19, #FF0000, 255, 0, 0
-]]--
-
 -- Supported channel localization table
 SIL_Channels = {
     SYSTEM = string.lower(CHAT_MSG_SYSTEM),
