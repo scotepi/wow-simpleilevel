@@ -796,15 +796,16 @@ function SIL:ColorScore(score, items)
     -- Default to white
 	local r,g,b = 1,1,1;
 	
-	local found = false;
+    local found = false;
+    local previousMax = 0;
 	
-	for i,maxScore in pairs(SIL_ColorIndex) do
+    for i,maxScore in pairs(SIL_ColorIndex) do
 		if score < maxScore and not found then
 			local colors = SIL_Colors[maxScore];
-			local baseColors = SIL_Colors[colors.p];
+			local baseColors = SIL_Colors[previousMax];
 			
-			local steps = maxScore - colors.p;
-			local scoreDiff = score - colors.p;
+			local steps = maxScore - previousMax;
+			local scoreDiff = score - previousMax;
 			
 			local diffR = (baseColors.r - colors.r) / 255;
 			local diffG = (baseColors.g - colors.g) / 255;
@@ -823,7 +824,9 @@ function SIL:ColorScore(score, items)
 			b = (baseColors.b / 255) - scoreDiffB;
 			
 			found = true;
-		end
+        end
+        
+        previousMax = maxScore
 	end
 	
 	-- Nothing was found so max
