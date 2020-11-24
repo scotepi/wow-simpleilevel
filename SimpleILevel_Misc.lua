@@ -242,6 +242,13 @@ function SIL:RGBtoHex(r, g, b)
 	return string.format("%02x%02x%02x", r*255, g*255, b*255)
 end
 
+-- from https://gist.github.com/jasonbradley/4357406
+function SIL:HexToRGB(hex)
+    hex = hex:gsub("#","")
+    local r,g,b = tonumber("0x"..hex:sub(1,2)), tonumber("0x"..hex:sub(3,4)), tonumber("0x"..hex:sub(5,6))
+
+    return {r = r, g = g, b = b, hex = '#'..hex, rgb = hex}
+end
 
 -- Play around with to test how color changes will work
 function SIL:ColorTest(l,h)
