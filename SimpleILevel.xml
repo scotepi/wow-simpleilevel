@@ -12,7 +12,8 @@
     <Script file="Locals\esES.lua" />
     <Script file="Locals\zhTW.lua" />
     
-    <Script file="settings.lua" />
+    <Script file="SimpleILevel_Settings.lua" />
+    <Script file="SimpleILevel_Colors.lua" />
     <Script file="SimpleILevel.lua" />
-    <Script file="misc.lua" />
+    <Script file="SimpleILevel_Misc.lua" />
 </Ui>

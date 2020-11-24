@@ -31,5 +31,5 @@
 
 ## X-Category: Information
 
-embeds.xml
+SimpleILevel_Embeds.xml
 SimpleILevel.xml
