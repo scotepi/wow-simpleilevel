@@ -20,21 +20,24 @@ ToDo:
 --[[
     There must be a 0 and 1000
 
+
+    Updated from https://www.wowhead.com/news=319344/how-to-gear-in-the-first-two-week-of-shadowlands-rewards-and-item-level
 ]]--
 
 SIL_Colors = {
 	-- White base color
 	[0] =       'FFFFFF',
-	-- Yellow, Level 25, old Level 60
-	[30] =     'FFFF00',
-	-- Green, Level 50, old Level 120
-	[58] =     '00FF00',
-	-- Teal, Level 50 full epic, used to be 445
-	[100] =     '00FFFF',
-	-- Blue, Was 475 ish
-	[130] =     '0066ff',
-	-- Purple, was 510 ish
-	[145] =     'FF00FF',
+	-- Yellow, end of BfA epic gear
+	[100] =     'FFFF00',
+	-- Green, Normal dungeon gear
+	[158] =     '00FF00',
+	-- Teal, Legendary rank 2
+    [210] =     '00FFFF',
+    
+	-- Blue, TBD Legendary rank, may get tweeked
+	[250] =     '0066ff',
+	-- Purple, TBD Legendary rank
+	[350] =     'FF00FF',
 	-- Red for a max score
 	[1000] =    'FF0000',
 };
