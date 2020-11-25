@@ -801,8 +801,8 @@ function SIL:ColorScore(score, items)
 	
     for i,maxScore in pairs(SIL_ColorIndex) do
 		if score < maxScore and not found then
-			local colors = SIL_Colors[maxScore];
-			local baseColors = SIL_Colors[previousMax];
+			local colors = self:HexToRGB(SIL_Colors[maxScore]);
+			local baseColors = self:HexToRGB(SIL_Colors[previousMax]);
 			
 			local steps = maxScore - previousMax;
 			local scoreDiff = score - previousMax;

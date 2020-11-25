@@ -24,19 +24,19 @@ ToDo:
 
 SIL_Colors = {
 	-- White base color
-	[0] =       {['r']=255,     ['g']=255,      ['b']=255,      ['rgb']='FFFFFF'},
+	[0] =       'FFFFFF',
 	-- Yellow, Level 25, old Level 60
-	[30] =     {['r']=255,     ['g']=255,      ['b']=0,        ['rgb']='FFFF00'},
+	[30] =     'FFFF00',
 	-- Green, Level 50, old Level 120
-	[58] =     {['r']=0,       ['g']=255,      ['b']=0,        ['rgb']='00FF00'},
+	[58] =     '00FF00',
 	-- Teal, Level 50 full epic, used to be 445
-	[100] =     {['r']=0,       ['g']=255,      ['b']=255,      ['rgb']='00FFFF'},
+	[100] =     '00FFFF',
 	-- Blue, Was 475 ish
-	[130] =     {['r']=0,       ['g']=102,      ['b']=255,      ['rgb']='0066ff'},
+	[130] =     '0066ff',
 	-- Purple, was 510 ish
-	[145] =     {['r']=255,     ['g']=0,        ['b']=255,      ['rgb']='FF00FF'},
+	[145] =     'FF00FF',
 	-- Red for a max score
-	[1000] =    {['r']=255,     ['g']=0,        ['b']=0,        ['rgb']='FF0000'},
+	[1000] =    'FF0000',
 };
 
 -- Build the index
@@ -44,6 +44,7 @@ SIL_ColorIndex = {}
 local i = 1
 for scoreStep,_ in pairs(SIL_Colors) do
     SIL_ColorIndex[i] = scoreStep
+    
     i = i + 1
 end
 
