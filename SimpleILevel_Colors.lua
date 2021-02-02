@@ -32,12 +32,12 @@ SIL_Colors = {
 	-- Green, Normal dungeon gear
 	[158] =     '00FF00',
 	-- Teal, Legendary rank 2
-    [210] =     '00FFFF',
+    [235] =     '00FFFF',
     
 	-- Blue, TBD Legendary rank, may get tweeked
-	[250] =     '0066ff',
+	[312] =     '0066ff',
 	-- Purple, TBD Legendary rank
-	[350] =     'FF00FF',
+	[389] =     'FF00FF',
 	-- Red for a max score
 	[1000] =    'FF0000',
 };
